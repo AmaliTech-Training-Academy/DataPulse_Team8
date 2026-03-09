@@ -1,19 +1,53 @@
 # helpers.py
-CLEAN_CSV = "tests/data/checks_clean.csv"
-DIRTY_CSV = "tests/data/checks_dirty.csv"
-VALID_JSON = "tests/data/valid.json"
+import io
+import os
 
-def csv_file(path, name):
-    return {"file": (name, open(path, "rb"), "text/csv")}
+CLEAN_CSV = """id,name,email,age,score
+1,Alice,alice@example.com,25,95
+2,Bob,bob@example.com,30,88
+3,Charlie,charlie@example.com,35,92
+4,Diana,diana@example.com,28,90
+5,Eve,eve@example.com,32,87"""
 
-def json_file(path, name):
-    import io
-    if isinstance(path, str) and not path.endswith(".json"):
-        content = path.encode("utf-8")
+DIRTY_CSV = """id,name,email,age,score
+1,Alice,alice@example.com,25,95
+2,Bob,,30,88
+3,,charlie@example.com,35,
+4,Diana,diana@example.com,invalid,90
+5,Eve,eve@example.com,32,87
+5,Eve,eve@example.com,32,87"""
+
+VALID_JSON = '{"data": []}'
+
+def csv_file(content, name):
+    """Create a CSV file upload from content string or file path.
+    
+    Args:
+        content: Either CSV content as string or path to CSV file
+        name: Filename for the upload
+    """
+    if isinstance(content, str) and os.path.exists(content):
+        # It's a file path
+        return {"file": (name, open(content, "rb"), "text/csv")}
     else:
-        with open(path, "rb") as f:
-            content = f.read()
-    return {"file": (name, io.BytesIO(content), "application/json")}
+        # It's inline content
+        return {"file": (name, io.BytesIO(content.encode("utf-8")), "text/csv")}
+
+def json_file(content, name):
+    """Create a JSON file upload from content string or file path.
+    
+    Args:
+        content: Either JSON content as string or path to JSON file
+        name: Filename for the upload
+    """
+    if isinstance(content, str) and os.path.exists(content):
+        # It's a file path
+        with open(content, "rb") as f:
+            file_content = f.read()
+    else:
+        # It's inline content
+        file_content = content.encode("utf-8")
+    return {"file": (name, io.BytesIO(file_content), "application/json")}
 
 def not_null_rule(field, severity):
     return {"type": "not_null", "field": field, "severity": severity}
