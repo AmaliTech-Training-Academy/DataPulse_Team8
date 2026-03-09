@@ -1,4 +1,4 @@
-"""Report service - STUB: Needs implementation."""
+"""Report service."""
 
 
 from datetime import datetime, timedelta

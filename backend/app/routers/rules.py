@@ -1,4 +1,4 @@
-"""Validation rules router - PARTIAL implementation."""
+"""Validation rules router."""
 
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query

@@ -4,6 +4,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from app.database import engine, Base
 from app.routers import auth, upload, rules, checks, reports
 from app.middleware.logging_middleware import GlobalLoggingMiddleware
+from contextlib import asynccontextmanager
 
 
 @asynccontextmanager

@@ -1,4 +1,4 @@
-"""Validation engine - PARTIAL implementation."""
+"""Validation engine."""
 
 import json
 import pandas as pd
