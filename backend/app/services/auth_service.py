@@ -1,29 +1,18 @@
 """Authentication service - IMPLEMENTED."""
 
-import hashlib
-import os
+import bcrypt
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.auth import UserCreate
 
 
 def hash_password(password: str) -> str:
-    """Hash password using SHA-256 with salt"""
-    salt = os.urandom(32)
-    key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
-    return salt.hex() + ':' + key.hex()
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    """Verify password against hash"""
-    try:
-        salt_hex, key_hex = hashed.split(':')
-        salt = bytes.fromhex(salt_hex)
-        key = bytes.fromhex(key_hex)
-        new_key = hashlib.pbkdf2_hmac('sha256', plain.encode('utf-8'), salt, 100000)
-        return key == new_key
-    except:
-        return False
+    return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
 
 
 def create_user(db: Session, user_data: UserCreate):

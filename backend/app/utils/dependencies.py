@@ -26,3 +26,15 @@ def get_current_user(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+def get_current_admin_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Check if the current user is an admin."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user doesn't have enough privileges",
+        )
+    return current_user
