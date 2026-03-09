@@ -47,7 +47,7 @@ def test_db():
 @pytest.fixture
 def sample_user(client):
     email = "test@example.com"
-    password = "Password123"
+    password = "test123"
     resp = client.post(
         "/api/auth/register",
         json={"email": email, "password": password, "full_name": "Test User"},
@@ -67,7 +67,7 @@ def auth_token(sample_user):
 @pytest.fixture
 def admin_user(client, test_db):
     email = "admin@example.com"
-    password = "AdminPassword123"
+    password = "admin123"
     resp = client.post(
         "/api/auth/register",
         json={"email": email, "password": password, "full_name": "Admin User"},

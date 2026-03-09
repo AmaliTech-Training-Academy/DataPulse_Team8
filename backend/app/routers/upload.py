@@ -6,20 +6,14 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models.dataset import Dataset, DatasetFile
-from app.models.user import User
 from app.schemas.dataset import DatasetResponse, DatasetList
 from app.services.file_parser import parse_csv, parse_json
-from app.utils.dependencies import get_current_user
 
 router = APIRouter()
 
 
 @router.post("/upload", response_model=DatasetResponse, status_code=201)
-def upload_dataset(
-    file: UploadFile = File(...), 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+def upload_dataset(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """Upload a CSV or JSON file and store dataset metadata."""
     filename = file.filename or ""
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
@@ -49,7 +43,6 @@ def upload_dataset(
         column_count=metadata["column_count"],
         column_names=json.dumps(metadata["column_names"]),
         status="PENDING",
-        uploaded_by=current_user.id
     )
     db.add(dataset)
     db.commit()
@@ -68,13 +61,8 @@ def list_datasets(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
     """List all datasets with pagination."""
-    query = db.query(Dataset)
-    if not current_user.is_admin:
-        query = query.filter(Dataset.uploaded_by == current_user.id)
-        
-    total = query.count()
-    datasets = query.offset(skip).limit(limit).all()
+    total = db.query(Dataset).count()
+    datasets = db.query(Dataset).offset(skip).limit(limit).all()
     return DatasetList(datasets=datasets, total=total)

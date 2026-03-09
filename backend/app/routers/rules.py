@@ -42,16 +42,10 @@ def create_rule(
 
 @router.get("", response_model=list[RuleResponse])
 def list_rules(
-    dataset_type: Optional[str] = Query(None), 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    dataset_type: Optional[str] = Query(None), db: Session = Depends(get_db)
 ):
     """List validation rules - IMPLEMENTED."""
     q = db.query(ValidationRule).filter(ValidationRule.is_active)
-    
-    if not current_user.is_admin:
-        q = q.filter(ValidationRule.created_by == current_user.id)
-        
     if dataset_type:
         q = q.filter(ValidationRule.dataset_type == dataset_type)
     return q.all()

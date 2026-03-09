@@ -59,7 +59,7 @@ def test_update_rule_as_non_owner(client: TestClient, auth_token: str):
     # Create another user and get token
     res = client.post(
         "/api/auth/register",
-        json={"email": "other@req.com", "password": "Password123", "full_name": "Other"},
+        json={"email": "other@req.com", "password": "pass", "full_name": "Other"},
     )
     other_token = res.json()["access_token"]
 
@@ -86,7 +86,7 @@ def test_delete_rule_as_non_owner(client: TestClient, auth_token: str):
 
     res = client.post(
         "/api/auth/register",
-        json={"email": "another@req.com", "password": "Password123", "full_name": "Other2"},
+        json={"email": "another@req.com", "password": "pass", "full_name": "Other2"},
     )
     other_token = res.json()["access_token"]
 

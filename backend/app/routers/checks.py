@@ -12,11 +12,9 @@ from app.schemas.report import CheckResultResponse, QualityScoreResponse
 from app.models.dataset import Dataset, DatasetFile
 from app.models.rule import ValidationRule
 from app.models.check_result import CheckResult, QualityScore
-from app.models.user import User
 from app.services.file_parser import parse_csv, parse_json
 from app.services.validation_engine import ValidationEngine
 from app.services.scoring_service import calculate_quality_score
-from app.utils.dependencies import get_current_user
 
 router = APIRouter()
 logger = logging.getLogger("datapulse.checks")
@@ -41,12 +39,7 @@ def check_rate_limit(client_ip: str):
 
 
 @router.post("/run/{dataset_id}", status_code=200)
-def run_checks(
-    dataset_id: int, 
-    request: Request, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+def run_checks(dataset_id: int, request: Request, db: Session = Depends(get_db)):
     """Run all applicable validation checks on a dataset."""
     start_time = time.time()
 
@@ -56,9 +49,6 @@ def run_checks(
     dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
-        
-    if dataset.uploaded_by != current_user.id and not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Not authorized to run checks on this dataset")
 
     dataset_file = (
         db.query(DatasetFile).filter(DatasetFile.dataset_id == dataset_id).first()
@@ -154,19 +144,8 @@ def run_checks(
 
 
 @router.get("/results/{dataset_id}", response_model=list[CheckResultResponse])
-def get_check_results(
-    dataset_id: int, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+def get_check_results(dataset_id: int, db: Session = Depends(get_db)):
     """Get all check results for a dataset."""
-    dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
-    if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset not found")
-        
-    if dataset.uploaded_by != current_user.id and not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Not authorized to view these results")
-        
     results = (
         db.query(CheckResult)
         .filter(CheckResult.dataset_id == dataset_id)

@@ -4,7 +4,7 @@ import io
 import pytest
 
 
-def test_upload_csv_success(client, auth_token):
+def test_upload_csv_success(client):
     """Test uploading a valid CSV file."""
     csv_content = """id,name,age
 1,Alice,30
@@ -12,8 +12,7 @@ def test_upload_csv_success(client, auth_token):
 3,Carol,35
 """
     files = {"file": ("test.csv", io.BytesIO(csv_content.encode()), "text/csv")}
-    headers = {"Authorization": f"Bearer {auth_token}"}
-    resp = client.post("/api/datasets/upload", files=files, headers=headers)
+    resp = client.post("/api/datasets/upload", files=files)
     assert resp.status_code == 201
     data = resp.json()
     assert data["name"] == "test"

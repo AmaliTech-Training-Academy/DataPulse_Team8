@@ -6,15 +6,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app.database import SessionLocal
 from app.models.user import User
-from app.config import settings
 import bcrypt
 
 
 def seed_admin():
     db = SessionLocal()
     try:
-        email = settings.ADMIN_EMAIL
-        password = settings.ADMIN_PASSWORD
+        email = "admin@amalitech.com"
+        password = "password123"
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 

@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 from app.models.dataset import Dataset
 from app.models.check_result import CheckResult, QualityScore
 from app.models.rule import ValidationRule
-from app.models.user import User
 
 def generate_report(dataset_id: int, db: Session) -> dict:
     dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
@@ -69,7 +68,7 @@ def generate_report(dataset_id: int, db: Session) -> dict:
     return report
 
 
-def get_trend_data(dataset_id: Optional[int], start_date: datetime, end_date: datetime, interval: str, db: Session, current_user: User = None) -> dict:
+def get_trend_data(dataset_id: Optional[int], start_date: datetime, end_date: datetime, interval: str, db: Session) -> dict:
     query = db.query(QualityScore).filter(
         QualityScore.checked_at >= start_date,
         QualityScore.checked_at <= end_date
@@ -77,11 +76,6 @@ def get_trend_data(dataset_id: Optional[int], start_date: datetime, end_date: da
 
     if dataset_id:
         query = query.filter(QualityScore.dataset_id == dataset_id)
-
-    if current_user and not current_user.is_admin:
-        query = query.join(Dataset, QualityScore.dataset_id == Dataset.id).filter(
-            Dataset.uploaded_by == current_user.id
-        )
 
     scores_records = query.order_by(QualityScore.checked_at).all()
     
