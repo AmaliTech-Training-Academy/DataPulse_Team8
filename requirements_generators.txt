@@ -1,0 +1,12 @@
+# DataPulse Data Generators — optional dependencies
+#
+# The generators work with only the Python standard library.
+# Install the extras below to unlock additional features:
+#
+#   pip install -r requirements_generators.txt
+
+# Database seeding (generator_production --db-url ...)
+sqlalchemy>=2.0,<3.0
+
+# Faster / richer data generation (optional)
+faker>=24.0,<26.0
