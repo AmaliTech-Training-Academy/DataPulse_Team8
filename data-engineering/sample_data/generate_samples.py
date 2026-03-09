@@ -100,7 +100,7 @@ def main():
     parser.add_argument("--rows", type=int, default=1000, help="Number of rows to generate")
     parser.add_argument("--error-rate", type=float, default=0.1, help="Percentage of rows with errors (0.0 to 1.0)")
     parser.add_argument("--output", type=str, default="generated.csv", help="Path to output CSV file")
-    parser.add_argument("--preset", action="store_true", help="Generate standard preset files (clean, messy, mixed)")
+    parser.add_argument("--preset", action="store_true", help="Generate standard preset files (clean, dirty, mixed)")
     
     args = parser.parse_args()
 
@@ -110,12 +110,15 @@ def main():
     if args.preset:
         print("Generating standard presets...")
         
-        # Output into a labelled 'datasets/' subfolder with a unique timestamped set
-        datasets_dir = os.path.join(d, "datasets")
+        # New folder structure: sample_data/generated_sample_data/sample_set_TIMESTAMP/
+        sample_data_dir = d
+        generated_root = os.path.join(sample_data_dir, "generated_sample_data")
+        
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        set_dir = os.path.join(datasets_dir, f"sample_set_{timestamp}")
+        set_dir = os.path.join(generated_root, f"sample_set_{timestamp}")
         os.makedirs(set_dir, exist_ok=True)
-        print(f"Creating files in directory: datasets/sample_set_{timestamp}/")
+        
+        print(f"Creating files in directory: {set_dir}/")
         
         # 95% clean data -> 5% error rate  → expected score ~95
         generate_robust_dataset(1000, 0.05, os.path.join(set_dir, "clean_data.csv"))
