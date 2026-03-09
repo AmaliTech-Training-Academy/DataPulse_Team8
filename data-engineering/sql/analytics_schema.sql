@@ -28,6 +28,10 @@ CREATE TABLE IF NOT EXISTS dim_datasets (
     file_type VARCHAR(10) NOT NULL CHECK (LOWER(file_type) IN ('csv', 'json')),
     row_count INTEGER NOT NULL DEFAULT 0 CHECK (row_count >= 0),
     column_count INTEGER NOT NULL DEFAULT 0 CHECK (column_count >= 0),
+    -- Source field from datasets.column_names for schema lineage.
+    column_names TEXT,
+    -- Source field from datasets.uploaded_by (users.id in app DB).
+    uploaded_by INTEGER,
     uploaded_at TIMESTAMPTZ NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
         CHECK (status IN ('PENDING', 'VALIDATED', 'FAILED')),
@@ -43,13 +47,27 @@ CREATE TABLE IF NOT EXISTS dim_rules (
     field_name VARCHAR(255) NOT NULL,
     rule_type VARCHAR(20) NOT NULL
         CHECK (rule_type IN ('NOT_NULL', 'DATA_TYPE', 'RANGE', 'UNIQUE', 'REGEX')),
+    -- Source field from validation_rules.parameters (JSON string payload).
+    parameters TEXT,
     severity VARCHAR(10) NOT NULL
         CHECK (severity IN ('HIGH', 'MEDIUM', 'LOW')),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    -- Source field from validation_rules.created_by (users.id in app DB).
+    created_by INTEGER,
     created_at TIMESTAMPTZ NOT NULL,
     first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Schema-alignment guardrails for existing environments.
+ALTER TABLE dim_datasets
+    ADD COLUMN IF NOT EXISTS column_names TEXT;
+ALTER TABLE dim_datasets
+    ADD COLUMN IF NOT EXISTS uploaded_by INTEGER;
+ALTER TABLE dim_rules
+    ADD COLUMN IF NOT EXISTS parameters TEXT;
+ALTER TABLE dim_rules
+    ADD COLUMN IF NOT EXISTS created_by INTEGER;
 
 CREATE TABLE IF NOT EXISTS dim_date (
     -- yyyymmdd integer key, e.g. 20260309
@@ -110,7 +128,9 @@ CREATE TABLE IF NOT EXISTS fact_quality_scores (
 -- Dimension indexes.
 CREATE INDEX IF NOT EXISTS idx_dim_datasets_uploaded_at ON dim_datasets(uploaded_at);
 CREATE INDEX IF NOT EXISTS idx_dim_datasets_status ON dim_datasets(status);
+CREATE INDEX IF NOT EXISTS idx_dim_datasets_uploaded_by ON dim_datasets(uploaded_by);
 CREATE INDEX IF NOT EXISTS idx_dim_rules_type_severity ON dim_rules(rule_type, severity);
+CREATE INDEX IF NOT EXISTS idx_dim_rules_created_by ON dim_rules(created_by);
 CREATE INDEX IF NOT EXISTS idx_dim_date_full_date ON dim_date(full_date);
 
 -- Fact indexes optimized for trend, latest-score, and issue analysis queries.

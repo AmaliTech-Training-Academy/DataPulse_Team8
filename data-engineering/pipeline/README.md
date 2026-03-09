@@ -14,6 +14,11 @@ Own the analytics data model for DataPulse so reports and trends are fast, corre
 The analytics schema in `sql/analytics_schema.sql` now includes:
 1. `etl_batch_runs` for ETL run tracking and watermarks.
 2. `dim_datasets` and `dim_rules` with strict quality constraints.
+   1. Includes backend-aligned lineage fields:
+      1. `dim_datasets.column_names`
+      2. `dim_datasets.uploaded_by`
+      3. `dim_rules.parameters`
+      4. `dim_rules.created_by`
 3. `dim_date` with full calendar attributes.
 4. `fact_quality_checks` at rule-check granularity.
 5. `fact_quality_scores` at dataset-run granularity.
@@ -30,8 +35,9 @@ Full table-by-table documentation is in:
 ### Source Tables (owned by backend)
 1. `datasets`
 2. `validation_rules`
-3. `check_results`
-4. `quality_scores`
+3. `users` (lineage reference for ownership fields)
+4. `check_results`
+5. `quality_scores`
 
 ### Analytics Tables (owned by data engineering)
 1. `dim_datasets`
@@ -52,6 +58,7 @@ Full table-by-table documentation is in:
 2. Rule failure analysis is accelerated with `(rule_id, checked_at DESC)` and partial failed-only indexes.
 3. Data integrity is enforced via `CHECK`, `FK`, and uniqueness constraints.
 4. ETL lineage is preserved using source IDs and `etl_batch_id` references.
+5. Ownership/config lineage is retained in dimensions for RBAC-aware analytics.
 
 ## Day 1 Execution Steps
 1. Install requirements:

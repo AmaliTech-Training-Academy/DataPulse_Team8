@@ -7,7 +7,7 @@
 | Domain | Data Engineering |
 | Owner | Data Engineer 1 (Evans Ankomah) |
 | Last Updated | 2026-03-09 |
-| Scope | Day 1 analytics schema foundation |
+| Scope | Day 1 foundation + backend contract alignment |
 | Source DDL | `data-engineering/sql/analytics_schema.sql` |
 
 ## Purpose
@@ -17,13 +17,14 @@ This document defines the analytics schema contract delivered on Day 1:
 3. View definitions for backend/report consumption.
 4. Index strategy for performance.
 5. Source-to-analytics lineage.
+6. Alignment with backend-owned auth and ownership fields.
 
 ## Logical Model
 | Entity | Type | Grain | Primary Key | Notes |
 |---|---|---|---|---|
 | `etl_batch_runs` | Control | One row per ETL execution | `id` | ETL lineage, watermarks, run status |
-| `dim_datasets` | Dimension | One row per source dataset | `id` | Mirrors `datasets.id` |
-| `dim_rules` | Dimension | One row per source rule | `id` | Mirrors `validation_rules.id` |
+| `dim_datasets` | Dimension | One row per source dataset | `id` | Mirrors `datasets.id` and uploader lineage |
+| `dim_rules` | Dimension | One row per source rule | `id` | Mirrors `validation_rules.id` including owner/config lineage |
 | `dim_date` | Dimension | One row per calendar date | `date_key` | Shared date conformed dimension |
 | `fact_quality_checks` | Fact | One row per source check result | `id` | Rule-level quality outcome |
 | `fact_quality_scores` | Fact | One row per source quality score | `id` | Dataset-run quality summary |
@@ -32,7 +33,10 @@ This document defines the analytics schema contract delivered on Day 1:
 | Source System Table | Target Analytics Object | Mapping Key |
 |---|---|---|
 | `datasets` | `dim_datasets` | `datasets.id -> dim_datasets.id` |
+| `datasets` | `dim_datasets` | `datasets.uploaded_by -> dim_datasets.uploaded_by` |
 | `validation_rules` | `dim_rules` | `validation_rules.id -> dim_rules.id` |
+| `validation_rules` | `dim_rules` | `validation_rules.parameters -> dim_rules.parameters` |
+| `validation_rules` | `dim_rules` | `validation_rules.created_by -> dim_rules.created_by` |
 | `check_results` | `fact_quality_checks` | `check_results.id -> source_check_result_id` |
 | `quality_scores` | `fact_quality_scores` | `quality_scores.id -> source_quality_score_id` |
 
@@ -60,6 +64,8 @@ This document defines the analytics schema contract delivered on Day 1:
 | `file_type` | `VARCHAR(10)` | No | Check lower in `csv/json` | Uploaded file type |
 | `row_count` | `INTEGER` | No | Default `0`, check `>= 0` | Dataset row count |
 | `column_count` | `INTEGER` | No | Default `0`, check `>= 0` | Dataset column count |
+| `column_names` | `TEXT` | Yes |  | Source dataset column metadata payload |
+| `uploaded_by` | `INTEGER` | Yes | Source reference to `users.id` | Dataset owner/uploader from app DB |
 | `uploaded_at` | `TIMESTAMPTZ` | No |  | Original upload timestamp |
 | `status` | `VARCHAR(20)` | No | Check in `PENDING/VALIDATED/FAILED` | Dataset quality status |
 | `first_seen_at` | `TIMESTAMPTZ` | No | Default `NOW()` | First observed in ETL |
@@ -73,8 +79,10 @@ This document defines the analytics schema contract delivered on Day 1:
 | `dataset_type` | `VARCHAR(100)` | No |  | Rule scope/group from source |
 | `field_name` | `VARCHAR(255)` | No |  | Dataset field validated |
 | `rule_type` | `VARCHAR(20)` | No | Check in `NOT_NULL/DATA_TYPE/RANGE/UNIQUE/REGEX` | Rule behavior class |
+| `parameters` | `TEXT` | Yes |  | Rule configuration payload from source |
 | `severity` | `VARCHAR(10)` | No | Check in `HIGH/MEDIUM/LOW` | Rule severity |
 | `is_active` | `BOOLEAN` | No | Default `TRUE` | Active/inactive flag |
+| `created_by` | `INTEGER` | Yes | Source reference to `users.id` | Rule owner from app DB |
 | `created_at` | `TIMESTAMPTZ` | No |  | Rule creation time in source |
 | `first_seen_at` | `TIMESTAMPTZ` | No | Default `NOW()` | First observed in ETL |
 | `last_seen_at` | `TIMESTAMPTZ` | No | Default `NOW()` | Last refreshed in ETL |
@@ -188,7 +196,9 @@ Primary use: issue distribution and hotspot analysis.
 |---|---|---|---|
 | `idx_dim_datasets_uploaded_at` | `dim_datasets` | `(uploaded_at)` | Time filtering on datasets |
 | `idx_dim_datasets_status` | `dim_datasets` | `(status)` | Status filtering |
+| `idx_dim_datasets_uploaded_by` | `dim_datasets` | `(uploaded_by)` | Owner-level filtering and lineage trace |
 | `idx_dim_rules_type_severity` | `dim_rules` | `(rule_type, severity)` | Rule diagnostics |
+| `idx_dim_rules_created_by` | `dim_rules` | `(created_by)` | Rule-owner filtering and governance analysis |
 | `idx_dim_date_full_date` | `dim_date` | `(full_date)` | Date joins/lookups |
 | `idx_fact_checks_dataset_checked_at` | `fact_quality_checks` | `(dataset_id, checked_at DESC)` | Dataset trend scans |
 | `idx_fact_checks_rule_checked_at` | `fact_quality_checks` | `(rule_id, checked_at DESC)` | Rule trend scans |
@@ -204,7 +214,7 @@ Primary use: issue distribution and hotspot analysis.
 | Domain constraints | `rule_type`, `severity`, `status`, and `file_type` are constrained |
 | Numeric validity | Scores and rates are bounded (`0..100`, `0..1`) |
 | Count consistency | `failed_rows <= total_rows` and `passed_rules + failed_rules = total_rules` |
-| Lineage integrity | Source IDs are stored uniquely in facts |
+| Lineage integrity | Source IDs are unique in facts; source ownership/config lineage is retained in dimensions |
 | Time consistency | All facts include `checked_at`, `date_key`, and `etl_loaded_at` |
 
 ## Refresh and SLA Contract
@@ -226,3 +236,4 @@ Primary use: issue distribution and hotspot analysis.
 | Date | Change |
 |---|---|
 | 2026-03-09 | Initial Day 1 schema documentation and full analytics data dictionary |
+| 2026-03-09 | Added backend-aligned lineage fields: `uploaded_by`, `column_names`, `parameters`, and `created_by` |
