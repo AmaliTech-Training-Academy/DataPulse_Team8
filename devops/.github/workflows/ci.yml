@@ -1,0 +1,68 @@
+name: DataPulse CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install flake8
+      - run: flake8 backend/app --max-line-length=120
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    # Option 1: Run tests locally with SQLite (default)
+    # Option 2: Run tests against Postgres using docker-compose.test.yml
+    # Uncomment the services section below to use Postgres instead of SQLite
+    # services:
+    #   postgres:
+    #     image: postgres:15-alpine
+    #     env:
+    #       POSTGRES_USER: datapulse_test
+    #       POSTGRES_PASSWORD: test_pass
+    #       POSTGRES_DB: datapulse_test
+    #     ports:
+    #       - 5432:5432
+    #     options: >-
+    #       --health-cmd pg_isready
+    #       --health-interval 10s
+    #       --health-timeout 5s
+    #       --health-retries 5
+    #     volumes:
+    #       - postgres_test_data:/var/lib/postgresql/data
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # Run tests with SQLite (default) - set TEST_DATABASE_URL to use Postgres
+      - name: Run tests
+        env:
+          # Uncomment and modify the line below to run tests against Postgres:
+          # TEST_DATABASE_URL: postgresql://datapulse_test:test_pass@localhost:5432/datapulse_test
+          TEST_DATABASE_URL: sqlite:///./test_datapulse.db
+        run: pip install -r backend/requirements.txt && cd backend && pytest tests/ -v
+
+  # Alternative: Run tests against Postgres using docker-compose.test.yml
+  test-with-postgres:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t datapulse-backend ./backend
