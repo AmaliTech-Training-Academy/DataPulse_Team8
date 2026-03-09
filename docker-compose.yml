@@ -1,6 +1,6 @@
 services:
   # PostgreSQL Database
-  postgres:
+  db:
     image: postgres:15-alpine
     container_name: datapulse-db
     environment:
@@ -29,23 +29,24 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
 
-  # DataPulse API
-  api:
+  # DataPulse Backend API
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: datapulse-api
+    container_name: datapulse-backend
     environment:
-      DATABASE_URL: postgresql://datapulse:datapulse123@postgres:5432/datapulse
+      DATABASE_URL: postgresql://datapulse:datapulse123@db:5432/datapulse
     ports:
       - "8000:8000"
     volumes:
-      - ./app:/app/app
+      - ./backend/app:/app/app
+      - ./backend/uploads:/app/uploads
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -54,6 +55,52 @@ services:
       retries: 3
       start_period: 40s
 
+  # Data Engineering Pipeline
+  pipeline:
+    build:
+      context: .
+      dockerfile: devops/Dockerfile.pipeline
+    container_name: datapulse-pipeline
+    environment:
+      SOURCE_DB_URL: postgresql://datapulse:datapulse123@db:5432/datapulse
+      TARGET_DB_URL: postgresql://datapulse:datapulse123@db:5432/datapulse
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
+  # Prometheus for Metrics Collection
+  prometheus:
+    image: prometheus:latest
+    container_name: datapulse-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    depends_on:
+      - backend
+
+  # Grafana for Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: datapulse-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
 volumes:
   postgres_data:
   pgadmin_data:
+  prometheus_data:
+  grafana_data:
