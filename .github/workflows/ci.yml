@@ -8,12 +8,12 @@
 
 name: CI
 
-# Trigger on feature branches and PRs to main
+# Trigger on feature branches and PRs to main and developer
 on:
   push:
-    branches: [main, develop, "feature/*"]
+    branches: [main, developer, develop, "feature/*", "devops/*"]
   pull_request:
-    branches: [main]
+    branches: [main, developer]
 
 # =============================================================================
 # Jobs
@@ -38,7 +38,7 @@ jobs:
         run: pip install flake8
 
       - name: Run flake8
-        run: flake8 app/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        run: flake8 backend/app/ --count --select=E9,F63,F7,F82 --show-source --statistics
 
   # -------------------------------------------------------------------------
   # Test (pytest)
@@ -74,10 +74,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r backend/requirements.txt
 
       - name: Run pytest
-        run: pytest tests/ -v --junitxml=test-results.xml
+        run: pytest backend/tests/ -v --junitxml=test-results.xml
         env:
           DATABASE_URL: postgresql://datapulse_user:datapulse_pass@localhost:5432/datapulse_db_test
           APP_ENV: test
@@ -106,7 +106,7 @@ jobs:
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./backend
           push: false
           tags: datapulse-api:latest
           cache-from: type=gha
