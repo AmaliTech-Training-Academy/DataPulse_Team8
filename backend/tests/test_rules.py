@@ -60,14 +60,14 @@ class TestCreateRule:
 
     def test_create_rule_invalid_type(self, client):
         """TC-R06 — Invalid rule_type returns 400."""
-        bad_rule = not_null_rule("name")
+        bad_rule = not_null_rule("name", "HIGH")
         bad_rule["rule_type"] = "DOES_NOT_EXIST"
         resp = client.post("/api/rules", json=bad_rule)
         assert resp.status_code == 400
 
     def test_create_rule_invalid_severity(self, client):
         """TC-R07 — Invalid severity returns 400."""
-        bad_rule = not_null_rule("name")
+        bad_rule = not_null_rule("name", "HIGH")
         bad_rule["severity"] = "CRITICAL"
         resp = client.post("/api/rules", json=bad_rule)
         assert resp.status_code == 400
@@ -191,7 +191,7 @@ class TestListRules:
 
     def test_list_rules_contains_created_rule(self, client):
         """TC-R08 extended — A newly created rule appears in the list."""
-        rule = not_null_rule("list_check_field")
+        rule = not_null_rule("list_check_field", "HIGH")
         rule["name"] = "unique_list_check_rule"
         client.post("/api/rules", json=rule)
         resp = client.get("/api/rules")
@@ -201,7 +201,7 @@ class TestListRules:
     def test_list_rules_filter_by_dataset_type(self, client):
         """TC-R09 — Filter by dataset_type returns only matching rules."""
         # Create a JSON-typed rule
-        json_rule = not_null_rule("json_field")
+        json_rule = not_null_rule("json_field", "HIGH")
         json_rule["name"] = "json_type_rule"
         json_rule["dataset_type"] = "json"
         client.post("/api/rules", json=json_rule)

@@ -17,7 +17,7 @@ class TestE2EHappyPath:
         assert ds["status"] == "PENDING" and ds["row_count"] == 5
 
         # Add rules
-        for rule in [not_null_rule("name"), not_null_rule("email"), range_rule("age", 0, 120), unique_rule("id")]:
+        for rule in [not_null_rule("name", "HIGH"), not_null_rule("email", "HIGH"), range_rule("age", 0, 120, "MEDIUM"), unique_rule("id", "HIGH")]:
             r = client.post("/api/rules", json=rule)
             assert r.status_code == 201
 
@@ -91,7 +91,7 @@ class TestE2ERuleUpdateAndDelete:
 
     def test_delete_rule_removes_from_list(self, client):
         """TC-R13 — Deleted rule not returned in GET /api/rules."""
-        rule = client.post("/api/rules", json=not_null_rule("deleteme_field")).json()
+        rule = client.post("/api/rules", json=not_null_rule("deleteme_field", "HIGH")).json()
         rule_id = rule["id"]
 
         del_resp = client.delete(f"/api/rules/{rule_id}")
@@ -111,7 +111,7 @@ class TestE2EHealthAndSmoke:
 
     def test_trends_populated_after_checks(self, client):
         ds = client.post("/api/datasets/upload", files=csv_file(CLEAN_CSV, "trend_e2e.csv")).json()
-        client.post("/api/rules", json=not_null_rule("name"))
+        client.post("/api/rules", json=not_null_rule("name", "HIGH"))
         client.post(f"/api/checks/run/{ds['id']}")
         trends = client.get("/api/reports/trends").json()
         assert len(trends) > 0
