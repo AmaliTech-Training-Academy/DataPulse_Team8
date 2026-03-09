@@ -35,7 +35,7 @@ services:
   # DataPulse API
   api:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: datapulse-api
     environment:
@@ -43,7 +43,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./app:/app/app
+      - ./backend:/app
     depends_on:
       postgres:
         condition: service_healthy
