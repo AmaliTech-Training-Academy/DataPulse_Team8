@@ -1,6 +1,7 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey
 from app.database import Base
+
 
 class ValidationRule(Base):
     __tablename__ = "validation_rules"
@@ -13,4 +14,7 @@ class ValidationRule(Base):
     parameters = Column(Text, nullable=True)
     severity = Column(String(10), default="MEDIUM")
     is_active = Column(Boolean, default=True)
+    created_by = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True
+    )
     created_at = Column(DateTime, default=datetime.utcnow)

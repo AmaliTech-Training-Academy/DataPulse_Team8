@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+
 
 class DatasetResponse(BaseModel):
     id: int
@@ -11,8 +12,8 @@ class DatasetResponse(BaseModel):
     column_names: Optional[str] = None
     status: str
     uploaded_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class DatasetList(BaseModel):
     datasets: List[DatasetResponse]
