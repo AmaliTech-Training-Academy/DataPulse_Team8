@@ -1,5 +1,6 @@
 """Validation rules router - FULLY IMPLEMENTED."""
 
+import json
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
@@ -11,15 +12,36 @@ router = APIRouter()
 
 VALID_TYPES      = {"NOT_NULL", "DATA_TYPE", "RANGE", "UNIQUE", "REGEX"}
 VALID_SEVERITIES = {"HIGH", "MEDIUM", "LOW"}
+VALID_DATA_TYPES = {"int", "float", "str", "bool"}
 
 
 @router.post("", response_model=RuleResponse, status_code=201)
 def create_rule(rule_data: RuleCreate, db: Session = Depends(get_db)):
-    """Create a new validation rule."""
+    """Create a new validation rule with comprehensive validation."""
+    # Validate rule type
     if rule_data.rule_type not in VALID_TYPES:
-        raise HTTPException(status_code=400, detail=f"Invalid rule_type. Must be one of: {VALID_TYPES}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid rule_type '{rule_data.rule_type}'. Must be one of: {', '.join(sorted(VALID_TYPES))}"
+        )
+    
+    # Validate severity
     if rule_data.severity not in VALID_SEVERITIES:
-        raise HTTPException(status_code=400, detail=f"Invalid severity. Must be one of: {VALID_SEVERITIES}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid severity '{rule_data.severity}'. Must be one of: {', '.join(sorted(VALID_SEVERITIES))}"
+        )
+    
+    # Validate field name is not empty
+    if not rule_data.field_name or not rule_data.field_name.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Field name cannot be empty"
+        )
+    
+    # Validate parameters based on rule type
+    _validate_rule_parameters(rule_data.rule_type, rule_data.parameters)
+    
     rule = ValidationRule(**rule_data.model_dump())
     db.add(rule)
     db.commit()
@@ -56,6 +78,72 @@ def update_rule(rule_id: int, rule_data: RuleUpdate, db: Session = Depends(get_d
     db.commit()
     db.refresh(rule)
     return rule
+
+
+def _validate_rule_parameters(rule_type: str, parameters: Optional[str]) -> None:
+    """Validate rule parameters based on rule type.
+    
+    Args:
+        rule_type: The type of validation rule
+        parameters: JSON string of parameters
+        
+    Raises:
+        HTTPException: If parameters are invalid for the rule type
+    """
+    if rule_type in ["DATA_TYPE", "RANGE", "REGEX"]:
+        if not parameters:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Rule type '{rule_type}' requires parameters"
+            )
+        
+        try:
+            params = json.loads(parameters)
+        except json.JSONDecodeError:
+            raise HTTPException(
+                status_code=400,
+                detail="Parameters must be valid JSON"
+            )
+        
+        # Validate DATA_TYPE parameters
+        if rule_type == "DATA_TYPE":
+            if "expected_type" not in params:
+                raise HTTPException(
+                    status_code=400,
+                    detail="DATA_TYPE rule requires 'expected_type' parameter"
+                )
+            if params["expected_type"] not in VALID_DATA_TYPES:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid expected_type '{params['expected_type']}'. Must be one of: {', '.join(sorted(VALID_DATA_TYPES))}"
+                )
+        
+        # Validate RANGE parameters
+        elif rule_type == "RANGE":
+            if "min" not in params and "max" not in params:
+                raise HTTPException(
+                    status_code=400,
+                    detail="RANGE rule requires at least 'min' or 'max' parameter"
+                )
+            if "min" in params and "max" in params:
+                if params["min"] >= params["max"]:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="RANGE rule: 'min' must be less than 'max'"
+                    )
+        
+        # Validate REGEX parameters
+        elif rule_type == "REGEX":
+            if "pattern" not in params:
+                raise HTTPException(
+                    status_code=400,
+                    detail="REGEX rule requires 'pattern' parameter"
+                )
+            if not params["pattern"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail="REGEX pattern cannot be empty"
+                )
 
 
 @router.delete("/{rule_id}", status_code=204)
