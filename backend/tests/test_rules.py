@@ -104,6 +104,81 @@ class TestCreateRule:
             resp = client.post("/api/rules", json=rule)
             assert resp.status_code == 201, f"Rule type {rt} should be accepted"
 
+    def test_create_rule_empty_field_name(self, client):
+        """TC-R06b — Empty field name returns 400."""
+        rule = not_null_rule("", "HIGH")
+        resp = client.post("/api/rules", json=rule)
+        assert resp.status_code == 400
+        assert "field name" in resp.json()["detail"].lower()
+
+    def test_create_data_type_rule_missing_parameters(self, client):
+        """TC-R06c — DATA_TYPE rule without parameters returns 400."""
+        rule = {
+            "name": "test_data_type",
+            "dataset_type": "csv",
+            "field_name": "age",
+            "rule_type": "DATA_TYPE",
+            "severity": "MEDIUM"
+        }
+        resp = client.post("/api/rules", json=rule)
+        assert resp.status_code == 400
+        assert "requires parameters" in resp.json()["detail"]
+
+    def test_create_data_type_rule_invalid_type(self, client):
+        """TC-R06d — DATA_TYPE rule with invalid expected_type returns 400."""
+        rule = data_type_rule("age", "invalid_type", "MEDIUM")
+        resp = client.post("/api/rules", json=rule)
+        assert resp.status_code == 400
+        assert "expected_type" in resp.json()["detail"]
+
+    def test_create_range_rule_min_greater_than_max(self, client):
+        """TC-R06e — RANGE rule with min >= max returns 400."""
+        rule = range_rule("score", 100, 50, "MEDIUM")
+        resp = client.post("/api/rules", json=rule)
+        assert resp.status_code == 400
+        assert "min" in resp.json()["detail"].lower() and "max" in resp.json()["detail"].lower()
+
+    def test_create_range_rule_missing_parameters(self, client):
+        """TC-R06f — RANGE rule without min or max returns 400."""
+        rule = {
+            "name": "test_range",
+            "dataset_type": "csv",
+            "field_name": "score",
+            "rule_type": "RANGE",
+            "severity": "MEDIUM"
+        }
+        resp = client.post("/api/rules", json=rule)
+        assert resp.status_code == 400
+        assert "requires" in resp.json()["detail"]
+
+    def test_create_regex_rule_missing_pattern(self, client):
+        """TC-R06g — REGEX rule without pattern returns 400."""
+        rule = {
+            "name": "test_regex",
+            "dataset_type": "csv",
+            "field_name": "email",
+            "rule_type": "REGEX",
+            "severity": "MEDIUM",
+            "parameters": json.dumps({})
+        }
+        resp = client.post("/api/rules", json=rule)
+        assert resp.status_code == 400
+        assert "pattern" in resp.json()["detail"]
+
+    def test_create_rule_invalid_json_parameters(self, client):
+        """TC-R06h — Invalid JSON in parameters returns 400."""
+        rule = {
+            "name": "test_invalid_json",
+            "dataset_type": "csv",
+            "field_name": "age",
+            "rule_type": "DATA_TYPE",
+            "severity": "MEDIUM",
+            "parameters": "not valid json"
+        }
+        resp = client.post("/api/rules", json=rule)
+        assert resp.status_code == 400
+        assert "json" in resp.json()["detail"].lower()
+
 
 class TestListRules:
     """TC-R08, TC-R09 — Rule Listing"""
@@ -154,66 +229,71 @@ class TestListRules:
 class TestUpdateRule:
     """TC-R10, TC-R11 — Rule Update (TODO endpoint)"""
 
-    def test_update_rule_currently_501(self, client):
-        """TC-R10 — PUT /api/rules/{id} currently returns 501 (not yet implemented)."""
-        rule_resp = client.post("/api/rules", json=not_null_rule("update_test_field"))
-        rule_id = rule_resp.json()["id"]
-        resp = client.put(f"/api/rules/{rule_id}", json={"field_name": "updated_field"})
-        # Currently a stub — expect 501. Update this test when implemented.
-        assert resp.status_code in (200, 501)
-
-    def test_update_nonexistent_rule(self, client):
-        """TC-R11 — PUT /api/rules/99999 should return 404 (or 501 while stub)."""
-        resp = client.put("/api/rules/99999", json={"field_name": "whatever"})
-        assert resp.status_code in (404, 501)
-
-    @pytest.mark.xfail(reason="PUT /api/rules/{id} not yet implemented — BUG-005")
     def test_update_rule_field_name(self, client):
-        """TC-R10 — When implemented: update field_name succeeds and is returned."""
-        rule_resp = client.post("/api/rules", json=not_null_rule("original_field"))
+        """TC-R10 — Update field_name succeeds and is returned."""
+        rule_resp = client.post("/api/rules", json=not_null_rule("original_field", "HIGH"))
         rule_id = rule_resp.json()["id"]
         resp = client.put(f"/api/rules/{rule_id}", json={"field_name": "new_field"})
         assert resp.status_code == 200
         assert resp.json()["field_name"] == "new_field"
 
-    @pytest.mark.xfail(reason="PUT /api/rules/{id} not yet implemented — BUG-005")
     def test_update_rule_severity(self, client):
-        """TC-R10 — When implemented: update severity to LOW succeeds."""
+        """TC-R10 — Update severity to LOW succeeds."""
         rule_resp = client.post("/api/rules", json=not_null_rule("sev_field", "HIGH"))
         rule_id = rule_resp.json()["id"]
         resp = client.put(f"/api/rules/{rule_id}", json={"severity": "LOW"})
         assert resp.status_code == 200
         assert resp.json()["severity"] == "LOW"
 
+    def test_update_nonexistent_rule(self, client):
+        """TC-R11 — PUT /api/rules/99999 should return 404."""
+        resp = client.put("/api/rules/99999", json={"field_name": "whatever"})
+        assert resp.status_code == 404
+
+    def test_update_rule_partial_update(self, client):
+        """TC-R10b — Partial update only changes specified fields."""
+        rule_resp = client.post("/api/rules", json=not_null_rule("partial_field", "HIGH"))
+        rule_id = rule_resp.json()["id"]
+        original_name = rule_resp.json()["name"]
+        
+        resp = client.put(f"/api/rules/{rule_id}", json={"severity": "MEDIUM"})
+        assert resp.status_code == 200
+        assert resp.json()["severity"] == "MEDIUM"
+        assert resp.json()["name"] == original_name  # Name unchanged
+
 
 class TestDeleteRule:
-    """TC-R12, TC-R13 — Rule Deletion (TODO endpoint)"""
+    """TC-R12, TC-R13 — Rule Deletion"""
 
-    def test_delete_rule_currently_501(self, client):
-        """TC-R12 — DELETE /api/rules/{id} currently returns 501 (not yet implemented)."""
-        rule_resp = client.post("/api/rules", json=not_null_rule("delete_test_field"))
-        rule_id = rule_resp.json()["id"]
-        resp = client.delete(f"/api/rules/{rule_id}")
-        assert resp.status_code in (204, 501)
-
-    def test_delete_nonexistent_rule(self, client):
-        """TC-R11 extended — DELETE /api/rules/99999 returns 404 or 501."""
-        resp = client.delete("/api/rules/99999")
-        assert resp.status_code in (404, 501)
-
-    @pytest.mark.xfail(reason="DELETE /api/rules/{id} not yet implemented — BUG-006")
     def test_delete_rule_soft_deletes(self, client):
-        """TC-R12 — When implemented: delete returns 204 and rule is deactivated."""
-        rule_resp = client.post("/api/rules", json=not_null_rule("soft_delete_field"))
+        """TC-R12 — Delete returns 204 and rule is deactivated."""
+        rule_resp = client.post("/api/rules", json=not_null_rule("soft_delete_field", "HIGH"))
         rule_id = rule_resp.json()["id"]
         del_resp = client.delete(f"/api/rules/{rule_id}")
         assert del_resp.status_code == 204
 
-    @pytest.mark.xfail(reason="DELETE /api/rules/{id} not yet implemented — BUG-006")
     def test_deleted_rule_absent_from_list(self, client):
-        """TC-R13 — When implemented: deleted rule not returned by GET /api/rules."""
-        rule_resp = client.post("/api/rules", json=not_null_rule("absent_check_field"))
+        """TC-R13 — Deleted rule not returned by GET /api/rules."""
+        rule_resp = client.post("/api/rules", json=not_null_rule("absent_check_field", "HIGH"))
         rule_id = rule_resp.json()["id"]
         client.delete(f"/api/rules/{rule_id}")
         ids = [r["id"] for r in client.get("/api/rules").json()]
         assert rule_id not in ids
+
+    def test_delete_nonexistent_rule(self, client):
+        """TC-R11 extended — DELETE /api/rules/99999 returns 404."""
+        resp = client.delete("/api/rules/99999")
+        assert resp.status_code == 404
+
+    def test_delete_rule_twice_idempotent(self, client):
+        """TC-R12b — Deleting same rule twice should still return 204."""
+        rule_resp = client.post("/api/rules", json=not_null_rule("double_delete", "HIGH"))
+        rule_id = rule_resp.json()["id"]
+        
+        # First delete
+        resp1 = client.delete(f"/api/rules/{rule_id}")
+        assert resp1.status_code == 204
+        
+        # Second delete - should still work (idempotent)
+        resp2 = client.delete(f"/api/rules/{rule_id}")
+        assert resp2.status_code == 204
