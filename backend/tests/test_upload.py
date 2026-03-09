@@ -128,6 +128,30 @@ class TestUploadValidation:
         resp = client.post("/api/datasets/upload")
         assert resp.status_code == 422
 
+    def test_upload_file_exceeds_size_limit(self, client):
+        """TC-U04b — File exceeding 10MB size limit returns 400."""
+        # Create a file larger than 10MB (10 * 1024 * 1024 bytes)
+        large_content = "x" * (11 * 1024 * 1024)  # 11MB
+        files = {"file": ("huge.csv", io.BytesIO(large_content.encode()), "text/csv")}
+        resp = client.post("/api/datasets/upload", files=files)
+        assert resp.status_code == 400
+        assert "exceeds maximum" in resp.json()["detail"].lower() or "10mb" in resp.json()["detail"].lower()
+
+    def test_upload_file_no_filename(self, client):
+        """TC-U04c — File with no filename returns 400."""
+        files = {"file": ("", io.BytesIO(b"id,name\n1,test"), "text/csv")}
+        resp = client.post("/api/datasets/upload", files=files)
+        assert resp.status_code == 400
+        assert "filename" in resp.json()["detail"].lower()
+
+    def test_upload_csv_with_only_headers_no_data(self, client):
+        """TC-U05b — CSV with only headers (no data rows) should be rejected."""
+        content = "id,name,email\n"
+        resp = client.post("/api/datasets/upload", files=csv_file(content, "headers_only.csv"))
+        # After our enhancement, this should return 400 due to empty DataFrame validation
+        assert resp.status_code == 400
+        assert "no data" in resp.json()["detail"].lower()
+
 
 class TestListDatasets:
     """TC-U10, U11 — GET /api/datasets"""
