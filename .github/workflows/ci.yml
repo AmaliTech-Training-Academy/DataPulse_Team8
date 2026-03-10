@@ -109,13 +109,12 @@ jobs:
         with:
           context: ./backend
           push: false
+          load: true
           tags: datapulse-api:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Run container health check
         run: |
           docker run -d --name test-api datapulse-api:latest
-          sleep 3
+          sleep 5
           docker logs test-api
           docker stop test-api || true
