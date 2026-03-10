@@ -99,9 +99,37 @@ services:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
+      - loki
+
+  # Loki for Log Aggregation
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: datapulse-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/loki-config.yml
+      - loki_data:/tmp/loki
+    command:
+      - -config.file=/etc/loki/loki-config.yml
+    depends_on:
+      - promtail
+
+  # Promtail for Log Shipping
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: datapulse-promtail
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/promtail-config.yml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command:
+      - -config.file=/etc/promtail/promtail-config.yml
+    depends_on:
+      - loki
 
 volumes:
   postgres_data:
   pgadmin_data:
   prometheus_data:
   grafana_data:
+  loki_data:

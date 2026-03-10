@@ -142,4 +142,64 @@ resource "docker_container" "grafana" {
     volume_name    = "datapulse_grafana_provisioning"
     container_path = "/etc/grafana/provisioning"
   }
+
+  depends_on = [docker_container.loki]
+}
+
+# Loki (Log Aggregator)
+resource "docker_image" "loki" {
+  name         = "grafana/loki:${var.loki_version}"
+  keep_locally = true
+}
+
+resource "docker_container" "loki" {
+  name  = "datapulse-loki"
+  image = docker_image.loki.image_id
+
+  command = [
+    "-config.file=/etc/loki/loki-config.yml"
+  ]
+
+  ports {
+    internal = 3100
+    external = var.loki_port
+  }
+
+  volumes {
+    host_path      = pathexpand("~/Amalitech/DataPulse_Team8/monitoring/loki-config.yml")
+    container_path = "/etc/loki/loki-config.yml"
+  }
+
+  volumes {
+    volume_name    = "datapulse_loki_data"
+    container_path = "/tmp/loki"
+  }
+}
+
+# Promtail (Log Shipper)
+resource "docker_image" "promtail" {
+  name         = "grafana/promtail:${var.promtail_version}"
+  keep_locally = true
+}
+
+resource "docker_container" "promtail" {
+  name  = "datapulse-promtail"
+  image = docker_image.promtail.image_id
+
+  command = [
+    "-config.file=/etc/promtail/promtail-config.yml"
+  ]
+
+  volumes {
+    host_path      = "/var/lib/docker/containers"
+    container_path = "/var/lib/docker/containers"
+    read_only      = true
+  }
+
+  volumes {
+    host_path      = pathexpand("~/Amalitech/DataPulse_Team8/monitoring/promtail-config.yml")
+    container_path = "/etc/promtail/promtail-config.yml"
+  }
+
+  depends_on = [docker_container.loki]
 }

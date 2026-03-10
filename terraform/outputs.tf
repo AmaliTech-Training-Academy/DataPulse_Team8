@@ -49,6 +49,12 @@ output "grafana_credentials" {
   sensitive   = true
 }
 
+# Loki Outputs
+output "loki_url" {
+  description = "Loki log aggregator URL"
+  value       = "http://localhost:${var.loki_port}"
+}
+
 # All Service URLs Summary
 output "service_urls" {
   description = "All service URLs after deployment"
@@ -58,5 +64,6 @@ output "service_urls" {
     api_docs   = "http://localhost:${var.api_port}/docs"
     prometheus = "http://localhost:${var.prometheus_port}"
     grafana    = "http://localhost:${var.grafana_port}"
+    loki       = "http://localhost:${var.loki_port}"
   }
 }

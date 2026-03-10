@@ -1,6 +1,6 @@
 # Branch Protection Workflow
 # This workflow prevents direct pushes to main, developer, and develop branches
-# Only merges via Pull Requests are allowed
+# Only the repository owner can push directly; contributors must use Pull Requests
 
 name: Branch Protection
 
@@ -12,11 +12,15 @@ jobs:
   protect-branches:
     runs-on: ubuntu-latest
     steps:
-      - name: Check if push is from PR
-        if: github.event_name != 'pull_request'
+      - name: Check if push is from a fork
+        if: github.event.repository.fork == true
         run: |
           BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-          echo "❌ Direct push to '$BRANCH_NAME' is not allowed!"
+          echo "❌ Direct push to '$BRANCH_NAME' is not allowed from forks!"
           echo "Please create a Pull Request to merge changes into '$BRANCH_NAME'"
           echo "You can create a PR at: https://github.com/${{ github.repository }}/pull/new/$BRANCH_NAME"
           exit 1
+      - name: Allow owner push
+        if: github.event.repository.fork == false
+        run: |
+          echo "Direct push allowed for repository owner"

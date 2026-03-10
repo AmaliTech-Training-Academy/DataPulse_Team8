@@ -81,3 +81,23 @@ variable "grafana_admin_password" {
   default     = "admin123"
   sensitive   = true
 }
+
+# Loki Configuration
+variable "loki_version" {
+  description = "Loki version to use"
+  type        = string
+  default     = "2.9.2"
+}
+
+variable "loki_port" {
+  description = "Loki external port"
+  type        = number
+  default     = 3100
+}
+
+# Promtail Configuration
+variable "promtail_version" {
+  description = "Promtail version to use"
+  type        = string
+  default     = "2.9.2"
+}
