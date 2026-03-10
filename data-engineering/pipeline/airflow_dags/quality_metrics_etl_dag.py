@@ -122,3 +122,36 @@ DEFAULT_ARGS = {
     "max_retry_delay": timedelta(minutes=15),
     "on_failure_callback": notify_pipeline_failure,
 }
+
+
+with DAG(
+    dag_id="quality_metrics_etl_on_upload",
+    description="Incremental ETL for quality metrics, triggered by upload/check activity.",
+    default_args=DEFAULT_ARGS,
+    start_date=datetime(2026, 3, 10),
+    schedule="*/1 * * * *",
+    catchup=False,
+    max_active_runs=1,
+    dagrun_timeout=timedelta(minutes=30),
+    tags=["data-engineering", "etl", "quality-metrics"],
+) as dag:
+    wait_for_new_upload_data = ShortCircuitOperator(
+        task_id="wait_for_new_upload_data",
+        python_callable=check_for_new_upload_data,
+        doc_md=(
+            "Checks source watermark and continues only when new uploads/checks "
+            "exist since the previous successful batch."
+        ),
+    )
+
+    execute_quality_metrics_etl = PythonOperator(
+        task_id="execute_quality_metrics_etl",
+        python_callable=run_quality_metrics_etl,
+        execution_timeout=timedelta(minutes=20),
+        doc_md=(
+            "Runs extract, transform, and load into analytics dimensions/facts "
+            "with batch tracking in etl_batch_runs."
+        ),
+    )
+
+    wait_for_new_upload_data >> execute_quality_metrics_etl
