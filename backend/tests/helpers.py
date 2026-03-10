@@ -11,10 +11,17 @@ CLEAN_CSV = """id,name,email,age,score
 
 DIRTY_CSV = """id,name,email,age,score
 1,Alice,alice@example.com,25,95
-2,Bob,,30,88
-3,,charlie@example.com,35,
+2,Bob,bob@example.com,,88
+3,,charlie@example.com,35,75
 4,Diana,diana@example.com,invalid,90
 5,Eve,eve@example.com,32,87
+5,Eve,eve@example.com,32,87"""
+
+MIXED_CSV = """id,name,email,age,score
+1,Alice,alice@example.com,25,95
+2,Bob,bob@example.com,30,88
+3,,charlie@example.com,35,92
+4,Diana,diana@example.com,28,90
 5,Eve,eve@example.com,32,87"""
 
 VALID_JSON = '{"data": []}'
