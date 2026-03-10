@@ -185,7 +185,7 @@ resource "docker_container" "grafana" {
 
   env = [
     "GF_SECURITY_ADMIN_USER=${var.grafana_admin_user}",
-    "GF_SECURITY_ADMIN_PASSWORD=${var.grafana_admin_password}"
+    "GF_SECURITY_ADMIN_PASSWORD=${local.grafana_password}"
   ]
 
   # Internal only - localhost access
