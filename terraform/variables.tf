@@ -101,3 +101,16 @@ variable "promtail_version" {
   type        = string
   default     = "2.9.2"
 }
+
+# AWS Configuration
+variable "aws_region" {
+  description = "AWS region for Secrets Manager"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "aws_secret_name" {
+  description = "AWS Secrets Manager secret name containing DB and Grafana credentials"
+  type        = string
+  default     = "datapulse/prod/credentials"
+}

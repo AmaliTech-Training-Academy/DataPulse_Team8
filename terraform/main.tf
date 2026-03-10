@@ -6,11 +6,34 @@ terraform {
       source  = "kreuzwerker/docker"
       version = "3.0.2"
     }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
   }
 }
 
 provider "docker" {
   host = "unix:///var/run/docker.sock"
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+# Fetch secrets from AWS Secrets Manager
+data "aws_secretsmanager_secret_version" "db_credentials" {
+  secret_id = var.aws_secret_name
+}
+
+locals {
+  # Parse JSON secret and extract values
+  db_secrets = jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string)
+
+  postgres_user     = local.db_secrets.postgres_user
+  postgres_password = local.db_secrets.postgres_password
+  postgres_db       = local.db_secrets.postgres_db
+  grafana_password  = local.db_secrets.grafana_admin_password
 }
 
 # Internal Docker network for secure container communication
@@ -75,7 +98,7 @@ resource "docker_container" "fastapi" {
   image = docker_image.fastapi.image_id
 
   env = [
-    "DATABASE_URL=postgresql://${var.postgres_user}:${var.postgres_password}@datapulse-db:5432/${var.postgres_db}"
+    "DATABASE_URL=postgresql://${local.postgres_user}:${local.postgres_password}@datapulse-db:5432/${local.postgres_db}"
   ]
 
   # Public API - bound to 0.0.0.0 for external access
