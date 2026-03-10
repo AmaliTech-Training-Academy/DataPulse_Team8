@@ -51,6 +51,37 @@ def load_quality_payload(
         len(dim_date_records),
     )
 
+    with target_engine.begin() as conn:
+        if dim_dataset_records:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO dim_datasets (
+                        id, name, file_type, row_count, column_count,
+                        column_names, uploaded_by, uploaded_at, status,
+                        first_seen_at, last_seen_at
+                    )
+                    VALUES (
+                        :id, :name, :file_type, :row_count, :column_count,
+                        :column_names, :uploaded_by, :uploaded_at, :status,
+                        :first_seen_at, :last_seen_at
+                    )
+                    ON CONFLICT (id) DO UPDATE SET
+                        name = EXCLUDED.name,
+                        file_type = EXCLUDED.file_type,
+                        row_count = EXCLUDED.row_count,
+                        column_count = EXCLUDED.column_count,
+                        column_names = EXCLUDED.column_names,
+                        uploaded_by = EXCLUDED.uploaded_by,
+                        uploaded_at = EXCLUDED.uploaded_at,
+                        status = EXCLUDED.status,
+                        first_seen_at = COALESCE(dim_datasets.first_seen_at, EXCLUDED.first_seen_at),
+                        last_seen_at = EXCLUDED.last_seen_at
+                    """
+                ),
+                dim_dataset_records,
+            )
+
     return {
         "rows_loaded": 0,
         "dim_datasets_upserted": len(dim_dataset_records),
