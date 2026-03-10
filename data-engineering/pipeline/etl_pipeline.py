@@ -22,13 +22,19 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ETLPipeline:
-    def __init__(self, source_url=None, target_url=None):
-        self.source_url = source_url or os.getenv("SOURCE_DB_URL",
-            "postgresql://datapulse:datapulse@localhost:5432/datapulse")
-        self.target_url = target_url or os.getenv("TARGET_DB_URL",
-            self.source_url)
-        self.source_engine = create_engine(self.source_url)
-        self.target_engine = create_engine(self.target_url)
+    def __init__(
+        self,
+        source_url: Optional[str] = None,
+        target_url: Optional[str] = None,
+        pipeline_name: str = "quality_metrics_airflow_etl",
+    ) -> None:
+        self.source_url = source_url or os.getenv(
+            "SOURCE_DB_URL", "postgresql://datapulse:datapulse@localhost:5432/datapulse"
+        )
+        self.target_url = target_url or os.getenv("TARGET_DB_URL", self.source_url)
+        self.pipeline_name = pipeline_name
+        self.source_engine: Engine = create_engine(self.source_url, pool_pre_ping=True)
+        self.target_engine: Engine = create_engine(self.target_url, pool_pre_ping=True)
         self.raw_data = None
         self.transformed_data = None
 
