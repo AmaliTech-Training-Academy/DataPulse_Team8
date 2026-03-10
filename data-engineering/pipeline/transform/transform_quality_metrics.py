@@ -52,11 +52,58 @@ def _normalize_allowed(series: pd.Series, allowed: set[str], fallback: str, uppe
     return values.where(values.isin(allowed), fallback)
 
 
+def _build_dim_datasets(datasets: pd.DataFrame, loaded_at: datetime) -> pd.DataFrame:
+    """Build dim_datasets payload."""
+
+    if datasets.empty:
+        return pd.DataFrame(
+            columns=[
+                "id",
+                "name",
+                "file_type",
+                "row_count",
+                "column_count",
+                "column_names",
+                "uploaded_by",
+                "uploaded_at",
+                "status",
+                "first_seen_at",
+                "last_seen_at",
+            ]
+        )
+
+    frame = datasets.copy()
+    frame["uploaded_at"] = _to_datetime(frame["uploaded_at"]).fillna(loaded_at)
+    frame["file_type"] = frame["file_type"].fillna("csv").astype(str).str.lower()
+    frame["file_type"] = frame["file_type"].where(frame["file_type"].isin(ALLOWED_FILE_TYPES), "csv")
+    frame["status"] = _normalize_allowed(frame["status"], ALLOWED_DATASET_STATUS, "PENDING")
+    frame["row_count"] = pd.to_numeric(frame["row_count"], errors="coerce").fillna(0).astype(int)
+    frame["column_count"] = pd.to_numeric(frame["column_count"], errors="coerce").fillna(0).astype(int)
+    frame["first_seen_at"] = frame["uploaded_at"]
+    frame["last_seen_at"] = loaded_at
+    return frame[
+        [
+            "id",
+            "name",
+            "file_type",
+            "row_count",
+            "column_count",
+            "column_names",
+            "uploaded_by",
+            "uploaded_at",
+            "status",
+            "first_seen_at",
+            "last_seen_at",
+        ]
+    ]
+
+
 def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload:
     """Transform extracted source data into analytics-ready dimensions and facts."""
 
+    loaded_at = datetime.utcnow()
     return TransformedPayload(
-        dim_datasets=extracted.datasets.copy(),
+        dim_datasets=_build_dim_datasets(extracted.datasets, loaded_at),
         dim_rules=extracted.rules.copy(),
         dim_date=pd.DataFrame(),
         fact_quality_checks=extracted.checks.copy(),
