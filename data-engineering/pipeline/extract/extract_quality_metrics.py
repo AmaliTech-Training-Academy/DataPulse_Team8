@@ -25,6 +25,25 @@ class ExtractedPayload:
     max_source_timestamp: Optional[datetime]
 
 
+def _max_checked_at(checks: pd.DataFrame, scores: pd.DataFrame) -> Optional[datetime]:
+    """Return the latest source timestamp across incremental source tables."""
+
+    checked_at_frames = []
+    if "checked_at" in checks:
+        checked_at_frames.append(pd.to_datetime(checks["checked_at"], errors="coerce"))
+    if "checked_at" in scores:
+        checked_at_frames.append(pd.to_datetime(scores["checked_at"], errors="coerce"))
+    if not checked_at_frames:
+        return None
+
+    combined = pd.concat(checked_at_frames, ignore_index=True).dropna()
+    if combined.empty:
+        return None
+
+    latest_value = combined.max()
+    return latest_value.to_pydatetime() if isinstance(latest_value, pd.Timestamp) else latest_value
+
+
 def extract_quality_payload(source_engine: Engine, watermark: Optional[datetime]) -> ExtractedPayload:
     """Extract source rows required for analytics ETL.
 
@@ -122,6 +141,8 @@ def extract_quality_payload(source_engine: Engine, watermark: Optional[datetime]
         params=params,
     )
 
+    max_source_timestamp = _max_checked_at(checks=checks, scores=scores)
+
     LOGGER.info(
         "Extracted datasets=%s rules=%s checks=%s scores=%s",
         len(datasets),
@@ -134,5 +155,5 @@ def extract_quality_payload(source_engine: Engine, watermark: Optional[datetime]
         rules=rules,
         checks=checks,
         scores=scores,
-        max_source_timestamp=None,
+        max_source_timestamp=max_source_timestamp,
     )
