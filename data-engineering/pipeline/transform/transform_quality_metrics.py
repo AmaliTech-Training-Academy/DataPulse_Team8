@@ -241,6 +241,49 @@ def _build_fact_quality_scores(scores: pd.DataFrame, loaded_at: datetime) -> pd.
     ]
 
 
+def _build_dim_date(fact_checks: pd.DataFrame, fact_scores: pd.DataFrame) -> pd.DataFrame:
+    """Build dim_date payload from fact date keys present in the run."""
+
+    keys = pd.Series(dtype="Int64")
+    if not fact_checks.empty:
+        keys = pd.concat([keys, fact_checks["date_key"]], ignore_index=True)
+    if not fact_scores.empty:
+        keys = pd.concat([keys, fact_scores["date_key"]], ignore_index=True)
+
+    keys = keys.dropna().astype(int).drop_duplicates()
+    if keys.empty:
+        return pd.DataFrame(
+            columns=[
+                "date_key",
+                "full_date",
+                "day_of_week",
+                "day_of_month",
+                "day_of_year",
+                "week_of_year",
+                "month",
+                "month_name",
+                "quarter",
+                "year",
+                "is_weekend",
+            ]
+        )
+
+    full_date = pd.to_datetime(keys.astype(str), format="%Y%m%d", errors="coerce")
+    frame = pd.DataFrame({"date_key": keys.values, "full_date": full_date})
+    frame = frame.dropna(subset=["full_date"]).sort_values("date_key")
+    frame["day_of_week"] = frame["full_date"].dt.isocalendar().day.astype(int)
+    frame["day_of_month"] = frame["full_date"].dt.day.astype(int)
+    frame["day_of_year"] = frame["full_date"].dt.dayofyear.astype(int)
+    frame["week_of_year"] = frame["full_date"].dt.isocalendar().week.astype(int)
+    frame["month"] = frame["full_date"].dt.month.astype(int)
+    frame["month_name"] = frame["full_date"].dt.strftime("%B")
+    frame["quarter"] = frame["full_date"].dt.quarter.astype(int)
+    frame["year"] = frame["full_date"].dt.year.astype(int)
+    frame["is_weekend"] = frame["day_of_week"].isin([6, 7])
+    frame["full_date"] = frame["full_date"].dt.date
+    return frame
+
+
 def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload:
     """Transform extracted source data into analytics-ready dimensions and facts."""
 
