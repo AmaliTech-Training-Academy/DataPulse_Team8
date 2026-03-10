@@ -64,6 +64,23 @@ def load_quality_payload(
         len(fact_score_records),
     )
 
+    if not (
+        dim_dataset_records
+        or dim_rule_records
+        or dim_date_records
+        or fact_check_records
+        or fact_score_records
+    ):
+        LOGGER.info("No rows in payload for batch_id=%s; skipping SQL writes.", batch_id)
+        return {
+            "rows_loaded": 0,
+            "dim_datasets_upserted": 0,
+            "dim_rules_upserted": 0,
+            "dim_date_insert_attempted": 0,
+            "fact_quality_checks_insert_attempted": 0,
+            "fact_quality_scores_insert_attempted": 0,
+        }
+
     with target_engine.begin() as conn:
         if dim_dataset_records:
             conn.execute(
