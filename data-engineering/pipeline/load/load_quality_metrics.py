@@ -42,13 +42,26 @@ def load_quality_payload(
     dim_dataset_records = _to_records(transformed.dim_datasets)
     dim_rule_records = _to_records(transformed.dim_rules)
     dim_date_records = _to_records(transformed.dim_date)
+    checks_frame = transformed.fact_quality_checks.copy()
+    scores_frame = transformed.fact_quality_scores.copy()
+    if not checks_frame.empty:
+        checks_frame["etl_batch_id"] = batch_id
+    if not scores_frame.empty:
+        scores_frame["etl_batch_id"] = batch_id
+    fact_check_records = _to_records(checks_frame)
+    fact_score_records = _to_records(scores_frame)
 
     LOGGER.info(
-        "Loading dimensions batch_id=%s dim_datasets=%s dim_rules=%s dim_date=%s",
+        (
+            "Loading payload batch_id=%s dim_datasets=%s dim_rules=%s "
+            "dim_date=%s fact_checks=%s fact_scores=%s"
+        ),
         batch_id,
         len(dim_dataset_records),
         len(dim_rule_records),
         len(dim_date_records),
+        len(fact_check_records),
+        len(fact_score_records),
     )
 
     with target_engine.begin() as conn:
