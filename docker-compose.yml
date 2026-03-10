@@ -82,8 +82,6 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
-    depends_on:
-      - backend
 
   # Grafana for Dashboard
   grafana:
@@ -97,9 +95,6 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-    depends_on:
-      - prometheus
-      - loki
 
   # Loki for Log Aggregation
   loki:
@@ -109,11 +104,10 @@ services:
       - "3100:3100"
     volumes:
       - ./monitoring/loki-config.yml:/etc/loki/loki-config.yml
-      - loki_data:/tmp/loki
+      - loki_data:/loki
     command:
       - -config.file=/etc/loki/loki-config.yml
-    depends_on:
-      - promtail
+    user: "root"
 
   # Promtail for Log Shipping
   promtail:
