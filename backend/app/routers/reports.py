@@ -93,3 +93,13 @@ def get_dataset_report(
         )
 
     return report
+
+@router.get("/{dataset_id}/export")
+def export_dataset_report(
+    dataset_id: int,
+    format: Optional[str] = Query("csv", description="format json or csv"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Export a full quality report for a dataset. Defaults to CSV."""
+    return get_dataset_report(dataset_id=dataset_id, format=format, db=db, current_user=current_user)
