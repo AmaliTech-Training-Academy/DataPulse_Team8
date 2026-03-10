@@ -73,6 +73,88 @@ class ETLPipeline:
             has_new_data = conn.execute(query, {"watermark": watermark}).scalar()
         return bool(has_new_data)
 
+    def _start_batch_run(self, source_watermark: Optional[datetime]) -> int:
+        """Create RUNNING batch metadata row and return batch id."""
+
+        query = text(
+            """
+            INSERT INTO etl_batch_runs (
+                pipeline_name, started_at, status, source_watermark, rows_extracted, rows_loaded
+            )
+            VALUES (:pipeline_name, :started_at, 'RUNNING', :source_watermark, 0, 0)
+            RETURNING id
+            """
+        )
+        with self.target_engine.begin() as conn:
+            batch_id = conn.execute(
+                query,
+                {
+                    "pipeline_name": self.pipeline_name,
+                    "started_at": datetime.now(timezone.utc),
+                    "source_watermark": source_watermark,
+                },
+            ).scalar_one()
+        return int(batch_id)
+
+    def _finish_batch_success(
+        self,
+        batch_id: int,
+        target_watermark: Optional[datetime],
+        rows_extracted: int,
+        rows_loaded: int,
+    ) -> None:
+        """Mark a batch as SUCCESS."""
+
+        query = text(
+            """
+            UPDATE etl_batch_runs
+            SET
+                finished_at = :finished_at,
+                status = 'SUCCESS',
+                target_watermark = :target_watermark,
+                rows_extracted = :rows_extracted,
+                rows_loaded = :rows_loaded,
+                error_message = NULL
+            WHERE id = :batch_id
+            """
+        )
+        with self.target_engine.begin() as conn:
+            conn.execute(
+                query,
+                {
+                    "finished_at": datetime.now(timezone.utc),
+                    "target_watermark": target_watermark,
+                    "rows_extracted": rows_extracted,
+                    "rows_loaded": rows_loaded,
+                    "batch_id": batch_id,
+                },
+            )
+
+    def _finish_batch_failure(self, batch_id: int, rows_extracted: int, error: Exception) -> None:
+        """Mark a batch as FAILED and persist error detail."""
+
+        query = text(
+            """
+            UPDATE etl_batch_runs
+            SET
+                finished_at = :finished_at,
+                status = 'FAILED',
+                rows_extracted = :rows_extracted,
+                error_message = :error_message
+            WHERE id = :batch_id
+            """
+        )
+        with self.target_engine.begin() as conn:
+            conn.execute(
+                query,
+                {
+                    "finished_at": datetime.now(timezone.utc),
+                    "rows_extracted": rows_extracted,
+                    "error_message": str(error)[:4000],
+                    "batch_id": batch_id,
+                },
+            )
+
     def extract(self):
         """Extract check results from app DB - IMPLEMENTED."""
         query = """
