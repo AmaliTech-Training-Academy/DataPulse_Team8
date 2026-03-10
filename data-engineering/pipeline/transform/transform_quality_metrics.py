@@ -224,6 +224,8 @@ def _build_fact_quality_scores(scores: pd.DataFrame, loaded_at: datetime) -> pd.
     frame["total_rules"] = pd.to_numeric(frame["total_rules"], errors="coerce").fillna(0).astype(int).clip(lower=0)
     frame["passed_rules"] = pd.to_numeric(frame["passed_rules"], errors="coerce").fillna(0).astype(int).clip(lower=0)
     frame["failed_rules"] = pd.to_numeric(frame["failed_rules"], errors="coerce").fillna(0).astype(int).clip(lower=0)
+    invalid_mask = frame["passed_rules"] + frame["failed_rules"] != frame["total_rules"]
+    frame.loc[invalid_mask, "failed_rules"] = (frame["total_rules"] - frame["passed_rules"]).clip(lower=0)
     frame["date_key"] = _to_date_key(frame["checked_at"])
     frame["etl_loaded_at"] = loaded_at
     return frame[
