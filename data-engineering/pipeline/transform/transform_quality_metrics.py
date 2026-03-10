@@ -304,7 +304,7 @@ def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload
     LOGGER.info(
         (
             "Transformation complete. dim_datasets=%s dim_rules=%s "
-            "fact_checks=%s fact_scores=%s dim_date=%s rows_extracted=%s"
+            "fact_checks=%s fact_scores=%s dim_date=%s rows_extracted=%s target_watermark=%s"
         ),
         len(dim_datasets),
         len(dim_rules),
@@ -312,6 +312,7 @@ def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload
         len(fact_quality_scores),
         len(dim_date),
         rows_extracted,
+        extracted.max_source_timestamp,
     )
     return TransformedPayload(
         dim_datasets=dim_datasets,
