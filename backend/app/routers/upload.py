@@ -20,7 +20,7 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
 
 @router.post("/upload", response_model=DatasetResponse, status_code=201)
 async def upload_dataset(
-    file: UploadFile = File(...), 
+    file: UploadFile = File(None), 
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -32,6 +32,12 @@ async def upload_dataset(
     - File must not be empty
     - File must be parseable by pandas
     """
+    if file is None:
+        raise HTTPException(
+            status_code=422,
+            detail="File field is required."
+        )
+    
     filename = file.filename or ""
     if not filename:
         raise HTTPException(
