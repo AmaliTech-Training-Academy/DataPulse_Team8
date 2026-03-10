@@ -144,6 +144,62 @@ def _build_dim_rules(rules: pd.DataFrame, loaded_at: datetime) -> pd.DataFrame:
     ]
 
 
+def _build_fact_quality_checks(checks: pd.DataFrame, loaded_at: datetime) -> pd.DataFrame:
+    """Build fact_quality_checks payload."""
+
+    if checks.empty:
+        return pd.DataFrame(
+            columns=[
+                "source_check_result_id",
+                "dataset_id",
+                "rule_id",
+                "rule_type",
+                "severity",
+                "passed",
+                "failed_rows",
+                "total_rows",
+                "failure_rate",
+                "score",
+                "details",
+                "checked_at",
+                "date_key",
+                "etl_loaded_at",
+            ]
+        )
+
+    frame = checks.copy()
+    frame["checked_at"] = _to_datetime(frame["checked_at"]).fillna(loaded_at)
+    frame["rule_type"] = _normalize_allowed(frame["rule_type"], ALLOWED_RULE_TYPES, "NOT_NULL")
+    frame["severity"] = _normalize_allowed(frame["severity"], ALLOWED_SEVERITY, "MEDIUM")
+    frame["passed"] = frame["passed"].fillna(False).astype(bool)
+    frame["failed_rows"] = pd.to_numeric(frame["failed_rows"], errors="coerce").fillna(0).astype(int).clip(lower=0)
+    frame["total_rows"] = pd.to_numeric(frame["total_rows"], errors="coerce").fillna(0).astype(int).clip(lower=0)
+    frame["failed_rows"] = frame[["failed_rows", "total_rows"]].min(axis=1)
+    safe_total = frame["total_rows"].replace(0, pd.NA)
+    frame["failure_rate"] = (frame["failed_rows"] / safe_total).fillna(0).clip(lower=0, upper=1).round(4)
+    frame["score"] = pd.NA
+    frame["date_key"] = _to_date_key(frame["checked_at"])
+    frame["etl_loaded_at"] = loaded_at
+    return frame[
+        [
+            "source_check_result_id",
+            "dataset_id",
+            "rule_id",
+            "rule_type",
+            "severity",
+            "passed",
+            "failed_rows",
+            "total_rows",
+            "failure_rate",
+            "score",
+            "details",
+            "checked_at",
+            "date_key",
+            "etl_loaded_at",
+        ]
+    ]
+
+
 def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload:
     """Transform extracted source data into analytics-ready dimensions and facts."""
 
