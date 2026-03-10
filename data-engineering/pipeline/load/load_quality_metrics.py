@@ -111,7 +111,25 @@ def load_quality_payload(
                 dim_rule_records,
             )
 
-    return {
+        if dim_date_records:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO dim_date (
+                        date_key, full_date, day_of_week, day_of_month, day_of_year,
+                        week_of_year, month, month_name, quarter, year, is_weekend
+                    )
+                    VALUES (
+                        :date_key, :full_date, :day_of_week, :day_of_month, :day_of_year,
+                        :week_of_year, :month, :month_name, :quarter, :year, :is_weekend
+                    )
+                    ON CONFLICT (date_key) DO NOTHING
+                    """
+                ),
+                dim_date_records,
+            )
+
+    loaded = {
         "rows_loaded": 0,
         "dim_datasets_upserted": len(dim_dataset_records),
         "dim_rules_upserted": len(dim_rule_records),
@@ -119,3 +137,5 @@ def load_quality_payload(
         "fact_quality_checks_insert_attempted": 0,
         "fact_quality_scores_insert_attempted": 0,
     }
+    LOGGER.info("Dimension load complete: %s", loaded)
+    return loaded
