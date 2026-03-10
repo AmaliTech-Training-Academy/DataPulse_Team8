@@ -181,12 +181,12 @@ def load_quality_payload(
             )
 
     loaded = {
-        "rows_loaded": 0,
+        "rows_loaded": len(fact_check_records) + len(fact_score_records),
         "dim_datasets_upserted": len(dim_dataset_records),
         "dim_rules_upserted": len(dim_rule_records),
         "dim_date_insert_attempted": len(dim_date_records),
-        "fact_quality_checks_insert_attempted": 0,
-        "fact_quality_scores_insert_attempted": 0,
+        "fact_quality_checks_insert_attempted": len(fact_check_records),
+        "fact_quality_scores_insert_attempted": len(fact_score_records),
     }
     LOGGER.info("Dimension load complete: %s", loaded)
     return loaded
