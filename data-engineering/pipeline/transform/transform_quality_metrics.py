@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 import pandas as pd
@@ -147,7 +147,19 @@ def _build_dim_rules(rules: pd.DataFrame, loaded_at: datetime) -> pd.DataFrame:
 def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload:
     """Transform extracted source data into analytics-ready dimensions and facts."""
 
-    loaded_at = datetime.utcnow()
+    loaded_at = datetime.now(timezone.utc)
+    rows_extracted = (
+        len(extracted.datasets)
+        + len(extracted.rules)
+        + len(extracted.checks)
+        + len(extracted.scores)
+    )
+    LOGGER.info(
+        "Transformation (core dims) complete. dim_datasets=%s dim_rules=%s rows_extracted=%s",
+        len(extracted.datasets),
+        len(extracted.rules),
+        rows_extracted,
+    )
     return TransformedPayload(
         dim_datasets=_build_dim_datasets(extracted.datasets, loaded_at),
         dim_rules=_build_dim_rules(extracted.rules, loaded_at),
@@ -155,10 +167,5 @@ def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload
         fact_quality_checks=extracted.checks.copy(),
         fact_quality_scores=extracted.scores.copy(),
         target_watermark=extracted.max_source_timestamp,
-        rows_extracted=(
-            len(extracted.datasets)
-            + len(extracted.rules)
-            + len(extracted.checks)
-            + len(extracted.scores)
-        ),
+        rows_extracted=rows_extracted,
     )
