@@ -12,6 +12,11 @@ from extract.extract_quality_metrics import ExtractedPayload
 
 LOGGER = logging.getLogger(__name__)
 
+ALLOWED_RULE_TYPES = {"NOT_NULL", "DATA_TYPE", "RANGE", "UNIQUE", "REGEX"}
+ALLOWED_SEVERITY = {"HIGH", "MEDIUM", "LOW"}
+ALLOWED_DATASET_STATUS = {"PENDING", "VALIDATED", "FAILED"}
+ALLOWED_FILE_TYPES = {"csv", "json"}
+
 
 @dataclass
 class TransformedPayload:
@@ -24,6 +29,27 @@ class TransformedPayload:
     fact_quality_scores: pd.DataFrame
     target_watermark: datetime | None
     rows_extracted: int
+
+
+def _to_datetime(series: pd.Series) -> pd.Series:
+    """Convert a pandas series to timezone-aware UTC datetime values."""
+
+    return pd.to_datetime(series, errors="coerce", utc=True)
+
+
+def _to_date_key(series: pd.Series) -> pd.Series:
+    """Convert datetimes to integer date keys in YYYYMMDD format."""
+
+    return pd.to_datetime(series, errors="coerce").dt.strftime("%Y%m%d").astype("Int64")
+
+
+def _normalize_allowed(series: pd.Series, allowed: set[str], fallback: str, uppercase: bool = True) -> pd.Series:
+    """Normalize values against an allow-list and fallback invalid values."""
+
+    values = series.fillna(fallback).astype(str)
+    if uppercase:
+        values = values.str.upper()
+    return values.where(values.isin(allowed), fallback)
 
 
 def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload:
@@ -43,4 +69,3 @@ def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload
             + len(extracted.scores)
         ),
     )
-
