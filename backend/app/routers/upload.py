@@ -1,6 +1,7 @@
 """Dataset upload router - IMPLEMENTED."""
 
 import os, json, uuid
+import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, status
 from sqlalchemy.orm import Session
 from app.config import settings
@@ -13,6 +14,9 @@ from app.utils.dependencies import get_current_user
 
 router = APIRouter()
 
+# File size limit: 10MB
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
+
 
 @router.post("/upload", response_model=DatasetResponse, status_code=201)
 def upload_dataset(
@@ -20,27 +24,82 @@ def upload_dataset(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Upload a CSV or JSON file and store dataset metadata."""
+    """Upload a CSV or JSON file and store dataset metadata.
+    
+    Validations:
+    - File type must be .csv or .json
+    - File size must not exceed 10MB
+    - File must not be empty
+    - File must be parseable by pandas
+    """
     filename = file.filename or ""
+    if not filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Filename is required. Please provide a valid file."
+        )
+    
+    # Validate file extension
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     if ext not in ("csv", "json"):
-        raise HTTPException(status_code=400, detail=f"Unsupported file type: {ext}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type '.{ext}'. Only CSV and JSON files are supported."
+        )
 
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     unique_name = f"{uuid.uuid4().hex}_{filename}"
     file_path = os.path.join(settings.UPLOAD_DIR, unique_name)
 
+    # Read file content
     content = file.file.read()
+    
+    # Validate file is not empty
     if len(content) == 0:
-        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded file is empty. Please provide a file with data."
+        )
+    
+    # Validate file size (10MB max)
+    if len(content) > MAX_FILE_SIZE:
+        size_mb = len(content) / (1024 * 1024)
+        raise HTTPException(
+            status_code=400,
+            detail=f"File size ({size_mb:.2f}MB) exceeds maximum allowed size of 10MB."
+        )
+    
+    # Write file to disk
     with open(file_path, "wb") as fh:
         fh.write(content)
 
+    # Parse file and extract metadata
     try:
         metadata = parse_csv(file_path) if ext == "csv" else parse_json(file_path)
+    except pd.errors.EmptyDataError:
+        os.remove(file_path)
+        raise HTTPException(
+            status_code=400,
+            detail="File contains no data. Please upload a file with at least one row."
+        )
+    except pd.errors.ParserError as e:
+        os.remove(file_path)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to parse {ext.upper()} file. The file may be malformed: {str(e)}"
+        )
+    except ValueError as e:
+        os.remove(file_path)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid {ext.upper()} format: {str(e)}"
+        )
     except Exception as e:
         os.remove(file_path)
-        raise HTTPException(status_code=400, detail=f"Failed to parse: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unexpected error while parsing file: {str(e)}"
+        )
 
     dataset = Dataset(
         name=filename.rsplit(".", 1)[0],
@@ -61,6 +120,7 @@ def upload_dataset(
     db.add(df)
     db.commit()
     return dataset
+
 
 
 @router.get("", response_model=DatasetList)
