@@ -74,9 +74,10 @@ class TestUploadValidation:
         resp = client.post("/api/datasets/upload", files=files, headers=headers)
         assert resp.status_code == 400
 
-    def test_upload_no_file_field(self, client):
+    def test_upload_no_file_field(self, client, auth_token):
         """TC-U04 extended — Request with no file field returns 422."""
-        resp = client.post("/api/datasets/upload")
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        resp = client.post("/api/datasets/upload", headers=headers)
         assert resp.status_code == 422
 
     def test_upload_file_exceeds_size_limit(self, client, auth_token):
