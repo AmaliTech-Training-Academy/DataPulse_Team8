@@ -27,7 +27,10 @@ class TestUploadJSON:
     def test_upload_valid_json(self, client, auth_token):
         """TC-U02 — Upload a valid JSON array returns 201."""
         headers = {"Authorization": f"Bearer {auth_token}"}
-        resp = client.post("/api/datasets/upload", files=json_file(VALID_JSON, "data.json"), headers=headers)
+        json_data = '[{"id": 1, "name": "Alice", "age": 30}, {"id": 2, "name": "Bob", "age": 25}, {"id": 3, "name": "Carol", "age": 35}]'
+        resp = client.post("/api/datasets/upload", files=json_file(json_data, "data.json"), headers=headers)
+        if resp.status_code != 201:
+            print(resp.json())
         assert resp.status_code == 201
         data = resp.json()
         assert data["file_type"] == "json"
