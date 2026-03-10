@@ -1,13 +1,24 @@
 """ETL Pipeline for DataPulse analytics."""
 
+from __future__ import annotations
+
 import os
-from datetime import datetime
+from datetime import datetime, timezone
+import logging
+from typing import Optional
+
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
 import pandas as pd
+from sqlalchemy.engine import Engine
+
+from extract.extract_quality_metrics import extract_quality_payload
+from load.load_quality_metrics import load_quality_payload
+from transform.transform_quality_metrics import transform_quality_payload
 
 load_dotenv()
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ETLPipeline:
