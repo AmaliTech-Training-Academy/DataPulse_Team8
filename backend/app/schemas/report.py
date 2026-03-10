@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+
 
 class CheckResultResponse(BaseModel):
     id: int
@@ -11,8 +12,8 @@ class CheckResultResponse(BaseModel):
     total_rows: int
     details: Optional[str] = None
     checked_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class QualityScoreResponse(BaseModel):
     id: int
@@ -22,13 +23,32 @@ class QualityScoreResponse(BaseModel):
     passed_rules: int
     failed_rules: int
     checked_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class QualityReport(BaseModel):
     dataset_id: int
     dataset_name: str
     score: float
     total_rules: int
+    passed_rules: int
+    failed_rules: int
+    executive_summary: dict
+    top_failure_patterns: list
+    recommendations: list
     results: List[CheckResultResponse]
     checked_at: datetime
+
+
+class TrendDatapoint(BaseModel):
+    date: str
+    average_score: float
+    check_count: int
+
+
+class QualityTrendResponse(BaseModel):
+    dataset_id: Optional[int] = None
+    trend_data: List[TrendDatapoint]
+    average_score: float
+    trend_direction: str
+    volatility: float

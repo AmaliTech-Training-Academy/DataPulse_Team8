@@ -1,6 +1,6 @@
-# helpers.py
 import io
 import os
+import json
 
 CLEAN_CSV = """id,name,email,age,score
 1,Alice,alice@example.com,25,95
@@ -49,17 +49,50 @@ def json_file(content, name):
         file_content = content.encode("utf-8")
     return {"file": (name, io.BytesIO(file_content), "application/json")}
 
-def not_null_rule(field, severity):
-    return {"type": "not_null", "field": field, "severity": severity}
+def not_null_rule(field_name: str, severity: str = "MEDIUM"):
+    return {
+        "name": f"Not Null {field_name}",
+        "dataset_type": "csv",
+        "field_name": field_name,
+        "rule_type": "NOT_NULL",
+        "severity": severity,
+    }
 
-def range_rule(field, min_val, max_val, severity):
-    return {"type": "range", "field": field, "min": min_val, "max": max_val, "severity": severity}
+def data_type_rule(field_name: str, expected_type: str, severity: str = "MEDIUM"):
+    return {
+        "name": f"Data Type {field_name}",
+        "dataset_type": "csv",
+        "field_name": field_name,
+        "rule_type": "DATA_TYPE",
+        "parameters": json.dumps({"expected_type": expected_type}),
+        "severity": severity,
+    }
 
-def unique_rule(field, severity):
-    return {"type": "unique", "field": field, "severity": severity}
+def range_rule(field_name: str, min_val: float, max_val: float, severity: str = "MEDIUM"):
+    return {
+        "name": f"Range {field_name}",
+        "dataset_type": "csv",
+        "field_name": field_name,
+        "rule_type": "RANGE",
+        "parameters": json.dumps({"min": min_val, "max": max_val}),
+        "severity": severity,
+    }
 
-def regex_rule(field, pattern, severity):
-    return {"type": "regex", "field": field, "pattern": pattern, "severity": severity}
+def unique_rule(field_name: str, severity: str = "MEDIUM"):
+    return {
+        "name": f"Unique {field_name}",
+        "dataset_type": "csv",
+        "field_name": field_name,
+        "rule_type": "UNIQUE",
+        "severity": severity,
+    }
 
-def data_type_rule(field, dtype, severity):
-    return {"type": "data_type", "field": field, "dtype": dtype, "severity": severity}
+def regex_rule(field_name: str, pattern: str, severity: str = "MEDIUM"):
+    return {
+        "name": f"Regex {field_name}",
+        "dataset_type": "csv",
+        "field_name": field_name,
+        "rule_type": "REGEX",
+        "parameters": json.dumps({"pattern": pattern}),
+        "severity": severity,
+    }

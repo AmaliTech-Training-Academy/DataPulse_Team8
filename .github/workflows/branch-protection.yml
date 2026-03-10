@@ -1,12 +1,12 @@
 # Branch Protection Workflow
-# This workflow prevents direct pushes to main and developer branches
+# This workflow prevents direct pushes to main, developer, and develop branches
 # Only merges via Pull Requests are allowed
 
 name: Branch Protection
 
 on:
   push:
-    branches: [main, developer]
+    branches: [main, developer, develop]
 
 jobs:
   protect-branches:
