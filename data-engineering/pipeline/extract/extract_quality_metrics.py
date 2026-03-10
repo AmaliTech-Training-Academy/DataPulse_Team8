@@ -41,7 +41,11 @@ def _max_checked_at(checks: pd.DataFrame, scores: pd.DataFrame) -> Optional[date
         return None
 
     latest_value = combined.max()
-    return latest_value.to_pydatetime() if isinstance(latest_value, pd.Timestamp) else latest_value
+    if isinstance(latest_value, pd.Timestamp):
+        return latest_value.to_pydatetime()
+    if isinstance(latest_value, datetime):
+        return latest_value
+    return None
 
 
 def extract_quality_payload(source_engine: Engine, watermark: Optional[datetime]) -> ExtractedPayload:
@@ -144,11 +148,13 @@ def extract_quality_payload(source_engine: Engine, watermark: Optional[datetime]
     max_source_timestamp = _max_checked_at(checks=checks, scores=scores)
 
     LOGGER.info(
-        "Extracted datasets=%s rules=%s checks=%s scores=%s",
+        "Extracted datasets=%s rules=%s checks=%s scores=%s (watermark=%s, max_source_timestamp=%s)",
         len(datasets),
         len(rules),
         len(checks),
         len(scores),
+        watermark,
+        max_source_timestamp,
     )
     return ExtractedPayload(
         datasets=datasets,
