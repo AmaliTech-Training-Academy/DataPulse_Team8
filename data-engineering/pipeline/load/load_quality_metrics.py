@@ -205,5 +205,5 @@ def load_quality_payload(
         "fact_quality_checks_insert_attempted": len(fact_check_records),
         "fact_quality_scores_insert_attempted": len(fact_score_records),
     }
-    LOGGER.info("Dimension load complete: %s", loaded)
+    LOGGER.info("Load complete for batch_id=%s: %s", batch_id, loaded)
     return loaded
