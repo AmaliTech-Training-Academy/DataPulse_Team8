@@ -14,7 +14,7 @@ variable "postgres_user" {
 variable "postgres_password" {
   description = "PostgreSQL password"
   type        = string
-  default     = "datapulse123"
+  default     = "ChangeMe2024!"
   sensitive   = true
 }
 
@@ -78,6 +78,26 @@ variable "grafana_admin_user" {
 variable "grafana_admin_password" {
   description = "Grafana admin password"
   type        = string
-  default     = "admin123"
+  default     = "ChangeMe2024!"
   sensitive   = true
+}
+
+# Loki Configuration
+variable "loki_version" {
+  description = "Loki version to use"
+  type        = string
+  default     = "2.9.2"
+}
+
+variable "loki_port" {
+  description = "Loki external port"
+  type        = number
+  default     = 3100
+}
+
+# Promtail Configuration
+variable "promtail_version" {
+  description = "Promtail version to use"
+  type        = string
+  default     = "2.9.2"
 }
