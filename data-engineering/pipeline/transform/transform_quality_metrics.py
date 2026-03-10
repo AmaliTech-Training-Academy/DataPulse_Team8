@@ -200,6 +200,47 @@ def _build_fact_quality_checks(checks: pd.DataFrame, loaded_at: datetime) -> pd.
     ]
 
 
+def _build_fact_quality_scores(scores: pd.DataFrame, loaded_at: datetime) -> pd.DataFrame:
+    """Build fact_quality_scores payload."""
+
+    if scores.empty:
+        return pd.DataFrame(
+            columns=[
+                "source_quality_score_id",
+                "dataset_id",
+                "score",
+                "total_rules",
+                "passed_rules",
+                "failed_rules",
+                "checked_at",
+                "date_key",
+                "etl_loaded_at",
+            ]
+        )
+
+    frame = scores.copy()
+    frame["checked_at"] = _to_datetime(frame["checked_at"]).fillna(loaded_at)
+    frame["score"] = pd.to_numeric(frame["score"], errors="coerce").fillna(0).clip(lower=0, upper=100).round(2)
+    frame["total_rules"] = pd.to_numeric(frame["total_rules"], errors="coerce").fillna(0).astype(int).clip(lower=0)
+    frame["passed_rules"] = pd.to_numeric(frame["passed_rules"], errors="coerce").fillna(0).astype(int).clip(lower=0)
+    frame["failed_rules"] = pd.to_numeric(frame["failed_rules"], errors="coerce").fillna(0).astype(int).clip(lower=0)
+    frame["date_key"] = _to_date_key(frame["checked_at"])
+    frame["etl_loaded_at"] = loaded_at
+    return frame[
+        [
+            "source_quality_score_id",
+            "dataset_id",
+            "score",
+            "total_rules",
+            "passed_rules",
+            "failed_rules",
+            "checked_at",
+            "date_key",
+            "etl_loaded_at",
+        ]
+    ]
+
+
 def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload:
     """Transform extracted source data into analytics-ready dimensions and facts."""
 
