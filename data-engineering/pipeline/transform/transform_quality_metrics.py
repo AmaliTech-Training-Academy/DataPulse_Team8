@@ -98,13 +98,59 @@ def _build_dim_datasets(datasets: pd.DataFrame, loaded_at: datetime) -> pd.DataF
     ]
 
 
+def _build_dim_rules(rules: pd.DataFrame, loaded_at: datetime) -> pd.DataFrame:
+    """Build dim_rules payload."""
+
+    if rules.empty:
+        return pd.DataFrame(
+            columns=[
+                "id",
+                "name",
+                "dataset_type",
+                "field_name",
+                "rule_type",
+                "parameters",
+                "severity",
+                "is_active",
+                "created_by",
+                "created_at",
+                "first_seen_at",
+                "last_seen_at",
+            ]
+        )
+
+    frame = rules.copy()
+    frame["created_at"] = _to_datetime(frame["created_at"]).fillna(loaded_at)
+    frame["rule_type"] = _normalize_allowed(frame["rule_type"], ALLOWED_RULE_TYPES, "NOT_NULL")
+    frame["severity"] = _normalize_allowed(frame["severity"], ALLOWED_SEVERITY, "MEDIUM")
+    frame["is_active"] = frame["is_active"].fillna(True).astype(bool)
+    frame["first_seen_at"] = frame["created_at"]
+    frame["last_seen_at"] = loaded_at
+    return frame[
+        [
+            "id",
+            "name",
+            "dataset_type",
+            "field_name",
+            "rule_type",
+            "parameters",
+            "severity",
+            "is_active",
+            "created_by",
+            "created_at",
+            "first_seen_at",
+            "last_seen_at",
+        ]
+    ]
+
+
 def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload:
     """Transform extracted source data into analytics-ready dimensions and facts."""
 
     loaded_at = datetime.utcnow()
     return TransformedPayload(
         dim_datasets=_build_dim_datasets(extracted.datasets, loaded_at),
-        dim_rules=extracted.rules.copy(),
+        dim_rules=_build_dim_rules(extracted.rules, loaded_at),
         dim_date=pd.DataFrame(),
         fact_quality_checks=extracted.checks.copy(),
         fact_quality_scores=extracted.scores.copy(),
