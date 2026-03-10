@@ -78,11 +78,61 @@ def extract_quality_payload(source_engine: Engine, watermark: Optional[datetime]
         params=params,
     )
 
-    LOGGER.info("Extracted dimensions datasets=%s rules=%s", len(datasets), len(rules))
+    checks = pd.read_sql(
+        text(
+            """
+            SELECT
+                cr.id AS source_check_result_id,
+                cr.dataset_id,
+                cr.rule_id,
+                cr.passed,
+                COALESCE(cr.failed_rows, 0) AS failed_rows,
+                COALESCE(cr.total_rows, 0) AS total_rows,
+                cr.details,
+                cr.checked_at,
+                UPPER(COALESCE(vr.rule_type, 'NOT_NULL')) AS rule_type,
+                UPPER(COALESCE(vr.severity, 'MEDIUM')) AS severity
+            FROM check_results cr
+            JOIN validation_rules vr ON vr.id = cr.rule_id
+            WHERE (:watermark IS NULL OR cr.checked_at > :watermark)
+            ORDER BY cr.checked_at, cr.id
+            """
+        ),
+        source_engine,
+        params=params,
+    )
+
+    scores = pd.read_sql(
+        text(
+            """
+            SELECT
+                qs.id AS source_quality_score_id,
+                qs.dataset_id,
+                qs.score,
+                COALESCE(qs.total_rules, 0) AS total_rules,
+                COALESCE(qs.passed_rules, 0) AS passed_rules,
+                COALESCE(qs.failed_rules, 0) AS failed_rules,
+                qs.checked_at
+            FROM quality_scores qs
+            WHERE (:watermark IS NULL OR qs.checked_at > :watermark)
+            ORDER BY qs.checked_at, qs.id
+            """
+        ),
+        source_engine,
+        params=params,
+    )
+
+    LOGGER.info(
+        "Extracted datasets=%s rules=%s checks=%s scores=%s",
+        len(datasets),
+        len(rules),
+        len(checks),
+        len(scores),
+    )
     return ExtractedPayload(
         datasets=datasets,
         rules=rules,
-        checks=pd.DataFrame(),
-        scores=pd.DataFrame(),
+        checks=checks,
+        scores=scores,
         max_source_timestamp=None,
     )
