@@ -106,7 +106,7 @@ variable "promtail_version" {
 variable "aws_region" {
   description = "AWS region for Secrets Manager"
   type        = string
-  default     = "us-east-1"
+  default     = "eu-west-1"
 }
 
 variable "aws_secret_name" {
