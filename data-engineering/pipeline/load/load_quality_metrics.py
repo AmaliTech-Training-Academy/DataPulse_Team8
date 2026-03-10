@@ -82,6 +82,35 @@ def load_quality_payload(
                 dim_dataset_records,
             )
 
+        if dim_rule_records:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO dim_rules (
+                        id, name, dataset_type, field_name, rule_type, parameters,
+                        severity, is_active, created_by, created_at, first_seen_at, last_seen_at
+                    )
+                    VALUES (
+                        :id, :name, :dataset_type, :field_name, :rule_type, :parameters,
+                        :severity, :is_active, :created_by, :created_at, :first_seen_at, :last_seen_at
+                    )
+                    ON CONFLICT (id) DO UPDATE SET
+                        name = EXCLUDED.name,
+                        dataset_type = EXCLUDED.dataset_type,
+                        field_name = EXCLUDED.field_name,
+                        rule_type = EXCLUDED.rule_type,
+                        parameters = EXCLUDED.parameters,
+                        severity = EXCLUDED.severity,
+                        is_active = EXCLUDED.is_active,
+                        created_by = EXCLUDED.created_by,
+                        created_at = EXCLUDED.created_at,
+                        first_seen_at = COALESCE(dim_rules.first_seen_at, EXCLUDED.first_seen_at),
+                        last_seen_at = EXCLUDED.last_seen_at
+                    """
+                ),
+                dim_rule_records,
+            )
+
     return {
         "rows_loaded": 0,
         "dim_datasets_upserted": len(dim_dataset_records),
