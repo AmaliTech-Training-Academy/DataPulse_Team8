@@ -202,13 +202,52 @@ class ETLPipeline:
             return
         print("Load: TODO - implement insert into analytics tables")
 
-    def run(self):
-        """Run the full ETL pipeline."""
-        print(f"ETL started at {datetime.now()}")
-        self.extract()
-        self.transform()
-        self.load()
-        print(f"ETL completed at {datetime.now()}")
+    def run(self, skip_if_no_new_data: bool = True) -> dict:
+        """Run extract, transform, and load for quality metrics aggregation."""
+
+        watermark = self.get_last_success_watermark()
+        LOGGER.info("ETL run started. pipeline=%s watermark=%s", self.pipeline_name, watermark)
+
+        if skip_if_no_new_data and not self.has_new_data_since_watermark(watermark):
+            LOGGER.info("No new source data found after watermark. Skipping run.")
+            return {
+                "status": "SKIPPED",
+                "pipeline_name": self.pipeline_name,
+                "watermark": watermark,
+                "rows_extracted": 0,
+                "rows_loaded": 0,
+            }
+
+        batch_id = self._start_batch_run(watermark)
+        rows_extracted = 0
+        try:
+            extracted = extract_quality_payload(self.source_engine, watermark)
+            transformed = transform_quality_payload(extracted)
+            rows_extracted = transformed.rows_extracted
+            load_stats = load_quality_payload(self.target_engine, transformed, batch_id)
+            rows_loaded = int(load_stats.get("rows_loaded", 0))
+
+            self._finish_batch_success(
+                batch_id=batch_id,
+                target_watermark=transformed.target_watermark or watermark,
+                rows_extracted=rows_extracted,
+                rows_loaded=rows_loaded,
+            )
+            summary = {
+                "status": "SUCCESS",
+                "pipeline_name": self.pipeline_name,
+                "batch_id": batch_id,
+                "rows_extracted": rows_extracted,
+                "rows_loaded": rows_loaded,
+                "target_watermark": transformed.target_watermark,
+                "load_stats": load_stats,
+            }
+            LOGGER.info("ETL completed successfully: %s", summary)
+            return summary
+        except Exception as error:
+            self._finish_batch_failure(batch_id=batch_id, rows_extracted=rows_extracted, error=error)
+            LOGGER.exception("ETL failed at batch_id=%s", batch_id)
+            raise
 
 
 if __name__ == "__main__":
