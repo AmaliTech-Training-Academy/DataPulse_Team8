@@ -72,7 +72,7 @@ services:
 
   # Prometheus for Metrics Collection
   prometheus:
-    image: prometheus:latest
+    image: prom/prometheus:latest
     container_name: datapulse-prometheus
     ports:
       - "9090:9090"
@@ -96,6 +96,7 @@ services:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
 

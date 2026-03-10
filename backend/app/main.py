@@ -1,9 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 from app.database import engine, Base
 from app.routers import auth, upload, rules, checks, reports
 
 app = FastAPI(title="DataPulse", description="Data Quality Monitoring", version="1.0.0")
+
+# Prometheus metrics instrumentation
+instrumentator = Instrumentator(
+    should_group_responses_count=True,
+    should_ignore_health_endpoints=True,
+    excluded_handlers=["/health", "/docs", "/openapi.json"],
+)
+instrumentator.instrument(app).expose(app)
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
     allow_methods=["*"], allow_headers=["*"])
