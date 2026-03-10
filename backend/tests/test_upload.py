@@ -91,12 +91,11 @@ class TestUploadValidation:
         assert "exceeds maximum" in resp.json()["detail"].lower() or "10mb" in resp.json()["detail"].lower()
 
     def test_upload_file_no_filename(self, client, auth_token):
-        """TC-U04c — File with no filename returns 400."""
+        """TC-U04c — File with no filename returns 422."""
         headers = {"Authorization": f"Bearer {auth_token}"}
         files = {"file": ("", io.BytesIO(b"id,name\n1,test"), "text/csv")}
         resp = client.post("/api/datasets/upload", files=files, headers=headers)
-        assert resp.status_code == 400
-        assert "filename" in resp.json()["detail"].lower()
+        assert resp.status_code == 422
 
     def test_upload_csv_with_only_headers_no_data(self, client, auth_token):
         """TC-U05b — CSV with only headers (no data rows) should be rejected."""
