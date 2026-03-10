@@ -92,3 +92,33 @@ def notify_pipeline_failure(context: dict) -> None:
             _send_slack_alert(slack_webhook, failure_message)
         except Exception as slack_error:
             LOGGER.exception("Slack alert failed: %s", slack_error)
+
+
+def check_for_new_upload_data() -> bool:
+    """Return True when new upload/check data exists since last successful watermark."""
+
+    pipeline = ETLPipeline()
+    watermark = pipeline.get_last_success_watermark()
+    has_new_data = pipeline.has_new_data_since_watermark(watermark)
+    LOGGER.info("Watermark=%s has_new_data=%s", watermark, has_new_data)
+    return has_new_data
+
+
+def run_quality_metrics_etl() -> dict:
+    """Execute ETL pipeline for quality metrics aggregation."""
+
+    pipeline = ETLPipeline()
+    result = pipeline.run(skip_if_no_new_data=False)
+    LOGGER.info("ETL task result: %s", result)
+    return result
+
+
+DEFAULT_ARGS = {
+    "owner": "data-engineering",
+    "depends_on_past": False,
+    "retries": 3,
+    "retry_delay": timedelta(minutes=2),
+    "retry_exponential_backoff": True,
+    "max_retry_delay": timedelta(minutes=15),
+    "on_failure_callback": notify_pipeline_failure,
+}
