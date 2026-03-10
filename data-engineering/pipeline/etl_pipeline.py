@@ -38,6 +38,41 @@ class ETLPipeline:
         self.raw_data = None
         self.transformed_data = None
 
+    def get_last_success_watermark(self) -> Optional[datetime]:
+        """Read last successful target watermark for incremental extraction."""
+
+        query = text(
+            """
+            SELECT MAX(target_watermark) AS last_watermark
+            FROM etl_batch_runs
+            WHERE pipeline_name = :pipeline_name
+              AND status = 'SUCCESS'
+            """
+        )
+        with self.target_engine.connect() as conn:
+            watermark = conn.execute(query, {"pipeline_name": self.pipeline_name}).scalar()
+        return watermark
+
+    def has_new_data_since_watermark(self, watermark: Optional[datetime]) -> bool:
+        """Check whether source data exists after a given watermark."""
+
+        if watermark is None:
+            return True
+
+        query = text(
+            """
+            SELECT
+                EXISTS (SELECT 1 FROM datasets WHERE uploaded_at > :watermark) OR
+                EXISTS (SELECT 1 FROM validation_rules WHERE created_at > :watermark) OR
+                EXISTS (SELECT 1 FROM check_results WHERE checked_at > :watermark) OR
+                EXISTS (SELECT 1 FROM quality_scores WHERE checked_at > :watermark)
+                AS has_new_data
+            """
+        )
+        with self.source_engine.connect() as conn:
+            has_new_data = conn.execute(query, {"watermark": watermark}).scalar()
+        return bool(has_new_data)
+
     def extract(self):
         """Extract check results from app DB - IMPLEMENTED."""
         query = """
