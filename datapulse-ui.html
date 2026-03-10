@@ -323,7 +323,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div id="register-form" style="display:none">
       <div class="field"><label>Full Name</label><input id="reg-name" type="text" placeholder="Your name"/></div>
       <div class="field"><label>Email</label><input id="reg-email" type="email" placeholder="you@example.com"/></div>
-      <div class="field"><label>Password</label><input id="reg-password" type="password" placeholder="min 6 chars"/></div>
+      <div class="field"><label>Password</label><input id="reg-password" type="password" placeholder="min 8 chars"/></div>
       <button class="btn btn-primary btn-full" onclick="doRegister()">Create Account →</button>
     </div>
     <div style="margin-top:16px;font-size:11px;color:var(--muted);text-align:center">
@@ -363,11 +363,17 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <a class="nav-item" onclick="showView('trends')" href="#">
       <span class="nav-icon">∿</span><span>Trends</span>
     </a>
+    <div class="nav-section admin-only" style="display:none">Admin</div>
+    <a class="nav-item admin-only" style="display:none" onclick="showView('admin')" href="#">
+      <span class="nav-icon">⊞</span><span>Admin Panel</span>
+    </a>
     <div class="nav-bottom">
       <div class="api-status">
         <div class="status-dot" id="status-dot"></div>
         <span id="status-text">Connecting...</span>
       </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px" id="user-info-bar" class="user-info-bar"></div>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:11px;padding:6px" onclick="doLogout()" id="logout-btn">↩ Sign Out</button>
     </div>
   </nav>
 
@@ -477,20 +483,19 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <button class="btn btn-primary" onclick="toggleRuleForm()">+ New Rule</button>
       </div>
 
-      <!-- CREATE RULE FORM -->
+      <!-- RULE FORM (CREATE/EDIT) -->
       <div class="card" id="rule-form-card" style="display:none;max-width:580px">
-        <div class="card-title">⚙ Create Validation Rule</div>
+        <div class="card-title" id="rule-form-title">⚙ Create Validation Rule</div>
+        <input type="hidden" id="edit-rule-id" value="">
         <div class="field">
           <label>Rule Name</label>
           <input id="rule-name" placeholder="e.g. email_not_null"/>
         </div>
         <div class="row" style="gap:12px">
           <div class="field" style="flex:1">
-            <label>Dataset Type</label>
-            <select id="rule-dataset-type">
-              <option value="csv">CSV</option>
-              <option value="json">JSON</option>
-            </select>
+            <label>Dataset Name / Type</label>
+            <input id="rule-dataset-type" list="dataset-names" placeholder="e.g. customers.csv"/>
+            <datalist id="dataset-names"></datalist>
           </div>
           <div class="field" style="flex:1">
             <label>Severity</label>
@@ -517,8 +522,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
         <div id="rule-params-box" style="display:none"></div>
         <div style="display:flex;gap:10px;margin-top:8px">
-          <button class="btn btn-primary" onclick="createRule()">Create Rule</button>
-          <button class="btn btn-ghost" onclick="toggleRuleForm()">Cancel</button>
+          <button class="btn btn-primary" id="rule-submit-btn" onclick="saveRule()">Create Rule</button>
+          <button class="btn btn-ghost" onclick="cancelRuleEdit()">Cancel</button>
         </div>
       </div>
 
@@ -526,9 +531,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="flex-between" style="margin-bottom:16px">
           <div class="card-title" style="margin-bottom:0">Active Rules</div>
           <select id="rules-filter" onchange="loadRules()" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-family:var(--font-mono);font-size:12px">
-            <option value="">All types</option>
-            <option value="csv">CSV only</option>
-            <option value="json">JSON only</option>
+            <option value="">All datasets</option>
           </select>
         </div>
         <div id="rules-table"><div class="loading-row"><div class="spinner"></div> Loading...</div></div>
@@ -578,6 +581,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div class="page-title">Quality Reports</div>
           <div class="page-sub">Detailed findings per rule for each dataset</div>
         </div>
+        <button class="btn btn-ghost" id="report-download-btn" onclick="downloadCSV()" style="display:none">⬇ Download CSV</button>
       </div>
       <div class="card" style="max-width:400px">
         <div class="card-title">📋 Select Dataset</div>
@@ -613,6 +617,20 @@ tr:hover td{background:rgba(255,255,255,.02)}
             <div id="report-rules-output"></div>
           </div>
         </div>
+        <div class="row" style="margin-top:20px">
+          <div class="card" style="flex:1">
+            <div class="card-title">Executive Summary</div>
+            <div id="report-summary-output" style="font-size:13px;line-height:1.6;color:var(--text)"></div>
+          </div>
+          <div class="card" style="flex:1">
+            <div class="card-title">Recommendations</div>
+            <div id="report-recommendations-output" style="font-size:13px;line-height:1.6;color:var(--text)"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:20px">
+          <div class="card-title">Top Failure Patterns</div>
+          <div id="report-patterns-output"></div>
+        </div>
       </div>
     </div>
 
@@ -643,6 +661,31 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
     </div>
 
+    <!-- ── ADMIN PANEL ── -->
+    <div class="view" id="view-admin">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Admin Panel</div>
+          <div class="page-sub">System-wide overview — all users, datasets, and rules</div>
+        </div>
+        <button class="btn btn-ghost" onclick="loadAdminPanel()">↻ Refresh</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-tile blue"><div class="stat-val" id="admin-total-datasets">—</div><div class="stat-label">All Datasets</div></div>
+        <div class="stat-tile green"><div class="stat-val" id="admin-avg-score">—</div><div class="stat-label">Avg Score</div></div>
+        <div class="stat-tile amber"><div class="stat-val" id="admin-total-rules">—</div><div class="stat-label">Total Rules</div></div>
+        <div class="stat-tile cyan"><div class="stat-val" id="admin-trend-dir">—</div><div class="stat-label">Trend Direction</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📂 All Datasets (All Users)</div>
+        <div id="admin-datasets-table"><div class="loading-row"><div class="spinner"></div> Loading...</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚙ All Active Rules</div>
+        <div id="admin-rules-table"><div class="loading-row"><div class="spinner"></div> Loading...</div></div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -653,8 +696,67 @@ tr:hover td{background:rgba(255,255,255,.02)}
 // ── CONFIG ──────────────────────────────────────────────────────────────────
 const API = 'http://localhost:8000';
 let token = localStorage.getItem('dp_token') || '';
+let isAdmin = localStorage.getItem('dp_is_admin') === 'true';
+let userEmail = localStorage.getItem('dp_user_email') || '';
 let dashTrendChart = null;
 let trendChart = null;
+
+// ── JWT DECODE ───────────────────────────────────────────────────────────────
+function decodeJWT(t) {
+  try {
+    const payload = t.split('.')[1];
+    return JSON.parse(atob(payload.replace(/-/g,'+').replace(/_/g,'/')));
+  } catch { return null; }
+}
+
+function updateAdminUI() {
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
+  const bar = $('user-info-bar');
+  if (bar) {
+    bar.innerHTML = userEmail
+      ? `<span style="color:var(--text)">${userEmail}</span>${isAdmin ? ' <span class="badge badge-amber">ADMIN</span>' : ''}`
+      : '';
+  }
+}
+
+async function detectAdminStatus() {
+  // The JWT only has "sub" (email). We detect admin by checking known admin email
+  // or by trying the API and seeing if we get all datasets (admin behavior).
+  const payload = decodeJWT(token);
+  if (payload && payload.sub) {
+    userEmail = payload.sub;
+    localStorage.setItem('dp_user_email', userEmail);
+  }
+  // Check if user is admin by observing dataset count behavior
+  // Admin emails from config: admin@amalitech.com
+  // We also try a heuristic: load datasets and see if uploaded_by varies
+  try {
+    const data = await api('GET', '/api/datasets?limit=100');
+    const datasets = data.datasets || [];
+    if (datasets.length > 1) {
+      const owners = new Set(datasets.map(d => d.uploaded_by).filter(Boolean));
+      if (owners.size > 1) { isAdmin = true; }
+    }
+    // Also check known admin email
+    if (userEmail === 'admin@amalitech.com') { isAdmin = true; }
+  } catch {}
+  localStorage.setItem('dp_is_admin', isAdmin ? 'true' : 'false');
+  updateAdminUI();
+}
+
+function doLogout() {
+  token = '';
+  isAdmin = false;
+  userEmail = '';
+  localStorage.removeItem('dp_token');
+  localStorage.removeItem('dp_is_admin');
+  localStorage.removeItem('dp_user_email');
+  $('auth-overlay').style.display = '';
+  updateAdminUI();
+  toast('Signed out', 'info');
+}
 
 // ── UTILS ────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -676,6 +778,7 @@ async function api(method, path, body=null, isForm=false) {
   if (isForm) opts.body = body;
   const res = await fetch(API + path, opts);
   if (res.status === 204) return null;
+  if (res.status === 401) { doLogout(); throw new Error('Session expired. Please sign in again.'); }
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
   return data;
@@ -731,6 +834,7 @@ async function doLogin() {
     localStorage.setItem('dp_token', token);
     $('auth-overlay').style.display = 'none';
     toast('Signed in successfully', 'success');
+    await detectAdminStatus();
     loadDashboard();
     loadAllDropdowns();
   } catch(e) { toast(e.message, 'error'); }
@@ -747,6 +851,7 @@ async function doRegister() {
     localStorage.setItem('dp_token', token);
     $('auth-overlay').style.display = 'none';
     toast('Account created & signed in', 'success');
+    await detectAdminStatus();
     loadDashboard();
     loadAllDropdowns();
   } catch(e) { toast(e.message, 'error'); }
@@ -755,6 +860,7 @@ async function doRegister() {
 // Auto-login if token exists
 if (token) {
   $('auth-overlay').style.display = 'none';
+  detectAdminStatus();
   loadDashboard();
   loadAllDropdowns();
 }
@@ -772,6 +878,7 @@ function showView(name) {
   if (name==='checks')     loadChecksView();
   if (name==='reports')    loadReportsView();
   if (name==='trends')     loadTrends();
+  if (name==='admin')      loadAdminPanel();
 }
 
 // ── LOAD ALL DROPDOWNS ───────────────────────────────────────────────────────
@@ -779,13 +886,16 @@ async function loadAllDropdowns() {
   try {
     const data = await api('GET', '/api/datasets?limit=100');
     const datasets = data.datasets || [];
-    ['check-dataset-select','report-dataset-select'].forEach(id => {
+    ['check-dataset-select','report-dataset-select','rules-filter'].forEach(id => {
       const el = $(id);
-      el.innerHTML = '<option value="">Select a dataset...</option>';
+      if (!el) return;
+      el.innerHTML = `<option value="">${id==='rules-filter'?'All datasets':'Select a dataset...'}</option>`;
       datasets.forEach(d => {
-        el.innerHTML += `<option value="${d.id}">[${d.file_type.toUpperCase()}] ${d.name} — ${d.status}</option>`;
+        el.innerHTML += `<option value="${id==='rules-filter'?d.name:d.id}">[${d.file_type.toUpperCase()}] ${d.name}</option>`;
       });
     });
+    // Populate datalist for rules
+    $('dataset-names').innerHTML = datasets.map(d => `<option value="${d.name}">`).join('');
   } catch {}
 }
 
@@ -795,20 +905,18 @@ async function loadDashboard() {
     const [datasetsData, rulesData, trendsData] = await Promise.all([
       api('GET', '/api/datasets?limit=100'),
       api('GET', '/api/rules'),
-      api('GET', '/api/reports/trends?days=30').catch(()=>[])
+      api('GET', '/api/reports/trends?days=30').catch(()=>null)
     ]);
 
     const datasets = datasetsData.datasets || [];
     const rules = rulesData || [];
-    const trends = trendsData || [];
+    const trendPoints = (trendsData && trendsData.trend_data) || [];
 
     $('dash-total-datasets').textContent = datasetsData.total || 0;
     $('dash-total-rules').textContent = rules.length;
-    $('dash-checks-run').textContent = trends.length;
+    $('dash-checks-run').textContent = trendPoints.reduce((s,t)=>s+t.check_count,0);
 
-    const avgScore = trends.length
-      ? (trends.reduce((s,t)=>s+t.score,0)/trends.length).toFixed(1)
-      : '—';
+    const avgScore = trendsData ? trendsData.average_score.toFixed(1) : '—';
     $('dash-avg-score').textContent = avgScore;
 
     // Recent datasets table
@@ -832,8 +940,8 @@ async function loadDashboard() {
         </div>`;
     }
 
-    // Trend chart
-    renderTrendChart('dash-trend-chart', trends, 'dashTrendChart');
+    // Trend chart — using trend_data from QualityTrendResponse
+    renderDashTrendChart(trendPoints);
   } catch(e) { toast('Dashboard load error: '+e.message, 'error'); }
 }
 
@@ -849,21 +957,29 @@ async function loadDatasets() {
     $('datasets-table').innerHTML = `
       <div class="table-wrap">
         <table>
-          <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Rows</th><th>Columns</th><th>Status</th><th>Uploaded</th><th>Actions</th></tr></thead>
-          <tbody>${datasets.map(d=>`
+          <thead><tr><th>ID</th><th>Name</th><th>Type</th>${isAdmin?'<th>Owner</th>':''}<th>Rows</th><th>Cols</th><th>Status</th><th>Uploaded</th><th>Actions</th></tr></thead>
+          <tbody>${datasets.map(d=>{
+            let cols = [];
+            try { cols = JSON.parse(d.column_names||'[]'); } catch{}
+            return `
             <tr>
               <td style="color:var(--muted)">#${d.id}</td>
               <td><b>${d.name}</b></td>
               <td><span class="chip">${d.file_type.toUpperCase()}</span></td>
+              ${isAdmin?`<td><span class="badge badge-blue">User #${d.uploaded_by}</span></td>`:''}
               <td>${d.row_count}</td>
-              <td>${d.column_count}</td>
+              <td>
+                <div style="max-width:200px;display:flex;flex-wrap:wrap;gap:4px">
+                  ${cols.slice(0,3).map(c=>`<span class="chip">${c}</span>`).join('')}${cols.length>3?`<span class="chip">+${cols.length-3}</span>`:''}
+                </div>
+              </td>
               <td>${statusBadge(d.status)}</td>
               <td style="color:var(--muted)">${fmtDate(d.uploaded_at)}</td>
               <td>
                 <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="quickRunChecks(${d.id})">▶ Run</button>
                 <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="quickViewReport(${d.id})">≡ Report</button>
               </td>
-            </tr>`).join('')}
+            </tr>`;}).join('')}
           </tbody>
         </table>
       </div>`;
@@ -943,7 +1059,21 @@ zone.addEventListener('drop', e => {
 // ── RULES ────────────────────────────────────────────────────────────────────
 function toggleRuleForm() {
   const card = $('rule-form-card');
-  card.style.display = card.style.display==='none' ? '' : 'none';
+  const isOpening = card.style.display==='none';
+  card.style.display = isOpening ? '' : 'none';
+  if (isOpening) {
+    $('rule-form-title').textContent = '⚙ Create Validation Rule';
+    $('rule-submit-btn').textContent = 'Create Rule';
+    $('edit-rule-id').value = '';
+    $('rule-name').value = '';
+    $('rule-field').value = '';
+    $('rule-params-box').style.display = 'none';
+  }
+}
+
+function cancelRuleEdit() {
+  $('rule-form-card').style.display = 'none';
+  $('edit-rule-id').value = '';
 }
 
 function updateRuleParams() {
@@ -971,7 +1101,8 @@ function updateRuleParams() {
   else box.style.display='none';
 }
 
-async function createRule() {
+async function saveRule() {
+  const id = $('edit-rule-id').value;
   const type = $('rule-type').value;
   let params = null;
   if (type==='DATA_TYPE') params = JSON.stringify({expected_type: $('param-expected-type').value});
@@ -981,19 +1112,54 @@ async function createRule() {
   }
   if (type==='REGEX') params = JSON.stringify({pattern: $('param-pattern').value});
 
+  const payload = {
+    name: $('rule-name').value,
+    dataset_type: $('rule-dataset-type').value,
+    field_name: $('rule-field').value,
+    rule_type: type,
+    severity: $('rule-severity').value,
+    parameters: params
+  };
+
   try {
-    await api('POST', '/api/rules', {
-      name: $('rule-name').value,
-      dataset_type: $('rule-dataset-type').value,
-      field_name: $('rule-field').value,
-      rule_type: type,
-      severity: $('rule-severity').value,
-      parameters: params
-    });
-    toast('Rule created successfully','success');
-    toggleRuleForm();
+    if (id) {
+      await api('PATCH', `/api/rules/${id}`, payload);
+      toast('Rule updated successfully','success');
+    } else {
+      await api('POST', '/api/rules', payload);
+      toast('Rule created successfully','success');
+    }
+    $('rule-form-card').style.display = 'none';
     loadRules();
-  } catch(e) { toast('Failed to create rule: '+e.message,'error'); }
+  } catch(e) { toast('Failed to save rule: '+e.message,'error'); }
+}
+
+async function editRule(id) {
+  try {
+    const rules = await api('GET', '/api/rules');
+    const r = rules.find(rule => rule.id === id);
+    if (!r) return;
+
+    $('rule-form-card').style.display = '';
+    $('rule-form-title').textContent = '⚙ Edit Validation Rule';
+    $('rule-submit-btn').textContent = 'Update Rule';
+    $('edit-rule-id').value = r.id;
+    $('rule-name').value = r.name;
+    $('rule-field').value = r.field_name;
+    $('rule-dataset-type').value = r.dataset_type;
+    $('rule-severity').value = r.severity;
+    $('rule-type').value = r.rule_type;
+    updateRuleParams();
+
+    // Fill params if any
+    if (r.parameters) {
+      const p = JSON.parse(r.parameters);
+      if (r.rule_type === 'DATA_TYPE') $('param-expected-type').value = p.expected_type;
+      if (r.rule_type === 'RANGE') { $('param-min').value = p.min; $('param-max').value = p.max; }
+      if (r.rule_type === 'REGEX') $('param-pattern').value = p.pattern;
+    }
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  } catch(e) { toast('Error loading rule details','error'); }
 }
 
 async function loadRules() {
@@ -1008,7 +1174,7 @@ async function loadRules() {
     $('rules-table').innerHTML = `
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Field</th><th>Rule Type</th><th>Dataset Type</th><th>Severity</th><th>Parameters</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Name</th><th>Field</th><th>Rule Type</th><th>Dataset</th><th>Severity</th><th>Parameters</th><th>Actions</th></tr></thead>
           <tbody>${rules.map(r=>`
             <tr>
               <td><b>${r.name}</b></td>
@@ -1017,7 +1183,12 @@ async function loadRules() {
               <td><span class="chip">${r.dataset_type.toUpperCase()}</span></td>
               <td><span class="badge ${r.severity==='HIGH'?'badge-red':r.severity==='MEDIUM'?'badge-amber':'badge-green'}">${r.severity}</span></td>
               <td style="color:var(--muted);font-size:11px">${r.parameters||'—'}</td>
-              <td><button class="btn btn-danger" style="padding:5px 10px;font-size:11px" onclick="deleteRule(${r.id})">✕ Delete</button></td>
+              <td>
+                <div style="display:flex;gap:6px">
+                  <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="editRule(${r.id})">✎ Edit</button>
+                  <button class="btn btn-danger" style="padding:5px 10px;font-size:11px" onclick="deleteRule(${r.id})">✕</button>
+                </div>
+              </td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -1149,36 +1320,85 @@ async function loadReport() {
           </table>
         </div>`;
     }
+
+    // Detailed Report additions
+    $('report-download-btn').style.display = '';
+    $('report-summary-output').innerHTML = `
+      <p><b>Status:</b> ${report.executive_summary.status}</p>
+      <p><b>Score:</b> ${report.executive_summary.score_percentage.toFixed(1)}%</p>
+      <p><b>Rules Pass/Fail:</b> ${report.executive_summary.passed_rules} / ${report.executive_summary.failed_rules}</p>
+    `;
+
+    $('report-recommendations-output').innerHTML = report.recommendations.length > 0 
+      ? `<ul>${report.recommendations.map(rec => `<li>${rec}</li>`).join('')}</ul>`
+      : '<p style="color:var(--muted)">No recommendations available.</p>';
+
+    if (report.top_failure_patterns && report.top_failure_patterns.length > 0) {
+      $('report-patterns-output').innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Pattern / Info</th><th>Occurrence</th></tr></thead>
+            <tbody>${report.top_failure_patterns.map(p => `
+              <tr>
+                <td>${p.pattern}</td>
+                <td><span class="badge badge-amber">${p.count}</span></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    } else {
+      $('report-patterns-output').innerHTML = '<div class="empty">No significant failure patterns detected.</div>';
+    }
+
   } catch(e) {
     toast(e.message.includes('No quality checks') ? 'Run checks first before viewing a report' : e.message, 'error');
   }
 }
 
+async function downloadCSV() {
+  const id = $('report-dataset-select').value;
+  if (!id) return;
+  try {
+    window.open(`${API}/api/reports/${id}?format=csv&token=${token}`, '_blank');
+    toast('CSV Download requested','info');
+  } catch(e) { toast('Download failed','error'); }
+}
+
+
 // ── TRENDS ───────────────────────────────────────────────────────────────────
 async function loadTrends() {
   const days = $('trend-days').value;
   try {
-    const trends = await api('GET', `/api/reports/trends?days=${days}`);
-    if (!trends || !trends.length) {
+    const trendsData = await api('GET', `/api/reports/trends?days=${days}`);
+    const trendPoints = (trendsData && trendsData.trend_data) || [];
+
+    if (!trendPoints.length) {
       $('trend-table').innerHTML = '<div class="empty"><div class="empty-icon">∿</div><div>No trend data yet.<br>Run some quality checks first.</div></div>';
       if (trendChart) { trendChart.destroy(); trendChart=null; }
       return;
     }
 
-    renderTrendChart('trend-chart', trends, 'trendChart', true);
+    // Render chart with trend_data
+    renderTrendsPageChart(trendPoints);
+
+    // Summary stats
+    const dirArrow = trendsData.trend_direction === 'up' ? '↑' : trendsData.trend_direction === 'down' ? '↓' : '→';
+    const dirColor = trendsData.trend_direction === 'up' ? 'var(--green)' : trendsData.trend_direction === 'down' ? 'var(--red)' : 'var(--muted)';
 
     $('trend-table').innerHTML = `
+      <div style="display:flex;gap:24px;margin-bottom:20px">
+        <div class="stat-tile green" style="flex:1"><div class="stat-val">${trendsData.average_score.toFixed(1)}</div><div class="stat-label">Average Score</div></div>
+        <div class="stat-tile" style="flex:1"><div class="stat-val" style="color:${dirColor}">${dirArrow} ${trendsData.trend_direction}</div><div class="stat-label">Trend Direction</div></div>
+        <div class="stat-tile amber" style="flex:1"><div class="stat-val">${trendsData.volatility.toFixed(1)}</div><div class="stat-label">Volatility</div></div>
+      </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Dataset ID</th><th>Score</th><th>Rules Run</th><th>Passed</th><th>Failed</th><th>Checked At</th></tr></thead>
-          <tbody>${[...trends].reverse().map(t=>`
+          <thead><tr><th>Date</th><th>Avg Score</th><th>Checks Run</th></tr></thead>
+          <tbody>${[...trendPoints].reverse().map(t=>`
             <tr>
-              <td><span class="chip">#${t.dataset_id}</span></td>
-              <td>${scoreBadge(t.score)}</td>
-              <td>${t.total_rules}</td>
-              <td style="color:var(--green)">${t.passed_rules}</td>
-              <td style="color:${t.failed_rules>0?'var(--red)':'var(--muted)'}">${t.failed_rules}</td>
-              <td style="color:var(--muted)">${fmtDate(t.checked_at)}</td>
+              <td style="color:var(--muted)">${t.date}</td>
+              <td>${scoreBadge(t.average_score)}</td>
+              <td>${t.check_count}</td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -1186,23 +1406,85 @@ async function loadTrends() {
   } catch(e) { toast('Error loading trends: '+e.message,'error'); }
 }
 
+// ── ADMIN PANEL ──────────────────────────────────────────────────────────────
+async function loadAdminPanel() {
+  if (!isAdmin) { toast('Admin access required','error'); return; }
+  try {
+    const [datasetsData, rulesData, trendsData] = await Promise.all([
+      api('GET', '/api/datasets?limit=100'),
+      api('GET', '/api/rules'),
+      api('GET', '/api/reports/trends?days=30').catch(()=>null)
+    ]);
+
+    const datasets = datasetsData.datasets || [];
+    const rules = rulesData || [];
+
+    $('admin-total-datasets').textContent = datasetsData.total || 0;
+    $('admin-total-rules').textContent = rules.length;
+    $('admin-avg-score').textContent = trendsData ? trendsData.average_score.toFixed(1) : '—';
+    const dir = trendsData ? trendsData.trend_direction : '—';
+    const dirArrow = dir === 'up' ? '↑' : dir === 'down' ? '↓' : dir === 'flat' ? '→' : '—';
+    $('admin-trend-dir').textContent = dirArrow + ' ' + dir;
+
+    // All datasets table
+    if (!datasets.length) {
+      $('admin-datasets-table').innerHTML = '<div class="empty">No datasets found.</div>';
+    } else {
+      $('admin-datasets-table').innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Rows</th><th>Cols</th><th>Owner ID</th><th>Status</th><th>Uploaded</th><th>Columns</th></tr></thead>
+            <tbody>${datasets.map(d=>{
+              let cols = [];
+              try { cols = JSON.parse(d.column_names||'[]'); } catch{}
+              return `<tr>
+                <td style="color:var(--muted)">#${d.id}</td>
+                <td><b>${d.name}</b></td>
+                <td><span class="chip">${d.file_type.toUpperCase()}</span></td>
+                <td>${d.row_count}</td>
+                <td>${d.column_count}</td>
+                <td><span class="badge badge-blue">User #${d.uploaded_by||'?'}</span></td>
+                <td>${statusBadge(d.status)}</td>
+                <td style="color:var(--muted)">${fmtDate(d.uploaded_at)}</td>
+                <td>${cols.slice(0,5).map(c=>`<span class="chip">${c}</span>`).join('')}${cols.length>5?`<span class="chip">+${cols.length-5}</span>`:''}</td>
+              </tr>`;}).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    // All rules table
+    if (!rules.length) {
+      $('admin-rules-table').innerHTML = '<div class="empty">No rules found.</div>';
+    } else {
+      const typeColors = {NOT_NULL:'blue',DATA_TYPE:'cyan',RANGE:'amber',UNIQUE:'green',REGEX:'blue'};
+      $('admin-rules-table').innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Name</th><th>Field</th><th>Type</th><th>Dataset</th><th>Severity</th><th>Owner</th><th>Created</th></tr></thead>
+            <tbody>${rules.map(r=>`
+              <tr>
+                <td style="color:var(--muted)">#${r.id}</td>
+                <td><b>${r.name}</b></td>
+                <td><span class="chip">${r.field_name}</span></td>
+                <td><span class="badge badge-${typeColors[r.rule_type]||'blue'}">${r.rule_type}</span></td>
+                <td><span class="chip">${r.dataset_type}</span></td>
+                <td><span class="badge ${r.severity==='HIGH'?'badge-red':r.severity==='MEDIUM'?'badge-amber':'badge-green'}">${r.severity}</span></td>
+                <td><span class="badge badge-blue">User #${r.created_by||'?'}</span></td>
+                <td style="color:var(--muted)">${fmtDate(r.created_at)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+  } catch(e) { toast('Admin panel error: '+e.message,'error'); }
+}
+
 // ── CHART HELPERS ─────────────────────────────────────────────────────────────
-function renderTrendChart(canvasId, trends, chartVar, full=false) {
-  const canvas = $(canvasId);
-  if (!canvas) return;
+function buildLineChart(canvas, labels, scores, full=false) {
   const ctx = canvas.getContext('2d');
-
-  // Destroy old chart
-  if (chartVar==='dashTrendChart' && dashTrendChart) { dashTrendChart.destroy(); dashTrendChart=null; }
-  if (chartVar==='trendChart' && trendChart) { trendChart.destroy(); trendChart=null; }
-
-  if (!trends.length) return;
-
-  const labels = trends.map(t => fmtDate(t.checked_at));
-  const scores = trends.map(t => parseFloat(t.score.toFixed(1)));
   const colors = scores.map(s => scoreColor(s));
-
-  const chart = new Chart(ctx, {
+  return new Chart(ctx, {
     type: 'line',
     data: {
       labels,
@@ -1228,9 +1510,7 @@ function renderTrendChart(canvasId, trends, chartVar, full=false) {
           backgroundColor: '#131720',
           borderColor: '#1c2233', borderWidth: 1,
           titleColor: '#dde4f0', bodyColor: '#5a6580',
-          callbacks: {
-            label: ctx => ` Score: ${ctx.parsed.y} / 100`,
-          }
+          callbacks: { label: ctx => ` Score: ${ctx.parsed.y} / 100` }
         }
       },
       scales: {
@@ -1248,10 +1528,28 @@ function renderTrendChart(canvasId, trends, chartVar, full=false) {
       }
     }
   });
-
-  if (chartVar==='dashTrendChart') dashTrendChart=chart;
-  if (chartVar==='trendChart') trendChart=chart;
 }
+
+function renderDashTrendChart(trendPoints) {
+  const canvas = $('dash-trend-chart');
+  if (!canvas) return;
+  if (dashTrendChart) { dashTrendChart.destroy(); dashTrendChart=null; }
+  if (!trendPoints.length) return;
+  const labels = trendPoints.map(t => t.date);
+  const scores = trendPoints.map(t => parseFloat(t.average_score.toFixed(1)));
+  dashTrendChart = buildLineChart(canvas, labels, scores);
+}
+
+function renderTrendsPageChart(trendPoints) {
+  const canvas = $('trend-chart');
+  if (!canvas) return;
+  if (trendChart) { trendChart.destroy(); trendChart=null; }
+  if (!trendPoints.length) return;
+  const labels = trendPoints.map(t => t.date);
+  const scores = trendPoints.map(t => parseFloat(t.average_score.toFixed(1)));
+  trendChart = buildLineChart(canvas, labels, scores, true);
+}
+
 </script>
 </body>
 </html>
