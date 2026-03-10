@@ -142,6 +142,26 @@ def load_quality_payload(
                 dim_date_records,
             )
 
+        if fact_check_records:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO fact_quality_checks (
+                        source_check_result_id, dataset_id, rule_id, rule_type, severity,
+                        passed, failed_rows, total_rows, failure_rate, score, details,
+                        checked_at, date_key, etl_batch_id, etl_loaded_at
+                    )
+                    VALUES (
+                        :source_check_result_id, :dataset_id, :rule_id, :rule_type, :severity,
+                        :passed, :failed_rows, :total_rows, :failure_rate, :score, :details,
+                        :checked_at, :date_key, :etl_batch_id, :etl_loaded_at
+                    )
+                    ON CONFLICT (source_check_result_id) DO NOTHING
+                    """
+                ),
+                fact_check_records,
+            )
+
     loaded = {
         "rows_loaded": 0,
         "dim_datasets_upserted": len(dim_dataset_records),
