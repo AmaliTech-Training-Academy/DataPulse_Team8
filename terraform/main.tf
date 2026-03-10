@@ -4,13 +4,42 @@ terraform {
   required_providers {
     docker = {
       source  = "kreuzwerker/docker"
-      version = "~> 3.0"
+      version = "3.6.2"
+    }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
     }
   }
 }
 
 provider "docker" {
   host = "unix:///var/run/docker.sock"
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+# Fetch secrets from AWS Secrets Manager
+data "aws_secretsmanager_secret_version" "db_credentials" {
+  secret_id = var.aws_secret_name
+}
+
+locals {
+  # Parse JSON secret and extract values
+  db_secrets = jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string)
+
+  postgres_user     = local.db_secrets.postgres_user
+  postgres_password = local.db_secrets.postgres_password
+  postgres_db       = local.db_secrets.postgres_db
+  grafana_password  = local.db_secrets.grafana_admin_password
+}
+
+# Internal Docker network for secure container communication
+resource "docker_network" "datapulse_net" {
+  name     = "datapulse_internal"
+  internal = true
 }
 
 # PostgreSQL Database
@@ -29,15 +58,22 @@ resource "docker_container" "postgres" {
     "POSTGRES_DB=${var.postgres_db}"
   ]
 
-  ports {
-    internal = 5432
-    external = var.postgres_port
-  }
+  # No external port - only accessible via internal Docker network
+  # API connects via: datapulse-db:5432
 
   volumes {
     volume_name    = "datapulse_postgres_data"
     container_path = "/var/lib/postgresql/data"
   }
+
+  networks_advanced {
+    name = docker_network.datapulse_net.name
+  }
+
+  memory     = 512
+  cpu_shares = 512
+  restart    = "unless-stopped"
+  read_only  = true
 
   healthcheck {
     test     = ["CMD-SHELL", "pg_isready -U ${var.postgres_user}"]
@@ -62,13 +98,25 @@ resource "docker_container" "fastapi" {
   image = docker_image.fastapi.image_id
 
   env = [
-    "DATABASE_URL=postgresql://${var.postgres_user}:${var.postgres_password}@datapulse-db:5432/${var.postgres_db}"
+    "DATABASE_URL=postgresql://${local.postgres_user}:${local.postgres_password}@datapulse-db:5432/${local.postgres_db}"
   ]
 
+  # Public API - bound to 0.0.0.0 for external access
   ports {
     internal = 8000
     external = var.api_port
+    ip       = "0.0.0.0"
   }
+
+  networks_advanced {
+    name = docker_network.datapulse_net.name
+  }
+
+  memory     = 512
+  cpu_shares = 512
+  restart    = "unless-stopped"
+  read_only  = true
+  tmpfs      = { "/tmp" = "rw,noexec,nosuid,size=100m" }
 
   depends_on = [docker_container.postgres]
 
@@ -97,9 +145,11 @@ resource "docker_container" "prometheus" {
     "--web.console.templates=/usr/share/prometheus/consoles"
   ]
 
+  # Internal only - localhost access
   ports {
     internal = 9090
     external = var.prometheus_port
+    ip       = "127.0.0.1"
   }
 
   volumes {
@@ -111,6 +161,16 @@ resource "docker_container" "prometheus" {
     volume_name    = "datapulse_prometheus_data"
     container_path = "/prometheus"
   }
+
+  networks_advanced {
+    name = docker_network.datapulse_net.name
+  }
+
+  memory     = 512
+  cpu_shares = 512
+  restart    = "unless-stopped"
+  read_only  = true
+  tmpfs      = { "/tmp" = "rw,noexec,nosuid,size=100m" }
 }
 
 # Grafana
@@ -125,12 +185,14 @@ resource "docker_container" "grafana" {
 
   env = [
     "GF_SECURITY_ADMIN_USER=${var.grafana_admin_user}",
-    "GF_SECURITY_ADMIN_PASSWORD=${var.grafana_admin_password}"
+    "GF_SECURITY_ADMIN_PASSWORD=${local.grafana_password}"
   ]
 
+  # Internal only - localhost access
   ports {
     internal = 3000
     external = var.grafana_port
+    ip       = "127.0.0.1"
   }
 
   volumes {
@@ -142,6 +204,16 @@ resource "docker_container" "grafana" {
     volume_name    = "datapulse_grafana_provisioning"
     container_path = "/etc/grafana/provisioning"
   }
+
+  networks_advanced {
+    name = docker_network.datapulse_net.name
+  }
+
+  memory     = 256
+  cpu_shares = 256
+  restart    = "unless-stopped"
+  read_only  = true
+  tmpfs      = { "/tmp" = "rw,noexec,nosuid,size=50m" }
 
   depends_on = [docker_container.loki]
 }
@@ -160,9 +232,11 @@ resource "docker_container" "loki" {
     "-config.file=/etc/loki/loki-config.yml"
   ]
 
+  # Internal only - localhost access
   ports {
     internal = 3100
     external = var.loki_port
+    ip       = "127.0.0.1"
   }
 
   volumes {
@@ -174,6 +248,16 @@ resource "docker_container" "loki" {
     volume_name    = "datapulse_loki_data"
     container_path = "/tmp/loki"
   }
+
+  networks_advanced {
+    name = docker_network.datapulse_net.name
+  }
+
+  memory     = 256
+  cpu_shares = 256
+  restart    = "unless-stopped"
+  read_only  = true
+  tmpfs      = { "/tmp" = "rw,noexec,nosuid,size=50m" }
 }
 
 # Promtail (Log Shipper)
@@ -200,6 +284,15 @@ resource "docker_container" "promtail" {
     host_path      = pathexpand("~/Amalitech/DataPulse_Team8/monitoring/promtail-config.yml")
     container_path = "/etc/promtail/promtail-config.yml"
   }
+
+  networks_advanced {
+    name = docker_network.datapulse_net.name
+  }
+
+  memory     = 128
+  cpu_shares = 128
+  restart    = "unless-stopped"
+  read_only  = true
 
   depends_on = [docker_container.loki]
 }

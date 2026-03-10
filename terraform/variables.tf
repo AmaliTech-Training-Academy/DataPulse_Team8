@@ -14,7 +14,7 @@ variable "postgres_user" {
 variable "postgres_password" {
   description = "PostgreSQL password"
   type        = string
-  default     = "datapulse123"
+  default     = "ChangeMe2024!"
   sensitive   = true
 }
 
@@ -78,7 +78,7 @@ variable "grafana_admin_user" {
 variable "grafana_admin_password" {
   description = "Grafana admin password"
   type        = string
-  default     = "admin123"
+  default     = "ChangeMe2024!"
   sensitive   = true
 }
 
@@ -100,4 +100,17 @@ variable "promtail_version" {
   description = "Promtail version to use"
   type        = string
   default     = "2.9.2"
+}
+
+# AWS Configuration
+variable "aws_region" {
+  description = "AWS region for Secrets Manager"
+  type        = string
+  default     = "eu-west-1"
+}
+
+variable "aws_secret_name" {
+  description = "AWS Secrets Manager secret name containing DB and Grafana credentials"
+  type        = string
+  default     = "datapulse/prod/credentials"
 }

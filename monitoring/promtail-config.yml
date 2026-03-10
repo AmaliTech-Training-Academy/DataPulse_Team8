@@ -6,13 +6,17 @@ positions:
   filename: /tmp/positions.yaml
 
 clients:
-  - url: http://loki:3100/loki/api/v1/push
+  - url: http://datapulse-loki:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: docker
+  - job_name: datapulse-logs
+    # Only scrape logs from DataPulse containers
+    pipeline_stages:
+      - match:
+          selector: '{container_name=~"datapulse.*"}'
     static_configs:
       - targets:
           - localhost
         labels:
-          job: docker-logs
+          job: datapulse-logs
           __path__: /var/lib/docker/containers/*/*-json.log
