@@ -288,6 +288,11 @@ def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload
     """Transform extracted source data into analytics-ready dimensions and facts."""
 
     loaded_at = datetime.now(timezone.utc)
+    dim_datasets = _build_dim_datasets(extracted.datasets, loaded_at)
+    dim_rules = _build_dim_rules(extracted.rules, loaded_at)
+    fact_quality_checks = _build_fact_quality_checks(extracted.checks, loaded_at)
+    fact_quality_scores = _build_fact_quality_scores(extracted.scores, loaded_at)
+    dim_date = _build_dim_date(fact_quality_checks, fact_quality_scores)
     rows_extracted = (
         len(extracted.datasets)
         + len(extracted.rules)
@@ -295,17 +300,23 @@ def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload
         + len(extracted.scores)
     )
     LOGGER.info(
-        "Transformation (core dims) complete. dim_datasets=%s dim_rules=%s rows_extracted=%s",
-        len(extracted.datasets),
-        len(extracted.rules),
+        (
+            "Transformation complete. dim_datasets=%s dim_rules=%s "
+            "fact_checks=%s fact_scores=%s dim_date=%s rows_extracted=%s"
+        ),
+        len(dim_datasets),
+        len(dim_rules),
+        len(fact_quality_checks),
+        len(fact_quality_scores),
+        len(dim_date),
         rows_extracted,
     )
     return TransformedPayload(
-        dim_datasets=_build_dim_datasets(extracted.datasets, loaded_at),
-        dim_rules=_build_dim_rules(extracted.rules, loaded_at),
-        dim_date=pd.DataFrame(),
-        fact_quality_checks=extracted.checks.copy(),
-        fact_quality_scores=extracted.scores.copy(),
+        dim_datasets=dim_datasets,
+        dim_rules=dim_rules,
+        dim_date=dim_date,
+        fact_quality_checks=fact_quality_checks,
+        fact_quality_scores=fact_quality_scores,
         target_watermark=extracted.max_source_timestamp,
         rows_extracted=rows_extracted,
     )
