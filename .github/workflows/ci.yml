@@ -111,6 +111,8 @@ jobs:
           push: false
           load: true
           tags: datapulse-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Run container health check
         run: |

@@ -4,7 +4,6 @@ conftest.py — Shared fixtures for the DataPulse pytest suite.
 
 import io
 import json
-import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -13,9 +12,8 @@ from sqlalchemy.orm import sessionmaker
 from app.main import app
 from app.database import Base, get_db
 
-SQLALCHEMY_TEST_URL = os.getenv("TEST_DATABASE_URL", "sqlite:///./test_datapulse.db")
-connect_args = {"check_same_thread": False} if SQLALCHEMY_TEST_URL.startswith("sqlite") else {}
-engine = create_engine(SQLALCHEMY_TEST_URL, connect_args=connect_args)
+SQLALCHEMY_TEST_URL = "sqlite:///./test_datapulse.db"
+engine = create_engine(SQLALCHEMY_TEST_URL, connect_args={"check_same_thread": False})
 TestSession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -35,10 +33,9 @@ def setup_db():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
-    if SQLALCHEMY_TEST_URL.startswith("sqlite"):
-        db_path = SQLALCHEMY_TEST_URL.replace("sqlite:///", "")
-        if os.path.exists(db_path):
-            os.remove(db_path)
+    import os
+    if os.path.exists("test_datapulse.db"):
+        os.remove("test_datapulse.db")
 
 
 @pytest.fixture(scope="session")
