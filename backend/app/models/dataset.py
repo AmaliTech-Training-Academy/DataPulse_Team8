@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from app.database import Base
 
+
 class Dataset(Base):
     __tablename__ = "datasets"
 
@@ -12,7 +13,9 @@ class Dataset(Base):
     row_count = Column(Integer, default=0)
     column_count = Column(Integer, default=0)
     column_names = Column(Text, nullable=True)
-    uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    uploaded_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     uploaded_at = Column(DateTime, default=datetime.utcnow)
     status = Column(String(20), default="PENDING")
 
@@ -23,7 +26,9 @@ class DatasetFile(Base):
     __tablename__ = "dataset_files"
 
     id = Column(Integer, primary_key=True, index=True)
-    dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=False)
+    dataset_id = Column(
+        Integer, ForeignKey("datasets.id", ondelete="CASCADE"), nullable=False
+    )
     file_path = Column(String(500), nullable=False)
     original_filename = Column(String(255), nullable=False)
 

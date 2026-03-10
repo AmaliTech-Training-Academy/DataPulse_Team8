@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+
 
 class RuleCreate(BaseModel):
     name: str
@@ -9,6 +10,7 @@ class RuleCreate(BaseModel):
     rule_type: str
     parameters: Optional[str] = None
     severity: str = "MEDIUM"
+
 
 class RuleResponse(BaseModel):
     id: int
@@ -19,9 +21,11 @@ class RuleResponse(BaseModel):
     parameters: Optional[str] = None
     severity: str
     is_active: bool
+    created_by: Optional[int] = None
     created_at: datetime
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class RuleUpdate(BaseModel):
     name: Optional[str] = None
