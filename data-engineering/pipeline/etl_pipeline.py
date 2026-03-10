@@ -39,51 +39,36 @@ class ETLPipeline:
         self.transformed_data = None
 
     def get_last_success_watermark(self) -> Optional[datetime]:
-        """Read last successful target watermark for incremental extraction."""
-
         query = text(
-            """
-            SELECT MAX(target_watermark) AS last_watermark
-            FROM etl_batch_runs
-            WHERE pipeline_name = :pipeline_name
-              AND status = 'SUCCESS'
-            """
+            "SELECT MAX(target_watermark) AS last_watermark "
+            "FROM etl_batch_runs "
+            "WHERE pipeline_name = :pipeline_name AND status = 'SUCCESS'"
         )
         with self.target_engine.connect() as conn:
             watermark = conn.execute(query, {"pipeline_name": self.pipeline_name}).scalar()
         return watermark
 
     def has_new_data_since_watermark(self, watermark: Optional[datetime]) -> bool:
-        """Check whether source data exists after a given watermark."""
-
         if watermark is None:
             return True
 
         query = text(
-            """
-            SELECT
-                EXISTS (SELECT 1 FROM datasets WHERE uploaded_at > :watermark) OR
-                EXISTS (SELECT 1 FROM validation_rules WHERE created_at > :watermark) OR
-                EXISTS (SELECT 1 FROM check_results WHERE checked_at > :watermark) OR
-                EXISTS (SELECT 1 FROM quality_scores WHERE checked_at > :watermark)
-                AS has_new_data
-            """
+            "SELECT "
+            "EXISTS (SELECT 1 FROM datasets WHERE uploaded_at > :watermark) OR "
+            "EXISTS (SELECT 1 FROM validation_rules WHERE created_at > :watermark) OR "
+            "EXISTS (SELECT 1 FROM check_results WHERE checked_at > :watermark) OR "
+            "EXISTS (SELECT 1 FROM quality_scores WHERE checked_at > :watermark) AS has_new_data"
         )
         with self.source_engine.connect() as conn:
             has_new_data = conn.execute(query, {"watermark": watermark}).scalar()
         return bool(has_new_data)
 
     def _start_batch_run(self, source_watermark: Optional[datetime]) -> int:
-        """Create RUNNING batch metadata row and return batch id."""
-
         query = text(
-            """
-            INSERT INTO etl_batch_runs (
-                pipeline_name, started_at, status, source_watermark, rows_extracted, rows_loaded
-            )
-            VALUES (:pipeline_name, :started_at, 'RUNNING', :source_watermark, 0, 0)
-            RETURNING id
-            """
+            "INSERT INTO etl_batch_runs "
+            "(pipeline_name, started_at, status, source_watermark, rows_extracted, rows_loaded) "
+            "VALUES (:pipeline_name, :started_at, 'RUNNING', :source_watermark, 0, 0) "
+            "RETURNING id"
         )
         with self.target_engine.begin() as conn:
             batch_id = conn.execute(
@@ -103,20 +88,11 @@ class ETLPipeline:
         rows_extracted: int,
         rows_loaded: int,
     ) -> None:
-        """Mark a batch as SUCCESS."""
-
         query = text(
-            """
-            UPDATE etl_batch_runs
-            SET
-                finished_at = :finished_at,
-                status = 'SUCCESS',
-                target_watermark = :target_watermark,
-                rows_extracted = :rows_extracted,
-                rows_loaded = :rows_loaded,
-                error_message = NULL
-            WHERE id = :batch_id
-            """
+            "UPDATE etl_batch_runs SET "
+            "finished_at = :finished_at, status = 'SUCCESS', target_watermark = :target_watermark, "
+            "rows_extracted = :rows_extracted, rows_loaded = :rows_loaded, error_message = NULL "
+            "WHERE id = :batch_id"
         )
         with self.target_engine.begin() as conn:
             conn.execute(
@@ -131,18 +107,10 @@ class ETLPipeline:
             )
 
     def _finish_batch_failure(self, batch_id: int, rows_extracted: int, error: Exception) -> None:
-        """Mark a batch as FAILED and persist error detail."""
-
         query = text(
-            """
-            UPDATE etl_batch_runs
-            SET
-                finished_at = :finished_at,
-                status = 'FAILED',
-                rows_extracted = :rows_extracted,
-                error_message = :error_message
-            WHERE id = :batch_id
-            """
+            "UPDATE etl_batch_runs SET "
+            "finished_at = :finished_at, status = 'FAILED', rows_extracted = :rows_extracted, "
+            "error_message = :error_message WHERE id = :batch_id"
         )
         with self.target_engine.begin() as conn:
             conn.execute(
@@ -203,20 +171,13 @@ class ETLPipeline:
         print("Load: TODO - implement insert into analytics tables")
 
     def run(self, skip_if_no_new_data: bool = True) -> dict:
-        """Run extract, transform, and load for quality metrics aggregation."""
 
         watermark = self.get_last_success_watermark()
         LOGGER.info("ETL run started. pipeline=%s watermark=%s", self.pipeline_name, watermark)
 
         if skip_if_no_new_data and not self.has_new_data_since_watermark(watermark):
             LOGGER.info("No new source data found after watermark. Skipping run.")
-            return {
-                "status": "SKIPPED",
-                "pipeline_name": self.pipeline_name,
-                "watermark": watermark,
-                "rows_extracted": 0,
-                "rows_loaded": 0,
-            }
+            return {"status": "SKIPPED", "watermark": watermark, "rows_extracted": 0, "rows_loaded": 0}
 
         batch_id = self._start_batch_run(watermark)
         rows_extracted = 0
@@ -235,7 +196,6 @@ class ETLPipeline:
             )
             summary = {
                 "status": "SUCCESS",
-                "pipeline_name": self.pipeline_name,
                 "batch_id": batch_id,
                 "rows_extracted": rows_extracted,
                 "rows_loaded": rows_loaded,
