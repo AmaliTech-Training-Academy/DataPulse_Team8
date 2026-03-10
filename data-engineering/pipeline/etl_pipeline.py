@@ -251,5 +251,10 @@ class ETLPipeline:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=os.getenv("ETL_LOG_LEVEL", "INFO"),
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    )
     pipeline = ETLPipeline()
-    pipeline.run()
+    result = pipeline.run(skip_if_no_new_data=False)
+    LOGGER.info("Pipeline result: %s", result)
