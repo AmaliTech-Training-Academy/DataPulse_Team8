@@ -1,14 +1,13 @@
 """Generate sample datasets with configurable error rate - IMPLEMENTED."""
 
-import random
-import string
 import csv
 import os
+import random
 from datetime import datetime, timedelta
 
 DEPARTMENTS = ["Engineering", "Marketing", "Sales", "HR", "Finance"]
-FIRST_NAMES = ["Alice","Bob","Carol","David","Eve","Frank","Grace","Henry"]
-LAST_NAMES = ["Smith","Jones","White","Brown","Davis","Miller","Wilson","Taylor"]
+FIRST_NAMES = ["Alice", "Bob", "Carol", "David", "Eve", "Frank", "Grace", "Henry"]
+LAST_NAMES = ["Smith", "Jones", "White", "Brown", "Davis", "Miller", "Wilson", "Taylor"]
 
 
 def generate_dataset(num_rows=100, error_rate=0.1, output_path="generated.csv"):
@@ -26,18 +25,26 @@ def generate_dataset(num_rows=100, error_rate=0.1, output_path="generated.csv"):
         # Introduce errors based on error_rate
         if random.random() < error_rate:
             choice = random.randint(0, 5)
-            if choice == 0: name = ""
-            elif choice == 1: email = "not-valid"
-            elif choice == 2: age = random.choice([-5, 0, 200])
-            elif choice == 3: dept = ""
-            elif choice == 4: salary = "abc"
-            elif choice == 5: hire = ""
+            if choice == 0:
+                name = ""
+            elif choice == 1:
+                email = "not-valid"
+            elif choice == 2:
+                age = random.choice([-5, 0, 200])
+            elif choice == 3:
+                dept = ""
+            elif choice == 4:
+                salary = "abc"
+            elif choice == 5:
+                hire = ""
 
         rows.append([i, name, email, age, dept, salary, hire])
 
     with open(output_path, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["id","name","email","age","department","salary","hire_date"])
+        writer.writerow(
+            ["id", "name", "email", "age", "department", "salary", "hire_date"]
+        )
         writer.writerows(rows)
     print(f"Generated {num_rows} rows -> {output_path} (error_rate={error_rate})")
 

@@ -1,19 +1,17 @@
-import urllib.request
 import json
+import urllib.request
 
 # First, let's try registering a new user
-url = 'http://localhost:8000/api/auth/register'
-data = json.dumps({
-    'email': 'qa_user@datapulse.com',
-    'password': 'qapassword12',
-    'full_name': 'Tob'
-}).encode('utf-8')
+url = "http://localhost:8000/api/auth/register"
+data = json.dumps(
+    {"email": "qa_user@datapulse.com", "password": "qapassword12", "full_name": "Tob"}
+).encode("utf-8")
 
 req = urllib.request.Request(
     url,
     data=data,
-    headers={'Content-Type': 'application/json', 'User-Agent': 'Python'},
-    method='POST'
+    headers={"Content-Type": "application/json", "User-Agent": "Python"},
+    method="POST",
 )
 
 try:
