@@ -4,10 +4,11 @@ import sys
 # Add the backend folder to sys.path so we can import the 'app' module
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import bcrypt
+
+from app.config import settings
 from app.database import SessionLocal
 from app.models.user import User
-from app.config import settings
-import bcrypt
 
 
 def seed_admin():

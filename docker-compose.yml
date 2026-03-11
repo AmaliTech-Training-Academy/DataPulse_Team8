@@ -70,6 +70,81 @@ services:
       backend:
         condition: service_healthy
 
+  # Airflow bootstrap (run once before scheduler/webserver)
+  airflow-init:
+    image: apache/airflow:2.9.3-python3.11
+    profiles: ["de"]
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "False"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://datapulse:datapulse123@db:5432/datapulse
+      SOURCE_DB_URL: postgresql://datapulse:datapulse123@db:5432/datapulse
+      TARGET_DB_URL: postgresql://datapulse:datapulse123@db:5432/datapulse
+      DE_ALERT_EMAILS: ""
+      SLACK_WEBHOOK_URL: ""
+      _PIP_ADDITIONAL_REQUIREMENTS: "psycopg2-binary==2.9.9 pandas==2.1.4 python-dotenv==1.0.1"
+    user: "50000:0"
+    volumes:
+      - ./data-engineering/pipeline:/opt/airflow/dags/pipeline
+      - airflow_logs:/opt/airflow/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      bash -c "airflow db migrate &&
+      airflow users create --username admin --firstname Data --lastname Engineer --role Admin --email admin@datapulse.local --password admin || true"
+
+  # Airflow web UI for DE monitoring
+  airflow-webserver:
+    image: apache/airflow:2.9.3-python3.11
+    profiles: ["de"]
+    restart: unless-stopped
+    ports:
+      - "8088:8080"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "False"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://datapulse:datapulse123@db:5432/datapulse
+      SOURCE_DB_URL: postgresql://datapulse:datapulse123@db:5432/datapulse
+      TARGET_DB_URL: postgresql://datapulse:datapulse123@db:5432/datapulse
+      DE_ALERT_EMAILS: ""
+      SLACK_WEBHOOK_URL: ""
+      _PIP_ADDITIONAL_REQUIREMENTS: "psycopg2-binary==2.9.9 pandas==2.1.4 python-dotenv==1.0.1"
+    user: "50000:0"
+    volumes:
+      - ./data-engineering/pipeline:/opt/airflow/dags/pipeline
+      - airflow_logs:/opt/airflow/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    command: webserver
+
+  # Airflow scheduler for DAG execution
+  airflow-scheduler:
+    image: apache/airflow:2.9.3-python3.11
+    profiles: ["de"]
+    restart: unless-stopped
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "False"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://datapulse:datapulse123@db:5432/datapulse
+      SOURCE_DB_URL: postgresql://datapulse:datapulse123@db:5432/datapulse
+      TARGET_DB_URL: postgresql://datapulse:datapulse123@db:5432/datapulse
+      DE_ALERT_EMAILS: ""
+      SLACK_WEBHOOK_URL: ""
+      _PIP_ADDITIONAL_REQUIREMENTS: "psycopg2-binary==2.9.9 pandas==2.1.4 python-dotenv==1.0.1"
+    user: "50000:0"
+    volumes:
+      - ./data-engineering/pipeline:/opt/airflow/dags/pipeline
+      - airflow_logs:/opt/airflow/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    command: scheduler
+
   # Prometheus for Metrics Collection
   prometheus:
     image: prom/prometheus:latest
@@ -105,3 +180,4 @@ volumes:
   pgadmin_data:
   prometheus_data:
   grafana_data:
+  airflow_logs:

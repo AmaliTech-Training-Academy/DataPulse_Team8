@@ -1,17 +1,16 @@
-import urllib.request
 import json
+import urllib.request
 
-url = 'http://localhost:8000/api/auth/login'
-data = json.dumps({
-    'email': 'qa_user@datapulse.com',
-    'password': 'qapassword12'
-}).encode('utf-8')
+url = "http://localhost:8000/api/auth/login"
+data = json.dumps(
+    {"email": "qa_user@datapulse.com", "password": "qapassword12"}
+).encode("utf-8")
 
 req = urllib.request.Request(
     url,
     data=data,
-    headers={'Content-Type': 'application/json', 'User-Agent': 'Python'},
-    method='POST'
+    headers={"Content-Type": "application/json", "User-Agent": "Python"},
+    method="POST",
 )
 
 try:

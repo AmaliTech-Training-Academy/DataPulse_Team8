@@ -1,0 +1,25 @@
+Day 1 Verification Query Output
+
+Tables (expected 6):
+- dim_datasets
+- dim_date
+- dim_rules
+- etl_batch_runs
+- fact_quality_checks
+- fact_quality_scores
+
+Views (expected 3):
+- vw_daily_dataset_quality
+- vw_dataset_latest_score
+- vw_rule_failure_summary
+
+dim_date boundary and count:
+- min_date: 2020-01-01
+- max_date: 2035-12-31
+- row_count: 5844
+
+Idempotency check on dim_date:
+- total_rows: 5844
+- distinct_date_keys: 5844
+
+Status: PASS

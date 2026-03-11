@@ -1,18 +1,20 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
-from app.database import engine, Base
-from app.routers import auth, upload, rules, checks, reports
+
+from app.database import Base, engine
 from app.middleware.logging_middleware import GlobalLoggingMiddleware
-from contextlib import asynccontextmanager
+from app.routers import auth, checks, reports, rules, upload
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    import app.models.user  # noqa: F401
+    import app.models.check_result  # noqa: F401
     import app.models.dataset  # noqa: F401
     import app.models.rule  # noqa: F401
-    import app.models.check_result  # noqa: F401
+    import app.models.user  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
     yield
@@ -24,6 +26,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Initialize and expose Prometheus metrics
+Instrumentator().instrument(app).expose(app)
 
 app.add_middleware(GlobalLoggingMiddleware)
 app.add_middleware(
