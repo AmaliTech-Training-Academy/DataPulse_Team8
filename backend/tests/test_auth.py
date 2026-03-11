@@ -1,7 +1,6 @@
 """Authentication tests - IMPLEMENTED."""
 
 
-
 def test_register_success(client):
     resp = client.post(
         "/api/auth/register",
@@ -89,3 +88,27 @@ def test_login_wrong_password(client):
         json={"email": "wrong@example.com", "password": "badpassword123"},
     )
     assert resp.status_code == 401
+
+
+def test_legacy_hash_migration(client, test_db):
+    import hashlib
+
+    from app.models.user import User
+
+    password = "LegacyPassword123"
+    legacy_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
+    user = User(
+        email="legacy@example.com", hashed_password=legacy_hash, full_name="Legacy"
+    )
+    test_db.add(user)
+    test_db.commit()
+
+    resp = client.post(
+        "/api/auth/login",
+        json={"email": "legacy@example.com", "password": password},
+    )
+    assert resp.status_code == 200
+
+    updated_user = test_db.query(User).filter_by(email="legacy@example.com").first()
+    assert updated_user.hashed_password != legacy_hash
+    assert updated_user.hashed_password.startswith("$2")

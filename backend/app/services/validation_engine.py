@@ -2,6 +2,7 @@
 
 import json
 import logging
+
 import pandas as pd
 
 logger = logging.getLogger("datapulse.validation")
@@ -17,7 +18,7 @@ class ValidationEngine:
         for rule in rules:
             logger.debug(f"Running rule {rule.id} ({rule.rule_type}) on field '{rule.field_name}'")
             params = json.loads(rule.parameters) if rule.parameters else {}
-            
+
             if rule.rule_type == "NOT_NULL":
                 result = self.null_check(df, rule.field_name)
             elif rule.rule_type == "DATA_TYPE":
@@ -42,12 +43,12 @@ class ValidationEngine:
                     "total_rows": len(df),
                     "details": f"Error: Unknown rule_type '{rule.rule_type}'",
                 }
-                
+
             result["rule_id"] = rule.id
             if not result["passed"]:
                 logger.info(f"Rule {rule.id} failed: {result['details']}")
             results.append(result)
-            
+
         logger.info(f"Validation engine completed {len(results)} checks.")
         return results
 
@@ -60,7 +61,7 @@ class ValidationEngine:
                 "total_rows": 0,
                 "details": f"Dataset is empty, cannot check nulls for '{field}'",
             }
-            
+
         if field not in df.columns:
             logger.warning(f"null_check: Field '{field}' not found in dataset columns: {list(df.columns)}")
             return {
@@ -69,14 +70,14 @@ class ValidationEngine:
                 "total_rows": len(df),
                 "details": f"Error: Field '{field}' not found in dataset",
             }
-            
+
         null_count = int(df[field].isnull().sum())
         passed = (null_count == 0)
-        
+
         details = "No null values found" if passed else f"Found {null_count} null value{'s' if null_count > 1 else ''} in '{field}'"
         if null_count == len(df):
             details = f"Column '{field}' is completely empty (100% null)"
-            
+
         return {
             "passed": passed,
             "failed_rows": null_count,
@@ -93,7 +94,7 @@ class ValidationEngine:
                 "total_rows": 0,
                 "details": f"Dataset is empty, cannot perform type check for '{field}'",
             }
-            
+
         if field not in df.columns:
             return {
                 "passed": False,
@@ -139,7 +140,7 @@ class ValidationEngine:
                 "total_rows": 0,
                 "details": f"Dataset is empty, cannot perform range check for '{field}'",
             }
-            
+
         if field not in df.columns:
             return {
                 "passed": False,
@@ -182,7 +183,7 @@ class ValidationEngine:
                 "total_rows": 0,
                 "details": f"Dataset is empty, cannot perform unique check for '{field}'",
             }
-            
+
         if field not in df.columns:
             return {
                 "passed": False,
@@ -219,7 +220,7 @@ class ValidationEngine:
                 "total_rows": 0,
                 "details": f"Dataset is empty, cannot perform regex check for '{field}'",
             }
-            
+
         if field not in df.columns:
             return {
                 "passed": False,

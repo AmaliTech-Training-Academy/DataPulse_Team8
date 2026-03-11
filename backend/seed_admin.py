@@ -5,7 +5,6 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bcrypt
-
 from app.config import settings
 from app.database import SessionLocal
 from app.models.user import User
