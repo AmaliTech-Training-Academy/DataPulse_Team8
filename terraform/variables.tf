@@ -198,3 +198,17 @@ variable "log_retention_days" {
   type        = number
   default     = 7
 }
+
+# EC2 Configuration
+variable "ec2_public_key" {
+  description = "EC2 public key for SSH access (or leave empty to auto-generate)"
+  type        = string
+  default     = ""
+}
+
+# SSH Key Generation
+variable "generate_ssh_key" {
+  description = "Whether to generate a new SSH key pair"
+  type        = bool
+  default     = true
+}

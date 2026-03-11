@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="1">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- TITLE -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="title" value="DataPulse — Team 8 | Terraform Infrastructure Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#1F3864;" vertex="1" parent="1">
+      <mxGeometry x="200" y="20" width="1200" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="subtitle" value="Plan: 12 resources to add  |  6 Containers  |  6 Docker Images  |  All on Docker Bridge Network" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#777777;" vertex="1" parent="1">
+      <mxGeometry x="200" y="55" width="1200" height="25" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- OUTER BORDER — DOCKER HOST (MacBook) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="docker_host" value="🖥️  Docker Host — MacBook Air (huey)" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];shape=mxgraph.cisco.sites.generic_building;sketch=0;html=1;pointerEvents=1;dashed=0;fillColor=#f5f5f5;strokeColor=#1F3864;strokeWidth=3;fontStyle=1;fontSize=13;fontColor=#1F3864;verticalLabelPosition=top;verticalAlign=bottom;labelPosition=center;align=center;" vertex="1" parent="1">
+      <mxGeometry x="80" y="90" width="1480" height="1000" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- DOCKER BRIDGE NETWORK BOX -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="network_box" value="Docker Bridge Network — network_mode: bridge" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EBF3FA;strokeColor=#2E75B6;strokeWidth=2;fontSize=12;fontStyle=1;fontColor=#2E75B6;verticalAlign=top;arcSize=3;" vertex="1" parent="1">
+      <mxGeometry x="120" y="150" width="1400" height="880" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- INTERNET / USER -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="internet" value="🌐 Developer / Browser" style="shape=mxgraph.network.cloud;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="680" y="170" width="220" height="110" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- ROW 1: FASTAPI (centre top) -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="fastapi_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1F3864;strokeColor=#1F3864;strokeWidth=2;arcSize=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="340" width="320" height="180" as="geometry" />
+    </mxCell>
+    <mxCell id="fastapi_icon" value="🐍" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=28;" vertex="1" parent="1">
+      <mxGeometry x="620" y="350" width="60" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="fastapi_label" value="FastAPI Application" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+      <mxGeometry x="685" y="350" width="240" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="fastapi_name" value="datapulse-api" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=11;fontColor=#AACCFF;" vertex="1" parent="1">
+      <mxGeometry x="685" y="378" width="240" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="fastapi_image" value="📦 datapulse-backend:latest" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#CCDDFF;" vertex="1" parent="1">
+      <mxGeometry x="685" y="398" width="240" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="fastapi_port" value="🔌 Port: 0.0.0.0:8000 → 8000" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFD580;" vertex="1" parent="1">
+      <mxGeometry x="635" y="420" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="fastapi_health" value="💓 Healthcheck: GET /health (30s)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#90EE90;" vertex="1" parent="1">
+      <mxGeometry x="635" y="440" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="fastapi_restart" value="⚠️ restart: no  |  read_only: false" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFB3B3;" vertex="1" parent="1">
+      <mxGeometry x="635" y="460" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="fastapi_metrics" value="/metrics endpoint → Prometheus" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#AAFFCC;" vertex="1" parent="1">
+      <mxGeometry x="635" y="490" width="290" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- ROW 2 LEFT: POSTGRES -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="postgres_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00695C;strokeColor=#00695C;strokeWidth=2;arcSize=8;" vertex="1" parent="1">
+      <mxGeometry x="140" y="600" width="300" height="180" as="geometry" />
+    </mxCell>
+    <mxCell id="pg_icon" value="🐘" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=28;" vertex="1" parent="1">
+      <mxGeometry x="140" y="610" width="60" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="pg_label" value="PostgreSQL Database" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+      <mxGeometry x="205" y="610" width="220" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="pg_name" value="datapulse-db" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=11;fontColor=#AAFFDD;" vertex="1" parent="1">
+      <mxGeometry x="205" y="638" width="220" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="pg_image" value="📦 postgres:15-alpine" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#CCFFEE;" vertex="1" parent="1">
+      <mxGeometry x="205" y="658" width="220" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="pg_port" value="🔌 Port: 0.0.0.0:5432 → 5432" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFD580;" vertex="1" parent="1">
+      <mxGeometry x="155" y="680" width="270" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="pg_health" value="💓 Healthcheck: pg_isready (10s, 5 retries)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#90EE90;" vertex="1" parent="1">
+      <mxGeometry x="155" y="700" width="270" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="pg_vol" value="💾 Volume: datapulse_postgres_data" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#AAFFDD;" vertex="1" parent="1">
+      <mxGeometry x="155" y="720" width="270" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="pg_restart" value="⚠️ restart: no  |  read_only: false" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFB3B3;" vertex="1" parent="1">
+      <mxGeometry x="155" y="740" width="270" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- ROW 2 CENTRE: PROMETHEUS -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="prometheus_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B84A0A;strokeColor=#B84A0A;strokeWidth=2;arcSize=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="600" width="320" height="190" as="geometry" />
+    </mxCell>
+    <mxCell id="prom_icon" value="🔥" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=28;" vertex="1" parent="1">
+      <mxGeometry x="620" y="608" width="60" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="prom_label" value="Prometheus" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+      <mxGeometry x="685" y="608" width="240" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="prom_name" value="datapulse-prometheus" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=11;fontColor=#FFCCAA;" vertex="1" parent="1">
+      <mxGeometry x="685" y="636" width="240" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="prom_image" value="📦 prometheus:latest" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFDDC0;" vertex="1" parent="1">
+      <mxGeometry x="685" y="656" width="240" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="prom_port" value="🔌 Port: 0.0.0.0:9090 → 9090" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFD580;" vertex="1" parent="1">
+      <mxGeometry x="635" y="678" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="prom_cmd" value="⚙️ --config.file=/etc/prometheus/prometheus.yml" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFDDC0;" vertex="1" parent="1">
+      <mxGeometry x="635" y="698" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="prom_vol1" value="📄 Config: terraform/prometheus.yml (host)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFDDC0;" vertex="1" parent="1">
+      <mxGeometry x="635" y="718" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="prom_vol2" value="💾 Volume: datapulse_prometheus_data" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFDDC0;" vertex="1" parent="1">
+      <mxGeometry x="635" y="738" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="prom_restart" value="⚠️ restart: no  |  read_only: false" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFB3B3;" vertex="1" parent="1">
+      <mxGeometry x="635" y="758" width="290" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- ROW 2 RIGHT: GRAFANA -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="grafana_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4527A0;strokeColor=#4527A0;strokeWidth=2;arcSize=8;" vertex="1" parent="1">
+      <mxGeometry x="1120" y="340" width="320" height="210" as="geometry" />
+    </mxCell>
+    <mxCell id="graf_icon" value="📊" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=28;" vertex="1" parent="1">
+      <mxGeometry x="1120" y="350" width="60" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="graf_label" value="Grafana Dashboard" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+      <mxGeometry x="1185" y="350" width="240" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="graf_name" value="datapulse-grafana" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=11;fontColor=#CCBBFF;" vertex="1" parent="1">
+      <mxGeometry x="1185" y="378" width="240" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="graf_image" value="📦 grafana:latest" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#DDCCFF;" vertex="1" parent="1">
+      <mxGeometry x="1185" y="398" width="240" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="graf_port" value="🔌 Port: 0.0.0.0:3000 → 3000" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFD580;" vertex="1" parent="1">
+      <mxGeometry x="1135" y="420" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="graf_vol1" value="💾 Volume: datapulse_grafana_data (/var/lib/grafana)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#DDCCFF;" vertex="1" parent="1">
+      <mxGeometry x="1135" y="440" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="graf_vol2" value="💾 Volume: datapulse_grafana_provisioning" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#DDCCFF;" vertex="1" parent="1">
+      <mxGeometry x="1135" y="460" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="graf_cred" value="🔐 Credentials: (sensitive value in tfvars)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#90EE90;" vertex="1" parent="1">
+      <mxGeometry x="1135" y="480" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="graf_restart" value="⚠️ restart: no  |  read_only: false" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFB3B3;" vertex="1" parent="1">
+      <mxGeometry x="1135" y="500" width="290" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- ROW 3 LEFT: LOKI -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="loki_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#1B5E20;strokeWidth=2;arcSize=8;" vertex="1" parent="1">
+      <mxGeometry x="1120" y="620" width="300" height="190" as="geometry" />
+    </mxCell>
+    <mxCell id="loki_icon" value="📝" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=28;" vertex="1" parent="1">
+      <mxGeometry x="1120" y="628" width="60" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="loki_label" value="Loki (Log Aggregation)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+      <mxGeometry x="1185" y="628" width="220" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="loki_name" value="datapulse-loki" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=11;fontColor=#AAFFAA;" vertex="1" parent="1">
+      <mxGeometry x="1185" y="656" width="220" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="loki_image" value="📦 grafana/loki:2.9.2  ✅ pinned" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#90EE90;" vertex="1" parent="1">
+      <mxGeometry x="1185" y="676" width="220" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="loki_port" value="🔌 Port: 0.0.0.0:3100 → 3100" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFD580;" vertex="1" parent="1">
+      <mxGeometry x="1135" y="698" width="270" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="loki_cmd" value="⚙️ -config.file=/etc/loki/loki-config.yml" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#CCFFCC;" vertex="1" parent="1">
+      <mxGeometry x="1135" y="718" width="270" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="loki_vol1" value="📄 Config: monitoring/loki-config.yml (host)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#CCFFCC;" vertex="1" parent="1">
+      <mxGeometry x="1135" y="738" width="270" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="loki_vol2" value="💾 Volume: datapulse_loki_data (/tmp/loki)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#CCFFCC;" vertex="1" parent="1">
+      <mxGeometry x="1135" y="758" width="270" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="loki_restart" value="⚠️ restart: no  |  read_only: false" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFB3B3;" vertex="1" parent="1">
+      <mxGeometry x="1135" y="778" width="270" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- ROW 3 RIGHT: PROMTAIL -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="promtail_box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#4A148C;strokeWidth=2;arcSize=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="870" width="320" height="180" as="geometry" />
+    </mxCell>
+    <mxCell id="pt_icon" value="🚀" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=28;" vertex="1" parent="1">
+      <mxGeometry x="620" y="878" width="60" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="pt_label" value="Promtail (Log Shipper)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+      <mxGeometry x="685" y="878" width="240" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="pt_name" value="datapulse-promtail" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=11;fontColor=#CCBBFF;" vertex="1" parent="1">
+      <mxGeometry x="685" y="906" width="240" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="pt_image" value="📦 grafana/promtail:2.9.2  ✅ pinned" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#90EE90;" vertex="1" parent="1">
+      <mxGeometry x="685" y="926" width="240" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="pt_cmd" value="⚙️ -config.file=/etc/promtail/promtail-config.yml" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#DDCCFF;" vertex="1" parent="1">
+      <mxGeometry x="635" y="948" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="pt_vol1" value="📄 Config: monitoring/promtail-config.yml (host)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#DDCCFF;" vertex="1" parent="1">
+      <mxGeometry x="635" y="968" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="pt_vol2" value="📂 /var/lib/docker/containers (host, read-only)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFD580;" vertex="1" parent="1">
+      <mxGeometry x="635" y="988" width="290" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="pt_restart" value="⚠️ No external port  |  restart: no" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10;fontColor=#FFB3B3;" vertex="1" parent="1">
+      <mxGeometry x="635" y="1008" width="290" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- CONNECTIONS -->
+    <!-- ═══════════════════════════════════════════════════ -->
+
+    <!-- Developer → FastAPI (HTTP :8000) -->
+    <mxCell id="e1" value="HTTP :8000&#xa;/docs  /health" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#2E75B6;strokeWidth=2.5;fontStyle=1;fontSize=11;fontColor=#2E75B6;" edge="1" source="internet" target="fastapi_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Developer → Grafana (HTTP :3000) -->
+    <mxCell id="e2" value="HTTP :3000" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4527A0;strokeWidth=2;fontStyle=1;fontSize=10;fontColor=#4527A0;" edge="1" source="internet" target="grafana_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- FastAPI → PostgreSQL -->
+    <mxCell id="e3" value="SQLAlchemy&#xa;:5432" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#00695C;strokeWidth=2.5;fontStyle=1;fontSize=11;fontColor=#00695C;" edge="1" source="fastapi_box" target="postgres_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Prometheus → FastAPI (/metrics scrape) -->
+    <mxCell id="e4" value="Scrape /metrics&#xa;every 15s" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#B84A0A;strokeWidth=2;dashed=1;fontStyle=1;fontSize=10;fontColor=#B84A0A;" edge="1" source="prometheus_box" target="fastapi_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Grafana → Prometheus (data source) -->
+    <mxCell id="e5" value="Data Source&#xa;PromQL :9090" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#B84A0A;strokeWidth=2;fontStyle=1;fontSize=10;fontColor=#B84A0A;" edge="1" source="grafana_box" target="prometheus_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Grafana → Loki (log data source) -->
+    <mxCell id="e6" value="Log Data Source&#xa;LogQL :3100" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1B5E20;strokeWidth=2;fontStyle=1;fontSize=10;fontColor=#1B5E20;" edge="1" source="grafana_box" target="loki_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Promtail → Loki (push logs) -->
+    <mxCell id="e7" value="Push logs&#xa;HTTP :3100" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4A148C;strokeWidth=2;fontStyle=1;fontSize=10;fontColor=#4A148C;" edge="1" source="promtail_box" target="loki_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Promtail reads host logs -->
+    <mxCell id="e8" value="Reads ALL&#xa;container logs&#xa;(read-only)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF6600;strokeWidth=2;dashed=1;fontStyle=1;fontSize=10;fontColor=#FF6600;" edge="1" source="promtail_box" target="fastapi_box" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- TERRAFORM OUTPUTS BOX -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="outputs_box" value="📤  Terraform Outputs (after terraform apply)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F9A825;strokeWidth=2;fontSize=12;fontStyle=1;fontColor=#E65100;verticalAlign=top;arcSize=5;" vertex="1" parent="1">
+      <mxGeometry x="140" y="860" width="420" height="200" as="geometry" />
+    </mxCell>
+    <mxCell id="out1" value="api_url                  →  http://localhost:8000" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontFamily=Courier New;fontColor=#1F3864;" vertex="1" parent="1">
+      <mxGeometry x="155" y="900" width="390" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="out2" value="api_docs_url          →  http://localhost:8000/docs" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontFamily=Courier New;fontColor=#1F3864;" vertex="1" parent="1">
+      <mxGeometry x="155" y="922" width="390" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="out3" value="api_health_url        →  http://localhost:8000/health" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontFamily=Courier New;fontColor=#1F3864;" vertex="1" parent="1">
+      <mxGeometry x="155" y="944" width="390" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="out4" value="grafana_url             →  http://localhost:3000" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontFamily=Courier New;fontColor=#4527A0;" vertex="1" parent="1">
+      <mxGeometry x="155" y="966" width="390" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="out5" value="prometheus_url        →  http://localhost:9090" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontFamily=Courier New;fontColor=#B84A0A;" vertex="1" parent="1">
+      <mxGeometry x="155" y="988" width="390" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="out6" value="loki_url                  →  http://localhost:3100" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontFamily=Courier New;fontColor=#1B5E20;" vertex="1" parent="1">
+      <mxGeometry x="155" y="1010" width="390" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="out7" value="postgres_url           →  (sensitive value)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontFamily=Courier New;fontColor=#00695C;" vertex="1" parent="1">
+      <mxGeometry x="155" y="1032" width="390" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- SECURITY WARNINGS BOX -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="security_box" value="⚠️  Security Issues Found in This Plan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#B71C1C;strokeWidth=2;fontSize=12;fontStyle=1;fontColor=#B71C1C;verticalAlign=top;arcSize=5;" vertex="1" parent="1">
+      <mxGeometry x="140" y="350" width="420" height="200" as="geometry" />
+    </mxCell>
+    <mxCell id="sec1" value="🔴  All ports bound to 0.0.0.0 (exposed to network)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#B71C1C;" vertex="1" parent="1">
+      <mxGeometry x="155" y="390" width="390" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="sec2" value="🔴  No shared Docker network — containers isolated" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#B71C1C;" vertex="1" parent="1">
+      <mxGeometry x="155" y="412" width="390" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="sec3" value="🔴  restart: no — containers won't recover from crash" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#B71C1C;" vertex="1" parent="1">
+      <mxGeometry x="155" y="434" width="390" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="sec4" value="🟡  Promtail reads ALL host container logs" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#E65100;" vertex="1" parent="1">
+      <mxGeometry x="155" y="456" width="390" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="sec5" value="🟡  No memory/CPU resource limits on any container" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#E65100;" vertex="1" parent="1">
+      <mxGeometry x="155" y="478" width="390" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="sec6" value="🟡  read_only: false on all containers" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#E65100;" vertex="1" parent="1">
+      <mxGeometry x="155" y="500" width="390" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="sec7" value="🟡  prometheus &amp; grafana images use :latest tag" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#E65100;" vertex="1" parent="1">
+      <mxGeometry x="155" y="522" width="390" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- LEGEND -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <mxCell id="legend_box" value="Legend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;strokeWidth=1.5;fontSize=12;fontStyle=1;fontColor=#333333;verticalAlign=top;arcSize=5;" vertex="1" parent="1">
+      <mxGeometry x="140" y="185" width="420" height="140" as="geometry" />
+    </mxCell>
+    <mxCell id="leg1" value="━━━  HTTP traffic (user-facing)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#2E75B6;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="155" y="215" width="380" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="leg2" value="━━━  Database connection (SQLAlchemy)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#00695C;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="155" y="237" width="380" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="leg3" value="- - -  Prometheus metrics scrape" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#B84A0A;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="155" y="259" width="380" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="leg4" value="━━━  Log shipping (Promtail → Loki → Grafana)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#4A148C;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="155" y="281" width="380" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="leg5" value="⚠️  Security issue flagged" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#B71C1C;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="155" y="303" width="380" height="18" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>

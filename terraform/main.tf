@@ -10,30 +10,24 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
-}
-
-provider "docker" {
-  host = "unix:///var/run/docker.sock"
 }
 
 provider "aws" {
   region = var.aws_region
 }
 
-# Fetch secrets from AWS Secrets Manager
-data "aws_secretsmanager_secret_version" "db_credentials" {
-  secret_id = var.aws_secret_name
-}
-
-locals {
-  # Parse JSON secret and extract values
-  db_secrets = jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string)
-
-  postgres_user     = local.db_secrets.postgres_user
-  postgres_password = local.db_secrets.postgres_password
-  postgres_db       = local.db_secrets.postgres_db
-  grafana_password  = local.db_secrets.grafana_admin_password
+# Optional: Docker provider for local development (can be disabled if not needed)
+provider "docker" {
+  host = "unix:///var/run/docker.sock"
 }
 
 # Internal Docker network for secure container communication
@@ -42,7 +36,7 @@ resource "docker_network" "datapulse_net" {
   internal = true
 }
 
-# PostgreSQL Database
+# PostgreSQL Database (Local Development)
 resource "docker_image" "postgres" {
   name         = "postgres:${var.postgres_version}"
   keep_locally = true
@@ -54,7 +48,7 @@ resource "docker_container" "postgres" {
 
   env = [
     "POSTGRES_USER=${var.postgres_user}",
-    "POSTGRES_PASSWORD=${var.postgres_password}",
+    "POSTGRES_PASSWORD=${var.postgres_password != null ? var.postgres_password : ""}",
     "POSTGRES_DB=${var.postgres_db}"
   ]
 
@@ -83,7 +77,7 @@ resource "docker_container" "postgres" {
   }
 }
 
-# FastAPI Backend
+# FastAPI Backend (Local Development)
 resource "docker_image" "fastapi" {
   name = "datapulse-backend:latest"
   build {
@@ -98,7 +92,7 @@ resource "docker_container" "fastapi" {
   image = docker_image.fastapi.image_id
 
   env = [
-    "DATABASE_URL=postgresql://${local.postgres_user}:${local.postgres_password}@datapulse-db:5432/${local.postgres_db}"
+    "DATABASE_URL=postgresql://${var.postgres_user}:${var.postgres_password != null ? var.postgres_password : ""}@datapulse-db:5432/${var.postgres_db}"
   ]
 
   # Public API - bound to 0.0.0.0 for external access
@@ -128,7 +122,7 @@ resource "docker_container" "fastapi" {
   }
 }
 
-# Prometheus
+# Prometheus (Local Development)
 resource "docker_image" "prometheus" {
   name         = "prometheus:${var.prometheus_version}"
   keep_locally = true
@@ -173,7 +167,7 @@ resource "docker_container" "prometheus" {
   tmpfs      = { "/tmp" = "rw,noexec,nosuid,size=100m" }
 }
 
-# Grafana
+# Grafana (Local Development)
 resource "docker_image" "grafana" {
   name         = "grafana:${var.grafana_version}"
   keep_locally = true
@@ -185,7 +179,7 @@ resource "docker_container" "grafana" {
 
   env = [
     "GF_SECURITY_ADMIN_USER=${var.grafana_admin_user}",
-    "GF_SECURITY_ADMIN_PASSWORD=${local.grafana_password}"
+    "GF_SECURITY_ADMIN_PASSWORD=${var.grafana_admin_password != null ? var.grafana_admin_password : ""}"
   ]
 
   # Internal only - localhost access
@@ -218,7 +212,7 @@ resource "docker_container" "grafana" {
   depends_on = [docker_container.loki]
 }
 
-# Loki (Log Aggregator)
+# Loki (Log Aggregator - Local Development)
 resource "docker_image" "loki" {
   name         = "grafana/loki:${var.loki_version}"
   keep_locally = true
@@ -260,7 +254,7 @@ resource "docker_container" "loki" {
   tmpfs      = { "/tmp" = "rw,noexec,nosuid,size=50m" }
 }
 
-# Promtail (Log Shipper)
+# Promtail (Log Shipper - Local Development)
 resource "docker_image" "promtail" {
   name         = "grafana/promtail:${var.promtail_version}"
   keep_locally = true

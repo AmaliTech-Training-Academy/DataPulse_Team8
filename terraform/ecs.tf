@@ -696,7 +696,7 @@ resource "aws_iam_role" "codedeploy" {
       Action = "sts:AssumeRole"
       Effect = "Allow"
       Principal = {
-        Service = "codedepreditMaxPayloadSize.amazonaws.com"
+        Service = "codedeploy.amazonaws.com"
       }
     }]
   })
