@@ -8,7 +8,6 @@ import logging
 from typing import Optional
 
 import pandas as pd
-from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 LOGGER = logging.getLogger(__name__)
@@ -58,8 +57,9 @@ def extract_quality_payload(source_engine: Engine, watermark: Optional[datetime]
 
     params = {"watermark": watermark}
 
-    datasets = pd.read_sql(
-        text(
+    raw_conn = source_engine.raw_connection()
+    try:
+        datasets = pd.read_sql(
             """
             SELECT
                 d.id,
@@ -73,14 +73,12 @@ def extract_quality_payload(source_engine: Engine, watermark: Optional[datetime]
                 d.status
             FROM datasets d
             ORDER BY d.id
-            """
-        ),
-        source_engine,
-        params=params,
-    )
+            """,
+            raw_conn,
+            params=params,
+        )
 
-    rules = pd.read_sql(
-        text(
+        rules = pd.read_sql(
             """
             SELECT
                 vr.id,
@@ -95,14 +93,12 @@ def extract_quality_payload(source_engine: Engine, watermark: Optional[datetime]
                 vr.created_at
             FROM validation_rules vr
             ORDER BY vr.id
-            """
-        ),
-        source_engine,
-        params=params,
-    )
+            """,
+            raw_conn,
+            params=params,
+        )
 
-    checks = pd.read_sql(
-        text(
+        checks = pd.read_sql(
             """
             SELECT
                 cr.id AS source_check_result_id,
@@ -117,16 +113,14 @@ def extract_quality_payload(source_engine: Engine, watermark: Optional[datetime]
                 UPPER(COALESCE(vr.severity, 'MEDIUM')) AS severity
             FROM check_results cr
             JOIN validation_rules vr ON vr.id = cr.rule_id
-            WHERE (:watermark IS NULL OR cr.checked_at > :watermark)
+            WHERE (%(watermark)s IS NULL OR cr.checked_at > %(watermark)s)
             ORDER BY cr.checked_at, cr.id
-            """
-        ),
-        source_engine,
-        params=params,
-    )
+            """,
+            raw_conn,
+            params=params,
+        )
 
-    scores = pd.read_sql(
-        text(
+        scores = pd.read_sql(
             """
             SELECT
                 qs.id AS source_quality_score_id,
@@ -137,13 +131,14 @@ def extract_quality_payload(source_engine: Engine, watermark: Optional[datetime]
                 COALESCE(qs.failed_rules, 0) AS failed_rules,
                 qs.checked_at
             FROM quality_scores qs
-            WHERE (:watermark IS NULL OR qs.checked_at > :watermark)
+            WHERE (%(watermark)s IS NULL OR qs.checked_at > %(watermark)s)
             ORDER BY qs.checked_at, qs.id
-            """
-        ),
-        source_engine,
-        params=params,
-    )
+            """,
+            raw_conn,
+            params=params,
+        )
+    finally:
+        raw_conn.close()
 
     max_source_timestamp = _max_checked_at(checks=checks, scores=scores)
 

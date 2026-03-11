@@ -8,7 +8,10 @@ import logging
 
 import pandas as pd
 
-from extract.extract_quality_metrics import ExtractedPayload
+try:
+    from pipeline.extract.extract_quality_metrics import ExtractedPayload
+except ImportError:
+    from extract.extract_quality_metrics import ExtractedPayload
 
 LOGGER = logging.getLogger(__name__)
 

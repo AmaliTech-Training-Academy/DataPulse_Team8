@@ -6,5 +6,10 @@
 - Generate sample data
 - Create dashboards
 
+## Key Documentation
+- `docs/analytics_schema_data_dictionary.md`
+- `docs/DE2_ETL_HANDOFF_GUIDE.md`
+- `tmp/README.md` (temporary local artifacts only)
+
 ## Setup
 pip install -r requirements.txt

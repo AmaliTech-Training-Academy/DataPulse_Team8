@@ -1,0 +1,10 @@
+services:
+  airflow-scheduler:
+    environment:
+      SOURCE_DB_URL: postgresql://admin:changeme@postgres:5432/dataplatform
+      TARGET_DB_URL: postgresql://admin:changeme@postgres:5432/dataplatform
+  airflow-webserver:
+    environment:
+      SOURCE_DB_URL: postgresql://admin:changeme@postgres:5432/dataplatform
+      TARGET_DB_URL: postgresql://admin:changeme@postgres:5432/dataplatform
+
