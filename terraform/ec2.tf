@@ -196,11 +196,12 @@ resource "aws_instance" "dev" {
 
   # User Data - Bootstrap Script
   user_data = templatefile("${path.module}/scripts/userdata.tpl", {
-    environment   = var.environment
-    ecs_cluster   = aws_ecs_cluster.main.name
-    region        = var.aws_region
-    github_repo   = "https://github.com/your-org/DataPulse.git"
-    github_branch = "develop"
+    environment    = var.environment
+    ecs_cluster    = aws_ecs_cluster.main.name
+    region         = var.aws_region
+    AWS_ACCOUNT_ID = data.aws_caller_identity.current.account_id
+    github_repo    = "https://github.com/your-org/DataPulse.git"
+    github_branch  = "develop"
   })
 
   # Root Volume

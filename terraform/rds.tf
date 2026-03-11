@@ -89,7 +89,7 @@ resource "aws_db_instance" "main" {
   # Deletion protection
   deletion_protection       = var.environment == "prod" ? true : false
   skip_final_snapshot       = var.environment == "prod" ? false : true
-  final_snapshot_identifier = var.environment == "prod" ? "datapulse-final-snapshot-${var.environment}" : ""
+  final_snapshot_identifier = var.environment == "prod" ? "datapulse-final-snapshot-prod" : null
 
   # Copy tags to snapshot
   copy_tags_to_snapshot = true

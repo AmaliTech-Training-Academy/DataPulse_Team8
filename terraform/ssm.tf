@@ -181,5 +181,21 @@ resource "aws_ssm_parameter" "grafana_url" {
 # SSM Parameter Outputs
 output "ssm_parameter_names" {
   description = "List of SSM parameter names created"
-  value       = [for param in aws_ssm_parameter.app_env : param.name]
+  value = [
+    aws_ssm_parameter.app_env.name,
+    aws_ssm_parameter.app_region.name,
+    aws_ssm_parameter.db_host.name,
+    aws_ssm_parameter.db_name.name,
+    aws_ssm_parameter.db_port.name,
+    aws_ssm_parameter.redis_endpoint.name,
+    aws_ssm_parameter.redis_port.name,
+    aws_ssm_parameter.ecs_cluster.name,
+    aws_ssm_parameter.ecs_service.name,
+    aws_ssm_parameter.alb_dns.name,
+    aws_ssm_parameter.db_credentials_arn.name,
+    aws_ssm_parameter.app_secret_arn.name,
+    aws_ssm_parameter.api_port.name,
+    aws_ssm_parameter.prometheus_url.name,
+    aws_ssm_parameter.grafana_url.name,
+  ]
 }
