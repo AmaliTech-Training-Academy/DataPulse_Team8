@@ -144,10 +144,157 @@ def _build_dim_rules(rules: pd.DataFrame, loaded_at: datetime) -> pd.DataFrame:
     ]
 
 
+def _build_fact_quality_checks(checks: pd.DataFrame, loaded_at: datetime) -> pd.DataFrame:
+    """Build fact_quality_checks payload."""
+
+    if checks.empty:
+        return pd.DataFrame(
+            columns=[
+                "source_check_result_id",
+                "dataset_id",
+                "rule_id",
+                "rule_type",
+                "severity",
+                "passed",
+                "failed_rows",
+                "total_rows",
+                "failure_rate",
+                "score",
+                "details",
+                "checked_at",
+                "date_key",
+                "etl_loaded_at",
+            ]
+        )
+
+    frame = checks.copy()
+    frame["checked_at"] = _to_datetime(frame["checked_at"]).fillna(loaded_at)
+    frame["rule_type"] = _normalize_allowed(frame["rule_type"], ALLOWED_RULE_TYPES, "NOT_NULL")
+    frame["severity"] = _normalize_allowed(frame["severity"], ALLOWED_SEVERITY, "MEDIUM")
+    frame["passed"] = frame["passed"].fillna(False).astype(bool)
+    frame["failed_rows"] = pd.to_numeric(frame["failed_rows"], errors="coerce").fillna(0).astype(int).clip(lower=0)
+    frame["total_rows"] = pd.to_numeric(frame["total_rows"], errors="coerce").fillna(0).astype(int).clip(lower=0)
+    frame["failed_rows"] = frame[["failed_rows", "total_rows"]].min(axis=1)
+    safe_total = frame["total_rows"].replace(0, pd.NA)
+    frame["failure_rate"] = (frame["failed_rows"] / safe_total).fillna(0).clip(lower=0, upper=1).round(4)
+    frame["score"] = pd.NA
+    frame["date_key"] = _to_date_key(frame["checked_at"])
+    frame["etl_loaded_at"] = loaded_at
+    return frame[
+        [
+            "source_check_result_id",
+            "dataset_id",
+            "rule_id",
+            "rule_type",
+            "severity",
+            "passed",
+            "failed_rows",
+            "total_rows",
+            "failure_rate",
+            "score",
+            "details",
+            "checked_at",
+            "date_key",
+            "etl_loaded_at",
+        ]
+    ]
+
+
+def _build_fact_quality_scores(scores: pd.DataFrame, loaded_at: datetime) -> pd.DataFrame:
+    """Build fact_quality_scores payload."""
+
+    if scores.empty:
+        return pd.DataFrame(
+            columns=[
+                "source_quality_score_id",
+                "dataset_id",
+                "score",
+                "total_rules",
+                "passed_rules",
+                "failed_rules",
+                "checked_at",
+                "date_key",
+                "etl_loaded_at",
+            ]
+        )
+
+    frame = scores.copy()
+    frame["checked_at"] = _to_datetime(frame["checked_at"]).fillna(loaded_at)
+    frame["score"] = pd.to_numeric(frame["score"], errors="coerce").fillna(0).clip(lower=0, upper=100).round(2)
+    frame["total_rules"] = pd.to_numeric(frame["total_rules"], errors="coerce").fillna(0).astype(int).clip(lower=0)
+    frame["passed_rules"] = pd.to_numeric(frame["passed_rules"], errors="coerce").fillna(0).astype(int).clip(lower=0)
+    frame["failed_rules"] = pd.to_numeric(frame["failed_rules"], errors="coerce").fillna(0).astype(int).clip(lower=0)
+    invalid_mask = frame["passed_rules"] + frame["failed_rules"] != frame["total_rules"]
+    frame.loc[invalid_mask, "failed_rules"] = (frame["total_rules"] - frame["passed_rules"]).clip(lower=0)
+    frame["date_key"] = _to_date_key(frame["checked_at"])
+    frame["etl_loaded_at"] = loaded_at
+    return frame[
+        [
+            "source_quality_score_id",
+            "dataset_id",
+            "score",
+            "total_rules",
+            "passed_rules",
+            "failed_rules",
+            "checked_at",
+            "date_key",
+            "etl_loaded_at",
+        ]
+    ]
+
+
+def _build_dim_date(fact_checks: pd.DataFrame, fact_scores: pd.DataFrame) -> pd.DataFrame:
+    """Build dim_date payload from fact date keys present in the run."""
+
+    keys = pd.Series(dtype="Int64")
+    if not fact_checks.empty:
+        keys = pd.concat([keys, fact_checks["date_key"]], ignore_index=True)
+    if not fact_scores.empty:
+        keys = pd.concat([keys, fact_scores["date_key"]], ignore_index=True)
+
+    keys = keys.dropna().astype(int).drop_duplicates()
+    if keys.empty:
+        return pd.DataFrame(
+            columns=[
+                "date_key",
+                "full_date",
+                "day_of_week",
+                "day_of_month",
+                "day_of_year",
+                "week_of_year",
+                "month",
+                "month_name",
+                "quarter",
+                "year",
+                "is_weekend",
+            ]
+        )
+
+    full_date = pd.to_datetime(keys.astype(str), format="%Y%m%d", errors="coerce")
+    frame = pd.DataFrame({"date_key": keys.values, "full_date": full_date})
+    frame = frame.dropna(subset=["full_date"]).sort_values("date_key")
+    frame["day_of_week"] = frame["full_date"].dt.isocalendar().day.astype(int)
+    frame["day_of_month"] = frame["full_date"].dt.day.astype(int)
+    frame["day_of_year"] = frame["full_date"].dt.dayofyear.astype(int)
+    frame["week_of_year"] = frame["full_date"].dt.isocalendar().week.astype(int)
+    frame["month"] = frame["full_date"].dt.month.astype(int)
+    frame["month_name"] = frame["full_date"].dt.strftime("%B")
+    frame["quarter"] = frame["full_date"].dt.quarter.astype(int)
+    frame["year"] = frame["full_date"].dt.year.astype(int)
+    frame["is_weekend"] = frame["day_of_week"].isin([6, 7])
+    frame["full_date"] = frame["full_date"].dt.date
+    return frame
+
+
 def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload:
     """Transform extracted source data into analytics-ready dimensions and facts."""
 
     loaded_at = datetime.now(timezone.utc)
+    dim_datasets = _build_dim_datasets(extracted.datasets, loaded_at)
+    dim_rules = _build_dim_rules(extracted.rules, loaded_at)
+    fact_quality_checks = _build_fact_quality_checks(extracted.checks, loaded_at)
+    fact_quality_scores = _build_fact_quality_scores(extracted.scores, loaded_at)
+    dim_date = _build_dim_date(fact_quality_checks, fact_quality_scores)
     rows_extracted = (
         len(extracted.datasets)
         + len(extracted.rules)
@@ -155,17 +302,24 @@ def transform_quality_payload(extracted: ExtractedPayload) -> TransformedPayload
         + len(extracted.scores)
     )
     LOGGER.info(
-        "Transformation (core dims) complete. dim_datasets=%s dim_rules=%s rows_extracted=%s",
-        len(extracted.datasets),
-        len(extracted.rules),
+        (
+            "Transformation complete. dim_datasets=%s dim_rules=%s "
+            "fact_checks=%s fact_scores=%s dim_date=%s rows_extracted=%s target_watermark=%s"
+        ),
+        len(dim_datasets),
+        len(dim_rules),
+        len(fact_quality_checks),
+        len(fact_quality_scores),
+        len(dim_date),
         rows_extracted,
+        extracted.max_source_timestamp,
     )
     return TransformedPayload(
-        dim_datasets=_build_dim_datasets(extracted.datasets, loaded_at),
-        dim_rules=_build_dim_rules(extracted.rules, loaded_at),
-        dim_date=pd.DataFrame(),
-        fact_quality_checks=extracted.checks.copy(),
-        fact_quality_scores=extracted.scores.copy(),
+        dim_datasets=dim_datasets,
+        dim_rules=dim_rules,
+        dim_date=dim_date,
+        fact_quality_checks=fact_quality_checks,
+        fact_quality_scores=fact_quality_scores,
         target_watermark=extracted.max_source_timestamp,
         rows_extracted=rows_extracted,
     )
