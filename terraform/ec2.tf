@@ -182,7 +182,7 @@ resource "aws_secretsmanager_secret_version" "ec2_ssh_key" {
 # EC2 Instance - Development
 resource "aws_instance" "dev" {
   ami           = data.aws_ami.amazon_linux_2.id
-  instance_type = "t3.medium"
+  instance_type = var.environment == "prod" ? "t3.small" : "t3.medium"
   subnet_id     = aws_subnet.public_1.id
 
   # Security Group
@@ -217,6 +217,63 @@ resource "aws_instance" "dev" {
     Environment = var.environment
     Project     = "DataPulse"
     Role        = "Development"
+  }
+
+  # Lifecycle
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# EC2 Instance - Production Monitoring (Prometheus, Grafana, Loki)
+resource "aws_instance" "monitoring" {
+  count         = var.environment == "prod" ? 1 : 0
+  ami           = data.aws_ami.amazon_linux_2.id
+  instance_type = "t3.small"
+  subnet_id     = aws_subnet.public_1.id
+
+  # Security Group
+  vpc_security_group_ids = [aws_security_group.ec2_dev.id]
+
+  # Key Pair
+  key_name = aws_key_pair.ec2_dev.key_name
+
+  # IAM Instance Profile
+  iam_instance_profile = aws_iam_instance_profile.ec2_dev.name
+
+  # User Data - Monitoring Stack
+  user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              
+              # Install Docker
+              amazon-linux-extras install docker -y
+              systemctl start docker
+              systemctl enable docker
+              
+              # Install Docker Compose
+              curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              chmod +x /usr/local/bin/docker-compose
+              
+              # Pull and run monitoring stack
+              docker run -d --name prometheus -p 9090:9090 prom/prometheus:latest
+              docker run -d --name grafana -p 3000:3000 grafana/grafana:latest
+              docker run -d --name loki -p 3100:3100 grafana/loki:latest
+              EOF
+
+  # Root Volume
+  root_block_device {
+    volume_size = 50
+    volume_type = "gp3"
+    encrypted   = true
+  }
+
+  # Tags
+  tags = {
+    Name        = "datapulse-monitoring-${var.environment}"
+    Environment = var.environment
+    Project     = "DataPulse"
+    Role        = "Monitoring"
   }
 
   # Lifecycle
@@ -260,4 +317,15 @@ output "ec2_instance_id" {
 output "ec2_private_ip" {
   description = "EC2 private IP address"
   value       = aws_instance.dev.private_ip
+}
+
+# Monitoring EC2 Outputs (Production only)
+output "monitoring_ec2_public_ip" {
+  description = "Monitoring EC2 public IP address (prod only)"
+  value       = var.environment == "prod" ? aws_instance.monitoring[0].public_ip : null
+}
+
+output "monitoring_ec2_public_dns" {
+  description = "Monitoring EC2 public DNS (prod only)"
+  value       = var.environment == "prod" ? aws_instance.monitoring[0].public_dns : null
 }
