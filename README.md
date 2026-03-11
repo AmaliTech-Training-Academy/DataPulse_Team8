@@ -159,5 +159,5 @@ Current Status:
 Next Steps:
 Open http://localhost:3000 in your browser
 Click the login form (it should show the auth overlay)
-Use credentials: qa_user@datapulse.com / qapassword12 or Create a new Account 
+Use credentials: qa_user@datapulse.com / qapassword12 or Create a new Account
 You should be able to access the full DataPulse dashboard!

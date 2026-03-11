@@ -1,7 +1,15 @@
 """SQLAlchemy ORM for analytics tables."""
 
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Date
-from sqlalchemy import ForeignKey, create_engine
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+)
 from sqlalchemy.orm import declarative_base
 
 AnalyticsBase = declarative_base()
