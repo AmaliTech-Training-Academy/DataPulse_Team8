@@ -42,14 +42,44 @@ def load_quality_payload(
     dim_dataset_records = _to_records(transformed.dim_datasets)
     dim_rule_records = _to_records(transformed.dim_rules)
     dim_date_records = _to_records(transformed.dim_date)
+    checks_frame = transformed.fact_quality_checks.copy()
+    scores_frame = transformed.fact_quality_scores.copy()
+    if not checks_frame.empty:
+        checks_frame["etl_batch_id"] = batch_id
+    if not scores_frame.empty:
+        scores_frame["etl_batch_id"] = batch_id
+    fact_check_records = _to_records(checks_frame)
+    fact_score_records = _to_records(scores_frame)
 
     LOGGER.info(
-        "Loading dimensions batch_id=%s dim_datasets=%s dim_rules=%s dim_date=%s",
+        (
+            "Loading payload batch_id=%s dim_datasets=%s dim_rules=%s "
+            "dim_date=%s fact_checks=%s fact_scores=%s"
+        ),
         batch_id,
         len(dim_dataset_records),
         len(dim_rule_records),
         len(dim_date_records),
+        len(fact_check_records),
+        len(fact_score_records),
     )
+
+    if not (
+        dim_dataset_records
+        or dim_rule_records
+        or dim_date_records
+        or fact_check_records
+        or fact_score_records
+    ):
+        LOGGER.info("No rows in payload for batch_id=%s; skipping SQL writes.", batch_id)
+        return {
+            "rows_loaded": 0,
+            "dim_datasets_upserted": 0,
+            "dim_rules_upserted": 0,
+            "dim_date_insert_attempted": 0,
+            "fact_quality_checks_insert_attempted": 0,
+            "fact_quality_scores_insert_attempted": 0,
+        }
 
     with target_engine.begin() as conn:
         if dim_dataset_records:
@@ -129,13 +159,51 @@ def load_quality_payload(
                 dim_date_records,
             )
 
+        if fact_check_records:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO fact_quality_checks (
+                        source_check_result_id, dataset_id, rule_id, rule_type, severity,
+                        passed, failed_rows, total_rows, failure_rate, score, details,
+                        checked_at, date_key, etl_batch_id, etl_loaded_at
+                    )
+                    VALUES (
+                        :source_check_result_id, :dataset_id, :rule_id, :rule_type, :severity,
+                        :passed, :failed_rows, :total_rows, :failure_rate, :score, :details,
+                        :checked_at, :date_key, :etl_batch_id, :etl_loaded_at
+                    )
+                    ON CONFLICT (source_check_result_id) DO NOTHING
+                    """
+                ),
+                fact_check_records,
+            )
+
+        if fact_score_records:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO fact_quality_scores (
+                        source_quality_score_id, dataset_id, score, total_rules, passed_rules,
+                        failed_rules, checked_at, date_key, etl_batch_id, etl_loaded_at
+                    )
+                    VALUES (
+                        :source_quality_score_id, :dataset_id, :score, :total_rules, :passed_rules,
+                        :failed_rules, :checked_at, :date_key, :etl_batch_id, :etl_loaded_at
+                    )
+                    ON CONFLICT (source_quality_score_id) DO NOTHING
+                    """
+                ),
+                fact_score_records,
+            )
+
     loaded = {
-        "rows_loaded": 0,
+        "rows_loaded": len(fact_check_records) + len(fact_score_records),
         "dim_datasets_upserted": len(dim_dataset_records),
         "dim_rules_upserted": len(dim_rule_records),
         "dim_date_insert_attempted": len(dim_date_records),
-        "fact_quality_checks_insert_attempted": 0,
-        "fact_quality_scores_insert_attempted": 0,
+        "fact_quality_checks_insert_attempted": len(fact_check_records),
+        "fact_quality_scores_insert_attempted": len(fact_score_records),
     }
-    LOGGER.info("Dimension load complete: %s", loaded)
+    LOGGER.info("Load complete for batch_id=%s: %s", batch_id, loaded)
     return loaded
