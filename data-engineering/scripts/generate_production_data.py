@@ -125,14 +125,14 @@ def generate_production_dataset(total_rows, error_rate, output_path, workers, ch
 
 def main():
     parser = argparse.ArgumentParser(description="DataPulse Production Scale CSV Generator")
-    parser.add_argument("--rows", type=int, help="Total number of rows to generate (e.g., 1000000)")
+    parser.add_argument("--rows", type=int, help="Total number of rows to generate (e.g., 2000)")
     parser.add_argument("--error-rate", type=float, default=0.1, help="Percentage of rows with errors (0.0 to 1.0)")
     parser.add_argument("--output", type=str, help="Absolute or relative path to output CSV file")
     parser.add_argument("--preset", action="store_true", help="Generate 3 massive preset files (good, mixed, messy) in a numbered folder.")
     
     # Performance tuning parameters
     parser.add_argument("--workers", type=int, default=mp.cpu_count(), help="Number of CPU cores to use (default: max)")
-    parser.add_argument("--chunk-size", type=int, default=10000, help="Rows per batch. Do not change unless tuning RAM.")
+    parser.add_argument("--chunk-size", type=int, default=2000, help="Rows per batch. Do not change unless tuning RAM.")
     
     args = parser.parse_args()
 
@@ -140,12 +140,12 @@ def main():
     try:
         if args.preset:
             # Generate 1,000,000 rows per file for the production preset if not specified
-            preset_rows = 1000000 if not args.rows else args.rows
+            preset_rows = 2000 if not args.rows else args.rows
             print(f"Generating massive production presets ({preset_rows:,} rows each)...")
             
             # Resolve data-engineering/sample_data directory correctly
             d = os.path.dirname(os.path.abspath(__file__))
-            sample_data_dir = os.path.join(os.path.dirname(os.path.dirname(d)), "sample_data")
+            sample_data_dir = os.path.join(os.path.dirname(d), "sample_data")
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             set_folder_name = f"production_set_{timestamp}"
