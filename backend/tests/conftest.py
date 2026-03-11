@@ -1,12 +1,16 @@
 """Test fixtures for pytest."""
 
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import os
 
-from app.database import Base, get_db
-from app.main import app
+os.environ["APP_ENV"] = "test"
+
+import pytest  # noqa: E402
+from app.database import Base, get_db  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
+
+from app.main import app  # noqa: E402
 
 SQLALCHEMY_TEST_URL = "sqlite:///./test.db"
 engine = create_engine(SQLALCHEMY_TEST_URL, connect_args={"check_same_thread": False})
@@ -29,6 +33,13 @@ def setup_db():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def clear_rate_limits():
+    from app.routers.checks import request_counts
+
+    request_counts.clear()
 
 
 @pytest.fixture

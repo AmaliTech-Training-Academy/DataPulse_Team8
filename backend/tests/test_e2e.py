@@ -160,6 +160,20 @@ class TestE2EHealthAndSmoke:
         data = client.get("/").json()
         assert data["name"] == "DataPulse"
 
+    def test_get_auth_headers_already_registered(self, client):
+        """Covers lines where test helper get_auth_headers handles already registered users."""
+        email = "already_reg@test.com"
+        client.post(
+            "/api/auth/register",
+            json={
+                "email": email,
+                "password": "Password123",
+                "full_name": "Already Reg",
+            },
+        )
+        headers = get_auth_headers(client, email)
+        assert "Authorization" in headers
+
     def test_trends_populated_after_checks(self, client):
         headers = get_auth_headers(client, "e2e_trends@test.com")
         ds = client.post(
