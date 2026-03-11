@@ -9,7 +9,10 @@ import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
-from transform.transform_quality_metrics import TransformedPayload
+try:
+    from pipeline.transform.transform_quality_metrics import TransformedPayload
+except ImportError:
+    from transform.transform_quality_metrics import TransformedPayload
 
 LOGGER = logging.getLogger(__name__)
 
