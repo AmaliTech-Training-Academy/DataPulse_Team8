@@ -87,7 +87,7 @@ resource "docker_container" "postgres" {
 resource "docker_image" "fastapi" {
   name = "datapulse-backend:latest"
   build {
-    context    = pathexpand("~/Amalitech/DataPulse_Team8/backend")
+    context    = "${path.module}/../backend"
     dockerfile = "Dockerfile"
   }
   keep_locally = true
@@ -153,7 +153,7 @@ resource "docker_container" "prometheus" {
   }
 
   volumes {
-    host_path      = pathexpand("~/Amalitech/DataPulse_Team8/terraform/prometheus.yml")
+    host_path      = "${path.module}/prometheus.yml"
     container_path = "/etc/prometheus/prometheus.yml"
   }
 
@@ -240,7 +240,7 @@ resource "docker_container" "loki" {
   }
 
   volumes {
-    host_path      = pathexpand("~/Amalitech/DataPulse_Team8/monitoring/loki-config.yml")
+    host_path      = "${path.module}/../monitoring/loki-config.yml"
     container_path = "/etc/loki/loki-config.yml"
   }
 
@@ -281,7 +281,7 @@ resource "docker_container" "promtail" {
   }
 
   volumes {
-    host_path      = pathexpand("~/Amalitech/DataPulse_Team8/monitoring/promtail-config.yml")
+    host_path      = "${path.module}/../monitoring/promtail-config.yml"
     container_path = "/etc/promtail/promtail-config.yml"
   }
 

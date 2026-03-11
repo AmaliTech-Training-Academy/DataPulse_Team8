@@ -107,7 +107,6 @@ services:
       - loki_data:/loki
     command:
       - -config.file=/etc/loki/loki-config.yml
-    user: "root"
 
   # Promtail for Log Shipping
   promtail:
