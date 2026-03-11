@@ -410,10 +410,11 @@ resource "aws_lb" "main" {
 
 # Target Groups for Blue-Green Deployment
 resource "aws_lb_target_group" "backend_blue" {
-  name     = "datapulse-backend-blue-${var.environment}"
-  port     = 8000
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  name        = "datapulse-backend-blue-${var.environment}"
+  port        = 8000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip"
 
   health_check {
     enabled             = true
@@ -434,10 +435,11 @@ resource "aws_lb_target_group" "backend_blue" {
 }
 
 resource "aws_lb_target_group" "backend_green" {
-  name     = "datapulse-backend-green-${var.environment}"
-  port     = 8000
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  name        = "datapulse-backend-green-${var.environment}"
+  port        = 8000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip"
 
   health_check {
     enabled             = true

@@ -124,7 +124,7 @@ resource "docker_container" "fastapi" {
 
 # Prometheus (Local Development)
 resource "docker_image" "prometheus" {
-  name         = "prometheus:${var.prometheus_version}"
+  name         = "prom/prometheus:${var.prometheus_version}"
   keep_locally = true
 }
 
@@ -169,7 +169,7 @@ resource "docker_container" "prometheus" {
 
 # Grafana (Local Development)
 resource "docker_image" "grafana" {
-  name         = "grafana:${var.grafana_version}"
+  name         = "grafana/grafana:${var.grafana_version}"
   keep_locally = true
 }
 
