@@ -1,0 +1,75 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "name=prod" >> $GITHUB_OUTPUT
+            echo "cluster=datapulse-prod" >> $GITHUB_OUTPUT
+          else
+            echo "name=dev" >> $GITHUB_OUTPUT
+            echo "cluster=datapulse-dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/datapulse-backend:${{ github.sha }} ./backend
+          docker build -t $ECR_REGISTRY/datapulse-backend:latest ./backend
+          docker push $ECR_REGISTRY/datapulse-backend:${{ github.sha }}
+          docker push $ECR_REGISTRY/datapulse-backend:latest
+
+      - name: Deploy to ECS
+        run: |
+          # Get task definition and update image
+          TASK_DEF=$(aws ecs register-task-definition \
+            --family datapulse-backend \
+            --network-mode awsvpc \
+            --requires-compatibilities FARGATE \
+            --cpu 512 \
+            --memory 1024 \
+            --execution-role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/datapulse-ecs-task-execution-${{ steps.env.outputs.name }} \
+            --task-role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/datapulse-ecs-task-${{ steps.env.outputs.name }} \
+            --container-definitions '[{"name":"backend","image":"${{ steps.login-ecr.outputs.registry }}/datapulse-backend:${{ github.sha }}","essential":true,"portMappings":[{"containerPort":8000,"hostPort":8000,"protocol":"tcp"}]}]' \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          # Deploy to blue service
+          aws ecs update-service \
+            --cluster ${{ steps.env.outputs.cluster }} \
+            --service datapulse-backend-blue-${{ steps.env.outputs.name }} \
+            --task-definition $TASK_DEF \
+            --desired-count 2 \
+            --force-new-deployment
+
+          aws ecs wait services-stable \
+            --cluster ${{ steps.env.outputs.cluster }} \
+            --services datapulse-backend-blue-${{ steps.env.outputs.name }}
+
+          echo "Deployed successfully to ${{ steps.env.outputs.name }} environment"
