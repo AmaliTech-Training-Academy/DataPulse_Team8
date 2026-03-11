@@ -561,12 +561,6 @@ resource "aws_ecs_service" "backend_blue" {
     type = "CODE_DEPLOY"
   }
 
-  # Blue-Green deployment configuration
-  deployment_circuit_breaker {
-    enable   = true
-    rollback = true
-  }
-
   depends_on = [aws_lb_listener.frontend]
 
   tags = {
@@ -597,11 +591,6 @@ resource "aws_ecs_service" "backend_green" {
 
   deployment_controller {
     type = "CODE_DEPLOY"
-  }
-
-  deployment_circuit_breaker {
-    enable   = true
-    rollback = true
   }
 
   tags = {

@@ -55,7 +55,7 @@ resource "aws_security_group" "rds" {
 resource "aws_db_instance" "main" {
   identifier     = "datapulse-postgres-${var.environment}"
   engine         = "postgres"
-  engine_version = "15.6"
+  engine_version = "15.5"
   instance_class = var.environment == "prod" ? "db.t3.medium" : "db.t3.micro"
 
   # Database name and credentials
