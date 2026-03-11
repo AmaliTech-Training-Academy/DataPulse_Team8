@@ -5,6 +5,11 @@ on:
     branches: [main, develop]
   workflow_dispatch:
 
+env:
+  # OIDC Role ARN - replace with your actual role ARN from Terraform output
+  # Format: arn:aws:iam::ACCOUNT_ID:role/github-actions-deploy-ENVIRONMENT
+  GITHUB_OIDC_ROLE: ${{ secrets.GITHUB_OIDC_ROLE_ARN }}
+
 jobs:
   deploy:
     name: Build and Deploy
@@ -21,18 +26,21 @@ jobs:
             echo "name=prod" >> $GITHUB_OUTPUT
             echo "cluster=datapulse-prod" >> $GITHUB_OUTPUT
           elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
-            echo "name=staging" >> $GITHUB_OUTPUT
-            echo "cluster=datapulse-staging" >> $GITHUB_OUTPUT
+            echo "name=dev" >> $GITHUB_OUTPUT
+            echo "cluster=datapulse-dev" >> $GITHUB_OUTPUT
           else
             echo "name=dev" >> $GITHUB_OUTPUT
             echo "cluster=datapulse-dev" >> $GITHUB_OUTPUT
           fi
 
+      # Note: Cluster name should match Terraform: datapulse-${var.environment}
+
+      # OIDC: Authenticate to AWS using OIDC (no credentials needed)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.GITHUB_OIDC_ROLE }}
+          role-session-name: GitHubActions-${{ github.run_id }}
           aws-region: ${{ secrets.AWS_REGION || 'eu-west-1' }}
 
       - name: Login to Amazon ECR

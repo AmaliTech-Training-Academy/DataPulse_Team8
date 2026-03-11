@@ -124,3 +124,43 @@ output "public_subnet_ids" {
   description = "Public subnet IDs"
   value       = [aws_subnet.public_1.id, aws_subnet.public_2.id]
 }
+
+# =====================================================
+# GitHub OIDC Outputs
+# =====================================================
+
+output "github_oidc_provider_arn" {
+  description = "ARN of the GitHub OIDC Provider - needed for GitHub repository settings"
+  value       = aws_iam_openid_connect_provider.github.arn
+}
+
+output "github_actions_deploy_role_arn" {
+  description = "ARN of the IAM role for GitHub Actions deployment - add this as GITHUB_OIDC_ROLE_ARN secret"
+  value       = aws_iam_role.github_actions_deploy.arn
+}
+
+output "github_actions_deploy_role_name" {
+  description = "Name of the IAM role for GitHub Actions deployment"
+  value       = aws_iam_role.github_actions_deploy.name
+}
+
+output "github_actions_readonly_role_arn" {
+  description = "ARN of the IAM role for GitHub Actions read-only access"
+  value       = aws_iam_role.github_actions_readonly.arn
+}
+
+output "github_oidc_setup_instructions" {
+  description = "Instructions for setting up GitHub OIDC"
+  value       = <<-EOT
+    After running 'terraform apply', do the following:
+    
+    1. Go to GitHub Repository → Settings → Secrets and variables → Actions
+    2. Add new repository secret:
+       - Name: GITHUB_OIDC_ROLE_ARN
+       - Value: ${aws_iam_role.github_actions_deploy.arn}
+    
+    3. (Optional) Remove old AWS credentials secrets:
+       - AWS_ACCESS_KEY_ID
+       - AWS_SECRET_ACCESS_KEY
+  EOT
+}
