@@ -1,16 +1,18 @@
 """Reports router - IMPLEMENTED."""
 
 import csv
+from datetime import datetime, timedelta, timezone
 from io import StringIO
 from typing import Optional
-from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+
 from app.database import get_db
-from app.schemas.report import QualityReport, QualityTrendResponse
 from app.models.dataset import Dataset
 from app.models.user import User
+from app.schemas.report import QualityReport, QualityTrendResponse
 from app.services import report_service
 from app.utils.dependencies import get_current_user
 
@@ -23,7 +25,7 @@ def get_quality_trends(
     days: int = Query(30, ge=1, le=365, description="Days to look back"),
     interval: str = Query("day", description="Aggregation interval (day, week, month)"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get quality score trends over time."""
     start_date = datetime.now(timezone.utc) - timedelta(days=days)
@@ -45,15 +47,17 @@ def get_dataset_report(
     dataset_id: int,
     format: Optional[str] = Query("json", description="format json or csv"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get a full quality report for a dataset."""
     dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
-        
+
     if dataset.uploaded_by != current_user.id and not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Not authorized to view this report")
+        raise HTTPException(
+            status_code=403, detail="Not authorized to view this report"
+        )
 
     report = report_service.generate_report(dataset_id, db)
     if not report:

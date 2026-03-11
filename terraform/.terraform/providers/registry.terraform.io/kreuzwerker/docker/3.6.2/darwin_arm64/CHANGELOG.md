@@ -817,4 +817,3 @@
 * Merge pull request [#3761](https://github.com/kreuzwerker/terraform-provider-docker/issues/3761) from ryane/f-provider-docker-improvements
 * Merge pull request [#3383](https://github.com/kreuzwerker/terraform-provider-docker/issues/3383) from apparentlymart/docker-container-command-docs
 * Merge pull request [#1564](https://github.com/kreuzwerker/terraform-provider-docker/issues/1564) from nickryand/docker_links
-

@@ -1,8 +1,10 @@
 """Authentication service - IMPLEMENTED."""
 
-import bcrypt
 import hashlib
+
+import bcrypt
 from sqlalchemy.orm import Session
+
 from app.models.user import User
 from app.schemas.auth import UserCreate
 
@@ -13,9 +15,13 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    if hashed.startswith("$2b$") or hashed.startswith("$2y$") or hashed.startswith("$2a$"):
+    if (
+        hashed.startswith("$2b$")
+        or hashed.startswith("$2y$")
+        or hashed.startswith("$2a$")
+    ):
         return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
-    
+
     # Fallback to legacy SHA-256
     legacy_hash = hashlib.sha256(plain.encode("utf-8")).hexdigest()
     return legacy_hash == hashed
@@ -42,11 +48,13 @@ def authenticate_user(db: Session, email: str, password: str):
     user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(password, user.hashed_password):
         return None
-    
+
     # On-the-fly migration to bcrypt if using legacy hash
-    if not (user.hashed_password.startswith("$2b$") or 
-            user.hashed_password.startswith("$2y$") or 
-            user.hashed_password.startswith("$2a$")):
+    if not (
+        user.hashed_password.startswith("$2b$")
+        or user.hashed_password.startswith("$2y$")
+        or user.hashed_password.startswith("$2a$")
+    ):
         user.hashed_password = hash_password(password)
         db.commit()
 
