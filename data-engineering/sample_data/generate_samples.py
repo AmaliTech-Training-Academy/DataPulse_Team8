@@ -14,13 +14,29 @@ import argparse
 import csv
 import os
 import random
+import logging
+import sys
 from datetime import datetime, timedelta
+
+# Configure Logging
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE = os.path.join(LOG_DIR, "sample_generator.log")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 try:
     from faker import Faker
 except ImportError:
-    print("Error: The 'faker' library is required to generate realistic data.")
-    print("Please run: pip install faker")
+    logger.error("The 'faker' library is required to generate realistic data. Please run: pip install faker")
     exit(1)
 
 # Initialize Faker
@@ -91,8 +107,8 @@ def generate_robust_dataset(num_rows=1000, error_rate=0.1, output_path="generate
         writer.writerow(["id", "name", "email", "age", "department", "salary", "hire_date"])
         writer.writerows(rows)
         
-    print(f"✓ Generated {num_rows} rows mapped to '{output_path}'")
-    print(f"  └─ Expected Error Rate: {error_rate * 100:.1f}% (~{num_errors} rows with injected errors)")
+    logger.info(f"✓ Generated {num_rows} rows mapped to '{output_path}'")
+    logger.info(f"  └─ Expected Error Rate: {error_rate * 100:.1f}% (~{num_errors} rows with injected errors)")
 
 
 def main():
@@ -108,7 +124,7 @@ def main():
     d = os.path.dirname(os.path.abspath(__file__))
 
     if args.preset:
-        print("Generating standard presets...")
+        logger.info("Generating standard presets...")
         
         # New folder structure: sample_data/generated_sample_data/sample_set_TIMESTAMP/
         sample_data_dir = d
@@ -118,7 +134,7 @@ def main():
         set_dir = os.path.join(generated_root, f"sample_set_{timestamp}")
         os.makedirs(set_dir, exist_ok=True)
         
-        print(f"Creating files in directory: {set_dir}/")
+        logger.info(f"Creating files in directory: {set_dir}/")
         
         # 95% clean data -> 5% error rate  → expected score ~95
         generate_robust_dataset(1000, 0.05, os.path.join(set_dir, "clean_data.csv"))
@@ -143,7 +159,7 @@ if __name__ == "__main__":
     output_dir = os.path.join(base_output_dir, f"sample_set_{timestamp}")
     os.makedirs(output_dir, exist_ok=True)
     
-    print(f"Generating samples in: {output_dir}/")
+    logger.info(f"Generating samples in: {output_dir}/")
     generate_dataset(100, 0.0, os.path.join(output_dir, "large_clean.csv"))
     generate_dataset(100, 0.15, os.path.join(output_dir, "large_dirty.csv"))
     generate_dataset(200, 0.08, os.path.join(output_dir, "large_mixed.csv"))
