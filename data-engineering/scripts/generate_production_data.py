@@ -9,15 +9,30 @@ import os
 import random
 import sys
 import multiprocessing as mp
+import logging
 from datetime import datetime
 from functools import partial
+
+# Configure Logging
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE = os.path.join(LOG_DIR, "production_generator.log")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 try:
     from faker import Faker
     from tqdm import tqdm
 except ImportError:
-    print("Error: Required libraries missing.")
-    print("Please run: pip install faker tqdm")
+    logger.error("Required libraries missing. Please run: pip install faker tqdm")
     sys.exit(1)
 
 # Constants
@@ -91,10 +106,10 @@ def generate_production_dataset(total_rows, error_rate, output_path, workers, ch
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
 
-    print(f"Initializing generation of {total_rows:,} rows...")
-    print(f"Output       : {output_path}")
-    print(f"Workers      : {workers}")
-    print(f"Target Error : {error_rate * 100:.1f}%")
+    logger.info(f"Initializing generation of {total_rows:,} rows...")
+    logger.info(f"Output       : {output_path}")
+    logger.info(f"Workers      : {workers}")
+    logger.info(f"Target Error : {error_rate * 100:.1f}%")
     
     # Prepare work batches
     batches = []
@@ -119,20 +134,20 @@ def generate_production_dataset(total_rows, error_rate, output_path, workers, ch
                     writer.writerows(batch_result)
                     pbar.update(len(batch_result))
 
-    print(f"\n✓ Successfully generated {total_rows:,} rows.")
+    logger.info(f"✓ Successfully generated {total_rows:,} rows.")
     file_size_mb = os.path.getsize(output_path) / (1024 * 1024)
-    print(f"✓ Final File Size: {file_size_mb:.2f} MB")
+    logger.info(f"✓ Final File Size: {file_size_mb:.2f} MB")
 
 def main():
     parser = argparse.ArgumentParser(description="DataPulse Production Scale CSV Generator")
-    parser.add_argument("--rows", type=int, help="Total number of rows to generate (e.g., 1000000)")
+    parser.add_argument("--rows", type=int, help="Total number of rows to generate (e.g., 2000)")
     parser.add_argument("--error-rate", type=float, default=0.1, help="Percentage of rows with errors (0.0 to 1.0)")
     parser.add_argument("--output", type=str, help="Absolute or relative path to output CSV file")
     parser.add_argument("--preset", action="store_true", help="Generate 3 massive preset files (good, mixed, messy) in a numbered folder.")
     
     # Performance tuning parameters
     parser.add_argument("--workers", type=int, default=mp.cpu_count(), help="Number of CPU cores to use (default: max)")
-    parser.add_argument("--chunk-size", type=int, default=10000, help="Rows per batch. Do not change unless tuning RAM.")
+    parser.add_argument("--chunk-size", type=int, default=2000, help="Rows per batch. Do not change unless tuning RAM.")
     
     args = parser.parse_args()
 
@@ -140,19 +155,19 @@ def main():
     try:
         if args.preset:
             # Generate 1,000,000 rows per file for the production preset if not specified
-            preset_rows = 1000000 if not args.rows else args.rows
-            print(f"Generating massive production presets ({preset_rows:,} rows each)...")
+            preset_rows = 2000 if not args.rows else args.rows
+            logger.info(f"Generating massive production presets ({preset_rows:,} rows each)...")
             
             # Resolve data-engineering/sample_data directory correctly
             d = os.path.dirname(os.path.abspath(__file__))
-            sample_data_dir = os.path.join(os.path.dirname(os.path.dirname(d)), "sample_data")
+            sample_data_dir = os.path.join(os.path.dirname(d), "sample_data")
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             set_folder_name = f"production_set_{timestamp}"
             set_dir = os.path.join(sample_data_dir, set_folder_name)
             os.makedirs(set_dir, exist_ok=True)
             
-            print(f"Creating massive files in: {set_dir}/")
+            logger.info(f"Creating massive files in: {set_dir}/")
             generate_production_dataset(preset_rows, 0.05, os.path.join(set_dir, "good_data.csv"), args.workers, args.chunk_size)
             generate_production_dataset(preset_rows, 0.30, os.path.join(set_dir, "mixed_data.csv"), args.workers, args.chunk_size)
             generate_production_dataset(preset_rows, 0.60, os.path.join(set_dir, "messy_data.csv"), args.workers, args.chunk_size)
@@ -163,10 +178,10 @@ def main():
                 
             # Safety checks
             if args.rows <= 0:
-                print("Error: --rows must be greater than 0")
+                logger.error("Error: --rows must be greater than 0")
                 sys.exit(1)
             if not (0.0 <= args.error_rate <= 1.0):
-                print("Error: --error-rate must be between 0.0 and 1.0")
+                logger.error("Error: --error-rate must be between 0.0 and 1.0")
                 sys.exit(1)
 
             generate_production_dataset(
@@ -177,14 +192,14 @@ def main():
                 args.chunk_size
             )
     except KeyboardInterrupt:
-        print("\n⚠ Generation cancelled by user.")
+        logger.warning("Generation cancelled by user.")
         sys.exit(1)
     except Exception as e:
-        print(f"\n✘ Fatal error during generation: {e}")
+        logger.error(f"Fatal error during generation: {e}")
         sys.exit(1)
         
     duration = datetime.now() - start_time
-    print(f"✓ Total Execution Time: {duration}")
+    logger.info(f"✓ Total Execution Time: {duration}")
 
 if __name__ == "__main__":
     # Required for Windows multiprocessing compatibility, safe on Mac/Linux
