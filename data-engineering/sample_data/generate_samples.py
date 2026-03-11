@@ -131,4 +131,19 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Alias for backward compatibility with stashed calls
+    generate_dataset = generate_robust_dataset
+    
+    d = os.path.dirname(os.path.abspath(__file__))
+    base_output_dir = os.path.join(d, "generated_sample_data")
+    os.makedirs(base_output_dir, exist_ok=True)
+    
+    # Create a timestamped subdirectory
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_dir = os.path.join(base_output_dir, f"sample_set_{timestamp}")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    print(f"Generating samples in: {output_dir}/")
+    generate_dataset(100, 0.0, os.path.join(output_dir, "large_clean.csv"))
+    generate_dataset(100, 0.15, os.path.join(output_dir, "large_dirty.csv"))
+    generate_dataset(200, 0.08, os.path.join(output_dir, "large_mixed.csv"))
