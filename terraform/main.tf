@@ -87,7 +87,7 @@ resource "docker_container" "postgres" {
 resource "docker_image" "fastapi" {
   name = "datapulse-backend:latest"
   build {
-    context    = pathexpand("~/Amalitech/DataPulse_Team8/backend")
+    context    = "${path.module}/../backend"
     dockerfile = "Dockerfile"
   }
   keep_locally = true

@@ -60,3 +60,67 @@ output "service_urls" {
     grafana    = "http://localhost:${var.grafana_port}"
   }
 }
+
+# =====================================================
+# ECS/ECR Outputs (Cloud)
+# =====================================================
+
+# ECR Repository URLs
+output "ecr_backend_url" {
+  description = "ECR repository URL for backend"
+  value       = aws_ecr_repository.backend.repository_url
+}
+
+output "ecr_frontend_url" {
+  description = "ECR repository URL for frontend"
+  value       = aws_ecr_repository.frontend.repository_url
+}
+
+# ECS Cluster
+output "ecs_cluster_name" {
+  description = "ECS Cluster name"
+  value       = aws_ecs_cluster.main.name
+}
+
+output "ecs_cluster_arn" {
+  description = "ECS Cluster ARN"
+  value       = aws_ecs_cluster.main.arn
+}
+
+# Application Load Balancer
+output "alb_dns_name" {
+  description = "ALB DNS name"
+  value       = aws_lb.main.dns_name
+}
+
+output "alb_arn" {
+  description = "ALB ARN"
+  value       = aws_lb.main.arn
+}
+
+# CodeDeploy
+output "codedeploy_app_name" {
+  description = "CodeDeploy application name"
+  value       = aws_codedeploy_app.backend.name
+}
+
+output "codedeploy_deployment_group" {
+  description = "CodeDeploy deployment group name"
+  value       = aws_codedeploy_deployment_group.backend.deployment_group_name
+}
+
+# VPC
+output "vpc_id" {
+  description = "VPC ID"
+  value       = aws_vpc.main.id
+}
+
+output "private_subnet_ids" {
+  description = "Private subnet IDs"
+  value       = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+}
+
+output "public_subnet_ids" {
+  description = "Public subnet IDs"
+  value       = [aws_subnet.public_1.id, aws_subnet.public_2.id]
+}
