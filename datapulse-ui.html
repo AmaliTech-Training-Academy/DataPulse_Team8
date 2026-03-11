@@ -1329,7 +1329,7 @@ async function loadReport() {
       <p><b>Rules Pass/Fail:</b> ${report.executive_summary.passed_rules} / ${report.executive_summary.failed_rules}</p>
     `;
 
-    $('report-recommendations-output').innerHTML = report.recommendations.length > 0 
+    $('report-recommendations-output').innerHTML = report.recommendations.length > 0
       ? `<ul>${report.recommendations.map(rec => `<li>${rec}</li>`).join('')}</ul>`
       : '<p style="color:var(--muted)">No recommendations available.</p>';
 

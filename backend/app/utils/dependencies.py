@@ -1,8 +1,9 @@
 """FastAPI dependencies - IMPLEMENTED."""
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
+
 from app.database import get_db
 from app.models.user import User
 from app.utils.jwt_handler import verify_token

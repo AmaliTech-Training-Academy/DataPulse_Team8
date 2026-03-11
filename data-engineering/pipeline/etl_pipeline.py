@@ -2,20 +2,20 @@
 
 import os
 from datetime import datetime
-from dotenv import load_dotenv
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
+
 import pandas as pd
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
 
 load_dotenv()
 
 
 class ETLPipeline:
     def __init__(self, source_url=None, target_url=None):
-        self.source_url = source_url or os.getenv("SOURCE_DB_URL",
-            "postgresql://datapulse:datapulse@localhost:5432/datapulse")
-        self.target_url = target_url or os.getenv("TARGET_DB_URL",
-            self.source_url)
+        self.source_url = source_url or os.getenv(
+            "SOURCE_DB_URL", "postgresql://datapulse:datapulse@localhost:5432/datapulse"
+        )
+        self.target_url = target_url or os.getenv("TARGET_DB_URL", self.source_url)
         self.source_engine = create_engine(self.source_url)
         self.target_engine = create_engine(self.target_url)
         self.raw_data = None
