@@ -1,8 +1,6 @@
 """Rules API tests - STUB."""
 
 import os
-import requests
-import pytest
 
 BASE_URL = os.getenv("API_URL", "http://localhost:8000")
 

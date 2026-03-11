@@ -1,10 +1,11 @@
 """Authentication router - IMPLEMENTED."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 from app.database import get_db
-from app.schemas.auth import UserCreate, Token, LoginRequest
-from app.services.auth_service import create_user, authenticate_user
+from app.schemas.auth import LoginRequest, Token, UserCreate
+from app.services.auth_service import authenticate_user, create_user
 from app.utils.jwt_handler import create_access_token
 
 router = APIRouter()
@@ -25,7 +26,10 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """Authenticate user and return a JWT token."""
     user = authenticate_user(db, login_data.email, login_data.password)
     if user is None:
-        raise HTTPException(status_code=401, detail="Invalid email or password",
-            headers={"WWW-Authenticate": "Bearer"})
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     token = create_access_token(data={"sub": user.email})
     return Token(access_token=token)
