@@ -16,10 +16,15 @@ from airflow.operators.python import PythonOperator, ShortCircuitOperator
 from airflow.utils.email import send_email
 
 PIPELINE_DIR = Path(__file__).resolve().parents[1]
-if str(PIPELINE_DIR) not in sys.path:
-    sys.path.insert(0, str(PIPELINE_DIR))
+PIPELINE_PARENT = PIPELINE_DIR.parent
+for path in (PIPELINE_PARENT, PIPELINE_DIR):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
-from etl_pipeline import ETLPipeline  # noqa: E402
+try:
+    from pipeline.etl_pipeline import ETLPipeline  # noqa: E402
+except ImportError:
+    from etl_pipeline import ETLPipeline  # noqa: E402
 
 LOGGER = logging.getLogger(__name__)
 

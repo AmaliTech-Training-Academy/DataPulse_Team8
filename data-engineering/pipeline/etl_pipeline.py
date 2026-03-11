@@ -12,9 +12,14 @@ from sqlalchemy import create_engine, text
 import pandas as pd
 from sqlalchemy.engine import Engine
 
-from extract.extract_quality_metrics import extract_quality_payload
-from load.load_quality_metrics import load_quality_payload
-from transform.transform_quality_metrics import transform_quality_payload
+try:
+    from pipeline.extract.extract_quality_metrics import extract_quality_payload
+    from pipeline.load.load_quality_metrics import load_quality_payload
+    from pipeline.transform.transform_quality_metrics import transform_quality_payload
+except ImportError:
+    from extract.extract_quality_metrics import extract_quality_payload
+    from load.load_quality_metrics import load_quality_payload
+    from transform.transform_quality_metrics import transform_quality_payload
 
 load_dotenv()
 
