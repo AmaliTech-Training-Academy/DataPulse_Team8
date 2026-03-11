@@ -140,7 +140,7 @@ resource "aws_iam_role_policy_attachment" "ec2_ecr" {
 # EC2 Key Pair - Generate or use provided
 resource "aws_key_pair" "ec2_dev" {
   key_name   = "datapulse-ec2-dev-${var.environment}"
-  public_key = var.ec2_public_key != "" ? var.ec2_public_key : tls_private_key.ec2_gen.public_key_openssh
+  public_key = var.ec2_public_key != "" ? var.ec2_public_key : (var.generate_ssh_key ? tls_private_key.ec2_gen[0].public_key_openssh : "")
 
   tags = {
     Name        = "datapulse-ec2-key-${var.environment}"

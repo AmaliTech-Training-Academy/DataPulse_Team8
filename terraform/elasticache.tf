@@ -144,7 +144,7 @@ output "redis_port" {
 
 output "redis_auth_token" {
   description = "Redis auth token (if enabled)"
-  value       = aws_elasticache_replication_group.main.auth_token_enabled ? aws_elasticache_replication_group.main.auth_token : ""
+  value       = aws_elasticache_replication_group.main.transit_encryption_enabled ? aws_elasticache_replication_group.main.auth_token : ""
   sensitive   = true
 }
 
