@@ -94,11 +94,6 @@ resource "aws_db_instance" "main" {
   # Copy tags to snapshot
   copy_tags_to_snapshot = true
 
-  # Lifecycle
-  lifecycle {
-    prevent_destroy = var.environment == "prod" ? true : false
-  }
-
   tags = {
     Name        = "datapulse-postgres-${var.environment}"
     Environment = var.environment
