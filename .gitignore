@@ -24,3 +24,4 @@ tfplan
 *.db
 backend/test.db
 .terraform.lock.hcl
+.terraform/
