@@ -470,6 +470,13 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
       <div class="card">
         <div id="datasets-table"><div class="loading-row"><div class="spinner"></div> Loading...</div></div>
+        <div id="datasets-pagination" class="flex-between mt-16" style="display:none">
+          <div style="font-size:12px;color:var(--muted)" id="datasets-page-info">Page 1 of 1</div>
+          <div class="flex-between gap-8">
+            <button class="btn btn-ghost" style="padding:5px 12px" onclick="changeDatasetsPage(-1)" id="datasets-prev-btn">← Prev</button>
+            <button class="btn btn-ghost" style="padding:5px 12px" onclick="changeDatasetsPage(1)" id="datasets-next-btn">Next →</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -642,6 +649,14 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div class="page-sub">Track how data quality changes over time</div>
         </div>
         <div class="topbar-right">
+          <select id="trend-dataset-select" onchange="loadTrends()" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--font-mono);font-size:12px">
+            <option value="">All Datasets</option>
+          </select>
+          <select id="trend-interval" onchange="loadTrends()" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--font-mono);font-size:12px">
+            <option value="day" selected>Daily</option>
+            <option value="week">Weekly</option>
+            <option value="month">Monthly</option>
+          </select>
           <select id="trend-days" onchange="loadTrends()" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--font-mono);font-size:12px">
             <option value="7">Last 7 days</option>
             <option value="30" selected>Last 30 days</option>
@@ -700,6 +715,8 @@ let isAdmin = localStorage.getItem('dp_is_admin') === 'true';
 let userEmail = localStorage.getItem('dp_user_email') || '';
 let dashTrendChart = null;
 let trendChart = null;
+let currentDatasetPage = 0;
+const DATASET_LIMIT = 10;
 
 // ── JWT DECODE ───────────────────────────────────────────────────────────────
 function decodeJWT(t) {
@@ -886,10 +903,10 @@ async function loadAllDropdowns() {
   try {
     const data = await api('GET', '/api/datasets?limit=100');
     const datasets = data.datasets || [];
-    ['check-dataset-select','report-dataset-select','rules-filter'].forEach(id => {
+    ['check-dataset-select','report-dataset-select','rules-filter','trend-dataset-select'].forEach(id => {
       const el = $(id);
       if (!el) return;
-      el.innerHTML = `<option value="">${id==='rules-filter'?'All datasets':'Select a dataset...'}</option>`;
+      el.innerHTML = `<option value="">${id==='rules-filter'?'All datasets':id==='trend-dataset-select'?'All Datasets':'Select a dataset...'}</option>`;
       datasets.forEach(d => {
         el.innerHTML += `<option value="${id==='rules-filter'?d.name:d.id}">[${d.file_type.toUpperCase()}] ${d.name}</option>`;
       });
@@ -948,12 +965,22 @@ async function loadDashboard() {
 // ── DATASETS ─────────────────────────────────────────────────────────────────
 async function loadDatasets() {
   try {
-    const data = await api('GET', '/api/datasets?limit=100');
+    const data = await api('GET', `/api/datasets?skip=${currentDatasetPage * DATASET_LIMIT}&limit=${DATASET_LIMIT}`);
     const datasets = data.datasets || [];
-    if (!datasets.length) {
+    const total = data.total || 0;
+
+    if (!datasets.length && currentDatasetPage === 0) {
       $('datasets-table').innerHTML = '<div class="empty"><div class="empty-icon">📂</div><div>No datasets uploaded yet.</div></div>';
+      $('datasets-pagination').style.display = 'none';
       return;
     }
+
+    $('datasets-pagination').style.display = 'flex';
+    const totalPages = Math.ceil(total / DATASET_LIMIT) || 1;
+    $('datasets-page-info').textContent = `Page ${currentDatasetPage + 1} of ${totalPages} (${total} total)`;
+    $('datasets-prev-btn').disabled = currentDatasetPage === 0;
+    $('datasets-next-btn').disabled = (currentDatasetPage + 1) >= totalPages;
+
     $('datasets-table').innerHTML = `
       <div class="table-wrap">
         <table>
@@ -984,6 +1011,12 @@ async function loadDatasets() {
         </table>
       </div>`;
   } catch(e) { toast('Error loading datasets: '+e.message,'error'); }
+}
+
+function changeDatasetsPage(delta) {
+  currentDatasetPage += delta;
+  if (currentDatasetPage < 0) currentDatasetPage = 0;
+  loadDatasets();
 }
 
 async function quickRunChecks(id) {
@@ -1323,9 +1356,10 @@ async function loadReport() {
 
     // Detailed Report additions
     $('report-download-btn').style.display = '';
+    const scorePct = parseFloat(report.executive_summary.score_percentage) || 0;
     $('report-summary-output').innerHTML = `
       <p><b>Status:</b> ${report.executive_summary.status}</p>
-      <p><b>Score:</b> ${report.executive_summary.score_percentage.toFixed(1)}%</p>
+      <p><b>Score:</b> ${scorePct.toFixed(1)}%</p>
       <p><b>Rules Pass/Fail:</b> ${report.executive_summary.passed_rules} / ${report.executive_summary.failed_rules}</p>
     `;
 
@@ -1337,11 +1371,11 @@ async function loadReport() {
       $('report-patterns-output').innerHTML = `
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Pattern / Info</th><th>Occurrence</th></tr></thead>
+            <thead><tr><th>Rule Name</th><th>Occurrence (Rows Affected)</th></tr></thead>
             <tbody>${report.top_failure_patterns.map(p => `
               <tr>
-                <td>${p.pattern}</td>
-                <td><span class="badge badge-amber">${p.count}</span></td>
+                <td><b>${p.rule_name}</b></td>
+                <td><span class="badge badge-amber">${p.failed_rows}</span> rows</td>
               </tr>`).join('')}
             </tbody>
           </table>
@@ -1368,8 +1402,13 @@ async function downloadCSV() {
 // ── TRENDS ───────────────────────────────────────────────────────────────────
 async function loadTrends() {
   const days = $('trend-days').value;
+  const datasetId = $('trend-dataset-select').value;
+  const interval = $('trend-interval').value;
   try {
-    const trendsData = await api('GET', `/api/reports/trends?days=${days}`);
+    let url = `/api/reports/trends?days=${days}&interval=${interval}`;
+    if (datasetId) url += `&dataset_id=${datasetId}`;
+
+    const trendsData = await api('GET', url);
     const trendPoints = (trendsData && trendsData.trend_data) || [];
 
     if (!trendPoints.length) {
