@@ -26,6 +26,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Initialize and expose Prometheus metrics
+Instrumentator().instrument(app).expose(app)
+
 app.add_middleware(GlobalLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
