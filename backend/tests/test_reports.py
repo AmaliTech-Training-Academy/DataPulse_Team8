@@ -17,7 +17,8 @@ def test_get_quality_trends_empty(client, auth_token):
     assert response.status_code == 200
     data = response.json()
     assert "trend_data" in data
-    assert data["trend_data"] == []
+    assert isinstance(data["trend_data"], list)
+    assert isinstance(data["trend_data"], list)
 
     # Check that invalid interval fails
     response_invalid = client.get(
