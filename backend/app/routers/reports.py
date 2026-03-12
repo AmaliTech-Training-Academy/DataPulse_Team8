@@ -23,17 +23,41 @@ router = APIRouter()
 def get_quality_trends(
     dataset_id: Optional[int] = Query(None, description="Optional dataset ID filter"),
     days: int = Query(30, ge=1, le=365, description="Days to look back"),
-    interval: str = Query("day", description="Aggregation interval (day, week, month)"),
+    interval: str = Query(
+        "day", description="Aggregation interval (day, week, month, time)"
+    ),
+    date: Optional[str] = Query(
+        None, description="Specific date for 'time' interval (YYYY-MM-DD)"
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Get quality score trends over time."""
-    start_date = datetime.now(timezone.utc) - timedelta(days=days)
-    end_date = datetime.now(timezone.utc)
+    if interval == "time":
+        if date:
+            try:
+                selected_date = datetime.strptime(date, "%Y-%m-%d").date()
+            except ValueError:
+                raise HTTPException(
+                    status_code=400, detail="Invalid date format. Use YYYY-MM-DD"
+                )
+        else:
+            selected_date = datetime.now(timezone.utc).date()
 
-    if interval not in ["day", "week", "month"]:
+        start_date = datetime.combine(selected_date, datetime.min.time()).replace(
+            tzinfo=timezone.utc
+        )
+        end_date = datetime.combine(selected_date, datetime.max.time()).replace(
+            tzinfo=timezone.utc
+        )
+    else:
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
+        end_date = datetime.now(timezone.utc)
+
+    if interval not in ["day", "week", "month", "time"]:
         raise HTTPException(
-            status_code=400, detail="Invalid interval. Use 'day', 'week', or 'month'"
+            status_code=400,
+            detail="Invalid interval. Use 'day', 'week', 'month', or 'time'",
         )
 
     trend_data = report_service.get_trend_data(

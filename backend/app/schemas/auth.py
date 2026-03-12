@@ -8,6 +8,14 @@ class UserCreate(BaseModel):
     password: str
     full_name: str
 
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+        if not re.match(email_regex, v):
+            raise ValueError("Invalid email format")
+        return v.lower()
+
     @field_validator("password")
     @classmethod
     def validate_password_strength(cls, v: str) -> str:
@@ -36,3 +44,11 @@ class Token(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+        if not re.match(email_regex, v):
+            raise ValueError("Invalid email format")
+        return v.lower()

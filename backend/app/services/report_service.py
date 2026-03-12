@@ -125,8 +125,12 @@ def get_trend_data(
             date_key = (
                 record.checked_at - timedelta(days=record.checked_at.weekday())
             ).strftime("%Y-%m-%d")
-        else:  # month
+        elif interval == "month":
             date_key = record.checked_at.strftime("%Y-%m-01")
+        else:  # time
+            # For time interval, each check is distinct.
+            # We use the full ISO string or a high-precision format as a unique key.
+            date_key = record.checked_at.strftime("%Y-%m-%d %H:%M:%S")
 
         if date_key not in grouped_data:
             grouped_data[date_key] = {"sum": 0.0, "count": 0}
@@ -141,9 +145,18 @@ def get_trend_data(
         data = grouped_data[date_str]
         avg = data["sum"] / data["count"]
 
+        # If interval is 'time', we only want the time part for the label
+        display_label = date_str
+        if interval == "time":
+            try:
+                dt_obj = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+                display_label = dt_obj.strftime("%H:%M:%S")
+            except ValueError:
+                pass
+
         trend_datapoints.append(
             {
-                "date": date_str,
+                "date": display_label,
                 "average_score": float(avg),
                 "check_count": data["count"],
             }

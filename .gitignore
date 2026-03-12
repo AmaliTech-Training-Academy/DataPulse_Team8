@@ -26,3 +26,4 @@ tfplan
 backend/test.db
 .terraform.lock.hcl
 .terraform/
+data-engineering/sample_data/generated_sample_data/
