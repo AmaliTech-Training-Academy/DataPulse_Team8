@@ -2,13 +2,17 @@ name: Deploy to ECS
 
 on:
   push:
-    branches: [main, develop, developer]
-  workflow_dispatch:
+    branches:
+      - main
+      - developer
 
-env:
-  # OIDC Role ARN - replace with your actual role ARN from Terraform output
-  # Format: arn:aws:iam::ACCOUNT_ID:role/github-actions-deploy-ENVIRONMENT
-  GITHUB_OIDC_ROLE: ${{ secrets.GITHUB_OIDC_ROLE_ARN }}
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   deploy:
