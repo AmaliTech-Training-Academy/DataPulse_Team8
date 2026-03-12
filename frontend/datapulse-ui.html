@@ -868,6 +868,55 @@
           flex-direction: column;
         }
       }
+
+      /* ── MINI SIDEBAR (FORCE) ── */
+      .shell.mini-sidebar nav {
+        width: 80px;
+      }
+      .shell.mini-sidebar nav .logo-mark,
+      .shell.mini-sidebar nav .logo-sub,
+      .shell.mini-sidebar nav .nav-section,
+      .shell.mini-sidebar nav .nav-item span:not(.nav-icon),
+      .shell.mini-sidebar nav .api-status span,
+      .shell.mini-sidebar nav .user-info-bar,
+      .shell.mini-sidebar nav .logout-btn span {
+        display: none !important;
+      }
+      .shell.mini-sidebar nav .nav-item,
+      .shell.mini-sidebar nav .api-status,
+      .shell.mini-sidebar nav .nav-bottom {
+        justify-content: center;
+      }
+      .shell.mini-sidebar nav .nav-item {
+        padding: 12px;
+        margin: 8px;
+        border-radius: 12px;
+      }
+      .shell.mini-sidebar nav .logout-btn {
+        width: 40px;
+        padding: 10px 0;
+        margin: 16px auto 0;
+        font-size: 16px !important;
+        justify-content: center;
+      }
+      .shell.mini-sidebar nav .api-status {
+        padding: 4px 0;
+      }
+      .shell.mini-sidebar main {
+        margin-left: 80px;
+      }
+
+      /* ── ANALYTICS VIEW ── */
+      #view-analytics {
+        height: calc(100vh - 96px);
+      }
+      #view-analytics iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 20px;
+        background: var(--surface);
+      }
     </style>
   </head>
   <body>
@@ -971,8 +1020,17 @@
         <a class="nav-item" onclick="showView('trends')" href="#">
           <span class="nav-icon">∿</span><span>Trends</span>
         </a>
-        <a class="nav-item" onclick="showView('analytics')" href="#">
-          <span class="nav-icon">↑</span><span>Analytics</span>
+        <a
+          class="nav-item"
+          onclick="showView('analytics')"
+          href="#"
+          style="
+            border-top: 1px solid var(--border);
+            margin-top: 12px;
+            padding-top: 16px;
+          "
+        >
+          <span class="nav-icon">☍</span><span>Analytics</span>
         </a>
         <div class="nav-section admin-only" style="display: none">Admin</div>
         <a
@@ -1589,6 +1647,26 @@
           </div>
         </div>
 
+        <!-- ── ANALYTICS (STREAMLIT) ── -->
+        <div class="view" id="view-analytics">
+          <div class="topbar">
+            <div>
+              <div class="page-title">Advanced Analytics</div>
+              <div class="page-sub">DataPulse Intelligence Dashboard</div>
+            </div>
+            <button
+              class="btn btn-ghost"
+              onclick="$('analytics-frame').src += ''"
+            >
+              ↻ Reload
+            </button>
+          </div>
+          <iframe
+            id="analytics-frame"
+            src="http://localhost:8501/?embed=true"
+          ></iframe>
+        </div>
+
         <!-- ── ADMIN PANEL ── -->
         <div class="view" id="view-admin">
           <div class="topbar">
@@ -1952,6 +2030,7 @@
 
       // ── NAVIGATION ───────────────────────────────────────────────────────────────
       function showView(name) {
+        const shell = document.querySelector(".shell");
         document
           .querySelectorAll(".view")
           .forEach((v) => v.classList.remove("active"));
@@ -1959,7 +2038,16 @@
           .querySelectorAll(".nav-item")
           .forEach((n) => n.classList.remove("active"));
         $(`view-${name}`).classList.add("active");
-        event.currentTarget.classList.add("active");
+        if (event && event.currentTarget) {
+          event.currentTarget.classList.add("active");
+        }
+
+        // Logic for mini-sidebar
+        if (name === "analytics") {
+          shell.classList.add("mini-sidebar");
+        } else {
+          shell.classList.remove("mini-sidebar");
+        }
 
         if (name === "dashboard") loadDashboard();
         if (name === "datasets") loadDatasets();
