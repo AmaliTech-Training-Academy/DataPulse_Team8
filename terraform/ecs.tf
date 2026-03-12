@@ -410,10 +410,11 @@ resource "aws_lb" "main" {
 
 # Target Groups for Blue-Green Deployment
 resource "aws_lb_target_group" "backend_blue" {
-  name     = "datapulse-backend-blue-${var.environment}"
-  port     = 8000
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  name        = "datapulse-backend-blue-${var.environment}"
+  port        = 8000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip"
 
   health_check {
     enabled             = true
@@ -438,10 +439,11 @@ resource "aws_lb_target_group" "backend_blue" {
 }
 
 resource "aws_lb_target_group" "backend_green" {
-  name     = "datapulse-backend-green-${var.environment}"
-  port     = 8000
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  name        = "datapulse-backend-green-${var.environment}"
+  port        = 8000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip"
 
   health_check {
     enabled             = true
@@ -459,10 +461,6 @@ resource "aws_lb_target_group" "backend_green" {
     Environment = var.environment
     Color       = "green"
   }
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 # ALB Listener
@@ -473,7 +471,68 @@ resource "aws_lb_listener" "frontend" {
 
   default_action {
     type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend.arn
+  }
+}
+
+# Listener Rules for path-based routing
+resource "aws_lb_listener_rule" "api" {
+  listener_arn = aws_lb_listener.frontend.arn
+  priority     = 10
+
+  action {
+    type             = "forward"
     target_group_arn = aws_lb_target_group.backend_blue.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/*", "/docs", "/redoc", "/openapi.json", "/health", "/metrics"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "grafana" {
+  listener_arn = aws_lb_listener.frontend.arn
+  priority     = 20
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.grafana.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/grafana/*"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "prometheus" {
+  listener_arn = aws_lb_listener.frontend.arn
+  priority     = 30
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.prometheus.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/prometheus/*"]
+    }
+  }
+}
+
+# Test Listener for Blue-Green Deployments
+resource "aws_lb_listener" "test" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = "8080"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend_green.arn
   }
 }
 
@@ -551,6 +610,159 @@ resource "aws_ecs_task_definition" "backend" {
   }
 }
 
+# Frontend Task Definition
+resource "aws_ecs_task_definition" "frontend" {
+  family                   = "datapulse-frontend"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "frontend"
+      image     = "${aws_ecr_repository.frontend.repository_url}:latest"
+      essential = true
+      portMappings = [
+        {
+          containerPort = 80
+          hostPort      = 80
+          protocol      = "tcp"
+        }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/datapulse-frontend"
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+      healthCheck = {
+        command     = ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 60
+      }
+    }
+  ])
+}
+
+# Prometheus Task Definition
+resource "aws_ecs_task_definition" "prometheus" {
+  family                   = "datapulse-prometheus"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "prometheus"
+      image     = "${aws_ecr_repository.prometheus.repository_url}:latest"
+      essential = true
+      portMappings = [
+        {
+          containerPort = 9090
+          hostPort      = 9090
+          protocol      = "tcp"
+        }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/datapulse-prometheus"
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
+}
+
+# Grafana Task Definition
+resource "aws_ecs_task_definition" "grafana" {
+  family                   = "datapulse-grafana"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "grafana"
+      image     = "${aws_ecr_repository.grafana.repository_url}:latest"
+      essential = true
+      portMappings = [
+        {
+          containerPort = 3000
+          hostPort      = 3000
+          protocol      = "tcp"
+        }
+      ]
+      environment = [
+        {
+          name  = "GF_SERVER_ROOT_URL"
+          value = "http://${aws_lb.main.dns_name}/grafana/"
+        },
+        {
+          name  = "GF_SERVER_SERVE_FROM_SUB_PATH"
+          value = "true"
+        }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/datapulse-grafana"
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
+}
+
+# Loki Task Definition
+resource "aws_ecs_task_definition" "loki" {
+  family                   = "datapulse-loki"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "loki"
+      image     = "${aws_ecr_repository.loki.repository_url}:latest"
+      essential = true
+      portMappings = [
+        {
+          containerPort = 3100
+          hostPort      = 3100
+          protocol      = "tcp"
+        }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/datapulse-loki"
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
+}
+
 # =====================================================
 # ECS Services with Blue-Green Deployment
 # =====================================================
@@ -585,6 +797,7 @@ resource "aws_ecs_service" "backend_blue" {
     rollback = true
   }
 
+  # Blue-Green deployment configuration managed by CodeDeploy
   depends_on = [aws_lb_listener.frontend]
 
   tags = {
@@ -623,6 +836,84 @@ resource "aws_ecs_service" "backend_green" {
   }
 }
 
+# Frontend Service
+resource "aws_ecs_service" "frontend" {
+  name            = "datapulse-frontend-${var.environment}"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.frontend.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_groups  = [aws_security_group.ecs_tasks.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.frontend.arn
+    container_name   = "frontend"
+    container_port   = 80
+  }
+}
+
+# Prometheus Service
+resource "aws_ecs_service" "prometheus" {
+  name            = "datapulse-prometheus-${var.environment}"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.prometheus.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_groups  = [aws_security_group.ecs_tasks.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.prometheus.arn
+    container_name   = "prometheus"
+    container_port   = 9090
+  }
+}
+
+# Grafana Service
+resource "aws_ecs_service" "grafana" {
+  name            = "datapulse-grafana-${var.environment}"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.grafana.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_groups  = [aws_security_group.ecs_tasks.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.grafana.arn
+    container_name   = "grafana"
+    container_port   = 3000
+  }
+}
+
+# Loki Service
+resource "aws_ecs_service" "loki" {
+  name            = "datapulse-loki-${var.environment}"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.loki.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_groups  = [aws_security_group.ecs_tasks.id]
+    assign_public_ip = false
+  }
+}
+
 # =====================================================
 # CloudWatch Logs
 # =====================================================
@@ -634,6 +925,31 @@ resource "aws_cloudwatch_log_group" "ecs" {
   tags = {
     Environment = var.environment
   }
+}
+
+resource "aws_cloudwatch_log_group" "backend" {
+  name              = "/ecs/datapulse-backend"
+  retention_in_days = var.log_retention_days
+}
+
+resource "aws_cloudwatch_log_group" "frontend" {
+  name              = "/ecs/datapulse-frontend"
+  retention_in_days = var.log_retention_days
+}
+
+resource "aws_cloudwatch_log_group" "prometheus" {
+  name              = "/ecs/datapulse-prometheus"
+  retention_in_days = var.log_retention_days
+}
+
+resource "aws_cloudwatch_log_group" "grafana" {
+  name              = "/ecs/datapulse-grafana"
+  retention_in_days = var.log_retention_days
+}
+
+resource "aws_cloudwatch_log_group" "loki" {
+  name              = "/ecs/datapulse-loki"
+  retention_in_days = var.log_retention_days
 }
 
 # =====================================================
