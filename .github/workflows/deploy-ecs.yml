@@ -25,13 +25,9 @@ jobs:
       - name: Determine environment
         id: env
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            echo "name=prod" >> $GITHUB_OUTPUT
-            echo "cluster=datapulse-prod" >> $GITHUB_OUTPUT
-          else
-            echo "name=dev" >> $GITHUB_OUTPUT
-            echo "cluster=datapulse-dev" >> $GITHUB_OUTPUT
-          fi
+          # Only 'prod' environment is currently provisioned
+          echo "name=prod" >> $GITHUB_OUTPUT
+          echo "cluster=datapulse-prod" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
