@@ -628,6 +628,8 @@ resource "aws_ecs_task_definition" "backend" {
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
 
+  depends_on = [aws_db_instance.main]
+
   container_definitions = jsonencode([
     {
       name      = "backend"
@@ -643,7 +645,7 @@ resource "aws_ecs_task_definition" "backend" {
       environment = [
         {
           name  = "DATABASE_URL"
-          value = "postgresql://${local.postgres_user}:${local.postgres_password}@${var.database_host}:5432/${var.database_name}"
+          value = "postgresql://${local.postgres_user}:${local.postgres_password}@${aws_db_instance.main.endpoint}/${var.database_name}"
         }
       ]
       secrets = [
