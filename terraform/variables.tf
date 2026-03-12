@@ -119,7 +119,7 @@ variable "aws_secret_name" {
 variable "environment" {
   description = "Environment name (dev, staging, prod)"
   type        = string
-  default     = "dev"
+  default     = "prod"
 }
 
 # VPC Configuration
