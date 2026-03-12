@@ -15,7 +15,43 @@ html, body, [class*="css"] {
 
 /* ── Page background ─────────────────────────────────────── */
 .stApp { background: #0a0b10; }
-.block-container { padding: 1.5rem 2rem 2rem; max-width: 1400px; }
+.block-container { padding: 1rem 1.5rem 2rem; max-width: 1400px; }
+
+/* Hide Streamlit header/footer for cleaner embed */
+#MainMenu, header, footer { visibility: hidden; height: 0; }
+[data-testid="stHeader"] { display: none; }
+
+/* Force dark colors on all widgets to prevent "white parts" */
+div[data-baseweb="select"] > div, 
+div[data-baseweb="multiselect"] > div {
+    background-color: #111827 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+div[role="listbox"] ul {
+    background-color: #111827 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+div[role="option"] {
+    background-color: transparent !important;
+    color: #f1f5f9 !important;
+}
+
+div[role="option"]:hover {
+    background-color: #1e293b !important;
+}
+
+/* Fix multiselect tags */
+span[data-baseweb="tag"] {
+    background-color: #6366f1 !important;
+    color: white !important;
+}
+
+/* Input text colors */
+input, select, textarea {
+    color: #f1f5f9 !important;
+}
 
 /* ── Hero banner ─────────────────────────────────────────── */
 .dp-hero {
@@ -156,12 +192,28 @@ html, body, [class*="css"] {
 .dp-empty-title { font-size: 0.95rem; font-weight: 600; color: #475569; }
 .dp-empty-sub   { font-size: 0.85rem; margin-top: 6px; color: #334155; }
 
-/* ── Sidebar ─────────────────────────────────────────────── */
-[data-testid="stSidebar"] {
-    background: #06070a !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+/* Force dark colors on all widgets to prevent "white parts" */
+div[data-baseweb="select"] > div, 
+div[data-baseweb="multiselect"] > div,
+div[data-baseweb="base-input"] > input,
+[data-testid="stMetricValue"],
+[data-testid="stMetricDelta"] {
+    background-color: #111827 !important;
+    color: #f1f5f9 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
 }
-[data-testid="stSidebar"] label { color: #64748b !important; font-size: 0.75rem !important; font-weight: 600 !important; }
+
+/* Fix for buttons */
+button[kind="primary"], button[kind="secondary"] {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+button[kind="primary"]:hover, button[kind="secondary"]:hover {
+    border-color: #6366f1 !important;
+    background-color: #334155 !important;
+}
 
 /* ── Dataframe / table ───────────────────────────────────── */
 [data-testid="stDataFrame"] { 

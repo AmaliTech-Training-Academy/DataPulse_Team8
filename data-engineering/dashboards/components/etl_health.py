@@ -11,7 +11,7 @@ from components import charts
 def render_etl_health(etl_df: pd.DataFrame) -> None:
     if etl_df.empty:
         st.markdown(
-            '<div class="dp-empty"><span class="dp-empty-icon">⚙️</span>'
+            '<div class="dp-empty"><span class="dp-empty-icon"></span>'
             '<div class="dp-empty-title">No pipeline runs recorded yet.</div></div>',
             unsafe_allow_html=True,
         )
