@@ -68,18 +68,29 @@ resource "aws_iam_role_policy" "github_actions_ecs_deploy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # ECR permissions
+      # ECR base permissions
       {
         Effect = "Allow"
         Action = [
-          "ecr:GetAuthorizationToken",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage",
-          "ecr:BatchCheckLayerAvailability"
+          "ecr:GetAuthorizationToken"
         ]
         Resource = "*"
       },
-      # ECS permissions
+      # ECR image push permissions (restricted to all datapulse repos to support backend, frontend, loki, etc)
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage"
+        ]
+        Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/datapulse/*"
+      },
+      # ECS cluster/service permissions
       {
         Effect = "Allow"
         Action = [
@@ -87,8 +98,7 @@ resource "aws_iam_role_policy" "github_actions_ecs_deploy" {
           "ecs:UpdateService",
           "ecs:DescribeServices",
           "ecs:ListTasks",
-          "ecs:DescribeTasks",
-          "ecs:WaitForServicesStable"
+          "ecs:DescribeTasks"
         ]
         Resource = [
           "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:service/datapulse-${var.environment}/*",
@@ -127,7 +137,7 @@ resource "aws_iam_role_policy" "github_actions_ecs_deploy" {
           aws_iam_role.ecs_task_role.arn
         ]
       },
-      # Secrets Manager for ECS secrets (read only)
+      # Secrets Manager for ECS secrets
       {
         Effect = "Allow"
         Action = [
@@ -136,7 +146,7 @@ resource "aws_iam_role_policy" "github_actions_ecs_deploy" {
         ]
         Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:datapulse/*"
       },
-      # SSM Parameter Store (read only)
+      # SSM Parameter Store
       {
         Effect = "Allow"
         Action = [

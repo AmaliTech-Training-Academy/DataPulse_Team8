@@ -44,15 +44,13 @@ jobs:
         id: build-images
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: datapulse/backend
           IMAGE_TAG: ${{ github.sha }}
         run: |
           # Build and push backend (tagged with sha and latest)
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./backend
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          docker build -t $ECR_REGISTRY/datapulse/backend:$IMAGE_TAG -t $ECR_REGISTRY/datapulse/backend:latest ./backend
+          docker push $ECR_REGISTRY/datapulse/backend:$IMAGE_TAG
+          docker push $ECR_REGISTRY/datapulse/backend:latest
+          echo "image=$ECR_REGISTRY/datapulse/backend:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
           # Build and push frontend
           docker build -t $ECR_REGISTRY/datapulse/frontend:latest ./frontend
