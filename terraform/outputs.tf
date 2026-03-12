@@ -1,46 +1,46 @@
 # PostgreSQL Outputs
 output "postgres_url" {
   description = "PostgreSQL connection URL"
-  value       = "postgresql://${var.postgres_user}:${var.postgres_password}@localhost:${var.postgres_port}/${var.postgres_db}"
+  value       = "postgresql://${var.postgres_user}:${var.postgres_password}@${aws_db_instance.main.endpoint}/${var.postgres_db}"
   sensitive   = true
 }
 
 output "postgres_endpoint" {
   description = "PostgreSQL external endpoint"
-  value       = "localhost:${var.postgres_port}"
+  value       = aws_db_instance.main.endpoint
 }
 
 # FastAPI Outputs
 output "api_url" {
   description = "FastAPI base URL"
-  value       = "http://localhost:${var.api_port}"
+  value       = "http://${aws_lb.main.dns_name}/api"
 }
 
 output "api_docs_url" {
   description = "FastAPI API documentation URL"
-  value       = "http://localhost:${var.api_port}/docs"
+  value       = "http://${aws_lb.main.dns_name}/docs"
 }
 
 output "api_health_url" {
   description = "FastAPI health check URL"
-  value       = "http://localhost:${var.api_port}/health"
+  value       = "http://${aws_lb.main.dns_name}/health"
 }
 
 # Prometheus Outputs
 output "prometheus_url" {
   description = "Prometheus UI URL"
-  value       = "http://localhost:${var.prometheus_port}"
+  value       = "http://${aws_lb.main.dns_name}/prometheus"
 }
 
 output "prometheus_scrape_target" {
   description = "Prometheus scrape target for FastAPI"
-  value       = "http://datapulse-api:8000/metrics"
+  value       = "http://${aws_lb.main.dns_name}/metrics"
 }
 
 # Grafana Outputs
 output "grafana_url" {
   description = "Grafana UI URL"
-  value       = "http://localhost:${var.grafana_port}"
+  value       = "http://${aws_lb.main.dns_name}/grafana"
 }
 
 output "grafana_credentials" {
@@ -53,11 +53,11 @@ output "grafana_credentials" {
 output "service_urls" {
   description = "All service URLs after deployment"
   value = {
-    postgres   = "postgresql://localhost:${var.postgres_port}/${var.postgres_db}"
-    api        = "http://localhost:${var.api_port}"
-    api_docs   = "http://localhost:${var.api_port}/docs"
-    prometheus = "http://localhost:${var.prometheus_port}"
-    grafana    = "http://localhost:${var.grafana_port}"
+    postgres   = "postgresql://${aws_db_instance.main.endpoint}/${var.postgres_db}"
+    api        = "http://${aws_lb.main.dns_name}/api"
+    api_docs   = "http://${aws_lb.main.dns_name}/docs"
+    prometheus = "http://${aws_lb.main.dns_name}/prometheus"
+    grafana    = "http://${aws_lb.main.dns_name}/grafana"
   }
 }
 

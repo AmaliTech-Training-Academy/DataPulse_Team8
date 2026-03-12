@@ -44,16 +44,35 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build, tag, and push image to Amazon ECR
-        id: build-image
+      - name: Build, tag, and push images to Amazon ECR
+        id: build-images
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Build backend
-          docker build -t $ECR_REGISTRY/datapulse/backend:$IMAGE_TAG ./backend
+          # Build and push backend (tagged with sha and latest)
+          docker build -t $ECR_REGISTRY/datapulse/backend:$IMAGE_TAG -t $ECR_REGISTRY/datapulse/backend:latest ./backend
           docker push $ECR_REGISTRY/datapulse/backend:$IMAGE_TAG
+          docker push $ECR_REGISTRY/datapulse/backend:latest
           echo "image=$ECR_REGISTRY/datapulse/backend:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+          # Build and push frontend
+          docker build -t $ECR_REGISTRY/datapulse/frontend:latest ./frontend
+          docker push $ECR_REGISTRY/datapulse/frontend:latest
+
+          # Build and push prometheus
+          docker build -t $ECR_REGISTRY/datapulse/prometheus:latest -f terraform/Dockerfile.prometheus terraform/
+          docker push $ECR_REGISTRY/datapulse/prometheus:latest
+
+          # Build and push grafana
+          docker build -t $ECR_REGISTRY/datapulse/grafana:latest -f monitoring/Dockerfile.grafana monitoring/
+          docker push $ECR_REGISTRY/datapulse/grafana:latest
+
+          # Tag and push loki (use official image as baseline since no config needed)
+          docker pull grafana/loki:2.9.2
+          docker tag grafana/loki:2.9.2 $ECR_REGISTRY/datapulse/loki:latest
+          docker push $ECR_REGISTRY/datapulse/loki:latest
+
 
       - name: Update environment in task-definition.json
         run: |
@@ -70,7 +89,7 @@ jobs:
         with:
           task-definition: terraform/task-definition.json
           container-name: backend
-          image: ${{ steps.build-image.outputs.image }}
+          image: ${{ steps.build-images.outputs.image }}
 
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
@@ -83,3 +102,11 @@ jobs:
           codedeploy-app: datapulse-backend-${{ steps.env.outputs.name }}
           codedeploy-deployment-group: datapulse-backend-dg-${{ steps.env.outputs.name }}
           codedeploy-appspec: terraform/appspec.yml
+
+      - name: Restart auxiliary ECS Services
+        run: |
+          # Force deployment to pick up :latest tag updates
+          aws ecs update-service --cluster ${{ steps.env.outputs.cluster }} --service datapulse-frontend-${{ steps.env.outputs.name }} --force-new-deployment
+          aws ecs update-service --cluster ${{ steps.env.outputs.cluster }} --service datapulse-prometheus-${{ steps.env.outputs.name }} --force-new-deployment
+          aws ecs update-service --cluster ${{ steps.env.outputs.cluster }} --service datapulse-grafana-${{ steps.env.outputs.name }} --force-new-deployment
+          aws ecs update-service --cluster ${{ steps.env.outputs.cluster }} --service datapulse-loki-${{ steps.env.outputs.name }} --force-new-deployment
