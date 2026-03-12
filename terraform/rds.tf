@@ -56,7 +56,8 @@ resource "aws_db_instance" "main" {
   identifier     = "datapulse-postgres-${var.environment}"
   engine         = "postgres"
   engine_version = "15.17"
-  instance_class = var.environment == "prod" ? "db.t3.medium" : "db.t3.micro"
+  # Instance class - using db.t3.small for budget optimization
+  instance_class = "db.t3.small"
 
   # Database name and credentials
   db_name  = var.database_name
@@ -78,8 +79,8 @@ resource "aws_db_instance" "main" {
   backup_window           = "03:00-04:00"
   maintenance_window      = "mon:04:00-mon:05:00"
 
-  # Multi-AZ for production
-  multi_az = var.environment == "prod" ? true : false
+  # Multi-AZ for production (disabled for budget optimization)
+  multi_az = false
 
   # Performance and monitoring
   performance_insights_enabled = var.environment == "prod" ? true : false

@@ -57,10 +57,11 @@ resource "aws_elasticache_replication_group" "main" {
   description          = "DataPulse Redis Cache"
 
   # Engine configuration
-  engine             = "redis"
-  engine_version     = "7.0"
-  node_type          = var.environment == "prod" ? "cache.t3.medium" : "cache.t3.micro"
-  num_cache_clusters = var.environment == "prod" ? 2 : 1
+  engine         = "redis"
+  engine_version = "7.0"
+  # Node type - using t3.micro for budget optimization
+  node_type          = "cache.t3.micro"
+  num_cache_clusters = 1
 
   # Network configuration
   subnet_group_name  = aws_elasticache_subnet_group.main.name
@@ -70,15 +71,16 @@ resource "aws_elasticache_replication_group" "main" {
   at_rest_encryption_enabled = true
   transit_encryption_enabled = true
   auto_minor_version_upgrade = true
-  automatic_failover_enabled = var.environment == "prod" ? true : false
+  # Automatic failover disabled for budget optimization
+  automatic_failover_enabled = false
 
   # Backup configuration
   snapshot_retention_limit = var.environment == "prod" ? 7 : 0
   snapshot_window          = "03:00-04:00"
   maintenance_window       = "mon:05:00-mon:06:00"
 
-  # Multi-AZ
-  multi_az_enabled = var.environment == "prod" ? true : false
+  # Multi-AZ disabled for budget optimization
+  multi_az_enabled = false
 
   # Log delivery
   log_delivery_configuration {

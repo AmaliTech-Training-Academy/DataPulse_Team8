@@ -182,7 +182,7 @@ resource "aws_secretsmanager_secret_version" "ec2_ssh_key" {
 # EC2 Instance - Development
 resource "aws_instance" "dev" {
   ami           = data.aws_ami.amazon_linux_2.id
-  instance_type = var.environment == "prod" ? "t3.small" : "t3.medium"
+  instance_type = "t3.small" # Using small for both envs for cost savings
   subnet_id     = aws_subnet.public_1.id
 
   # Security Group

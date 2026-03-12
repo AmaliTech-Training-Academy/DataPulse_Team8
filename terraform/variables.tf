@@ -169,7 +169,7 @@ variable "backend_memory" {
 variable "backend_desired_count" {
   description = "Desired number of backend tasks"
   type        = number
-  default     = 2
+  default     = 1 # Reduced from 2 for cost savings
 }
 
 # Database Configuration for ECS
