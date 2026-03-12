@@ -1,2 +1,1 @@
-requests==2.31.0
-pytest==7.4.3
+# link to API tests requirements in Readme.md
