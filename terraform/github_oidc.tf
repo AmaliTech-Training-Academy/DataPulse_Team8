@@ -90,11 +90,18 @@ resource "aws_iam_role_policy" "github_actions_ecs_deploy" {
         ]
         Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/datapulse/*"
       },
-      # ECS cluster/service permissions
+      # ECS task definition permissions (requires wildcard resource)
       {
         Effect = "Allow"
         Action = [
-          "ecs:RegisterTaskDefinition",
+          "ecs:RegisterTaskDefinition"
+        ]
+        Resource = "*"
+      },
+      # ECS service permissions
+      {
+        Effect = "Allow"
+        Action = [
           "ecs:UpdateService",
           "ecs:DescribeServices",
           "ecs:ListTasks",
@@ -123,6 +130,23 @@ resource "aws_iam_role_policy" "github_actions_ecs_deploy" {
           "elasticloadbalancing:DescribeTargetGroups",
           "elasticloadbalancing:DescribeRules",
           "elasticloadbalancing:ModifyRule"
+        ]
+        Resource = "*"
+      },
+      # CodeDeploy permissions for blue-green deployment
+      {
+        Effect = "Allow"
+        Action = [
+          "codedeploy:CreateApplication",
+          "codedeploy:GetApplication",
+          "codedeploy:GetDeploymentGroup",
+          "codedeploy:ListApplications",
+          "codedeploy:ListDeploymentGroups",
+          "codedeploy:CreateDeploymentGroup",
+          "codedeploy:DeployApplication",
+          "codedeploy:GetDeployment",
+          "codedeploy:GetDeploymentConfig",
+          "codedeploy:RegisterApplicationRevision"
         ]
         Resource = "*"
       },
