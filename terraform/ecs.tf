@@ -410,7 +410,9 @@ resource "aws_lb" "main" {
 
 # Target Groups for Blue-Green Deployment
 resource "aws_lb_target_group" "backend_blue" {
-  name        = "datapulse-backend-blue-${var.environment}"
+  name_prefix = "be-bl-"
+  name_prefix = "be-bl-"
+>>>>>>> 77b1ffb (feat: Add GitHub OIDC and improved Terraform configuration)
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
@@ -432,10 +434,16 @@ resource "aws_lb_target_group" "backend_blue" {
     Environment = var.environment
     Color       = "blue"
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_lb_target_group" "backend_green" {
-  name        = "datapulse-backend-green-${var.environment}"
+  name_prefix = "be-gn-"
+  name_prefix = "be-gn-"
+>>>>>>> 77b1ffb (feat: Add GitHub OIDC and improved Terraform configuration)
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
@@ -457,6 +465,10 @@ resource "aws_lb_target_group" "backend_green" {
     Environment = var.environment
     Color       = "green"
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # ALB Listener
@@ -468,6 +480,18 @@ resource "aws_lb_listener" "frontend" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.backend_blue.arn
+  }
+}
+
+# Test Listener for Blue-Green Deployments
+resource "aws_lb_listener" "test" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = "8080"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend_green.arn
   }
 }
 
@@ -561,6 +585,8 @@ resource "aws_ecs_service" "backend_blue" {
     type = "CODE_DEPLOY"
   }
 
+  # Blue-Green deployment configuration managed by CodeDeploy
+  depends_on = [aws_lb_listener.frontend]
   depends_on = [aws_lb_listener.frontend]
 
   tags = {
@@ -631,7 +657,8 @@ resource "aws_codedeploy_deployment_group" "backend" {
   service_role_arn      = aws_iam_role.codedeploy.arn
 
   deployment_style {
-    deployment_type = "BLUE_GREEN"
+    deployment_option = "WITH_TRAFFIC_CONTROL"
+    deployment_type   = "BLUE_GREEN"
   }
 
   ecs_service {
@@ -644,8 +671,9 @@ resource "aws_codedeploy_deployment_group" "backend" {
       action_on_timeout = "CONTINUE_DEPLOYMENT"
     }
 
-    green_fleet_provisioning_option {
-      action = "COPY_AUTO_SCALING_GROUP"
+    terminate_blue_instances_on_deployment_success {
+      action                           = "TERMINATE"
+      termination_wait_time_in_minutes = 5
     }
   }
 
@@ -653,6 +681,10 @@ resource "aws_codedeploy_deployment_group" "backend" {
     target_group_pair_info {
       prod_traffic_route {
         listener_arns = [aws_lb_listener.frontend.arn]
+      }
+
+      test_traffic_route {
+        listener_arns = [aws_lb_listener.test.arn]
       }
 
       target_group {
