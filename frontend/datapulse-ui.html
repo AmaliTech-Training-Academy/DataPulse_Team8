@@ -1,1003 +1,1824 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>DataPulse — Data Quality Monitor</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Clash+Display:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-:root {
-  --bg:        #07090f;
-  --surface:   #0e1118;
-  --card:      #131720;
-  --border:    #1c2233;
-  --border2:   #252d42;
-  --blue:      #4f8ef7;
-  --blue-dim:  #1e3a6e;
-  --cyan:      #26d9c7;
-  --green:     #22c97a;
-  --green-dim: #0d3d26;
-  --amber:     #f5a623;
-  --amber-dim: #3d2a08;
-  --red:       #f05a5a;
-  --red-dim:   #3d1212;
-  --text:      #dde4f0;
-  --muted:     #5a6580;
-  --dim:       #2a3350;
-  --font-display: 'Clash Display', sans-serif;
-  --font-mono:    'DM Mono', monospace;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:var(--font-mono);
-  font-size:13px;
-  min-height:100vh;
-  overflow-x:hidden;
-}
-body::before{
-  content:'';position:fixed;inset:0;
-  background:
-    radial-gradient(ellipse 60% 40% at 10% 0%, rgba(79,142,247,.07) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 90% 100%, rgba(38,217,199,.05) 0%, transparent 50%);
-  pointer-events:none;z-index:0;
-}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DataPulse — Data Quality Monitor</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Clash+Display:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #07090f;
+        --surface: #0e1118;
+        --card: #131720;
+        --border: #1c2233;
+        --border2: #252d42;
+        --blue: #4f8ef7;
+        --blue-dim: #1e3a6e;
+        --cyan: #26d9c7;
+        --green: #22c97a;
+        --green-dim: #0d3d26;
+        --amber: #f5a623;
+        --amber-dim: #3d2a08;
+        --red: #f05a5a;
+        --red-dim: #3d1212;
+        --text: #dde4f0;
+        --muted: #5a6580;
+        --dim: #2a3350;
+        --font-display: "Clash Display", sans-serif;
+        --font-mono: "DM Mono", monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 13px;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(
+            ellipse 60% 40% at 10% 0%,
+            rgba(79, 142, 247, 0.07) 0%,
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse 40% 30% at 90% 100%,
+            rgba(38, 217, 199, 0.05) 0%,
+            transparent 50%
+          );
+        pointer-events: none;
+        z-index: 0;
+      }
 
-/* ── LAYOUT ── */
-.shell{display:flex;min-height:100vh;position:relative;z-index:1}
+      /* ── LAYOUT ── */
+      .shell {
+        display: flex;
+        min-height: 100vh;
+        position: relative;
+        z-index: 1;
+      }
 
-/* ── SIDEBAR ── */
-nav{
-  width:220px;flex-shrink:0;
-  background:var(--surface);
-  border-right:1px solid var(--border);
-  display:flex;flex-direction:column;
-  position:fixed;top:0;left:0;bottom:0;
-  z-index:100;
-}
-.logo{
-  padding:24px 20px 20px;
-  border-bottom:1px solid var(--border);
-}
-.logo-mark{
-  font-family:var(--font-display);
-  font-size:22px;font-weight:700;
-  background:linear-gradient(135deg,var(--blue),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;
-  letter-spacing:-.02em;
-}
-.logo-sub{font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-top:3px}
+      /* ── SIDEBAR ── */
+      nav {
+        width: 220px;
+        flex-shrink: 0;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 100;
+      }
+      .logo {
+        padding: 24px 20px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+      .logo-mark {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--blue), var(--cyan));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.02em;
+      }
+      .logo-sub {
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-top: 3px;
+      }
 
-.nav-section{padding:16px 12px 8px;font-size:9px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase}
-.nav-item{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 16px;margin:2px 8px;
-  border-radius:8px;cursor:pointer;
-  color:var(--muted);font-size:12px;
-  transition:all .15s;border:1px solid transparent;
-  text-decoration:none;
-}
-.nav-item:hover{background:var(--card);color:var(--text);border-color:var(--border)}
-.nav-item.active{background:var(--blue-dim);color:var(--blue);border-color:rgba(79,142,247,.3)}
-.nav-icon{font-size:15px;width:18px;text-align:center}
+      .nav-section {
+        padding: 16px 12px 8px;
+        font-size: 9px;
+        color: var(--muted);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        margin: 2px 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 12px;
+        transition: all 0.15s;
+        border: 1px solid transparent;
+        text-decoration: none;
+      }
+      .nav-item:hover {
+        background: var(--card);
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .nav-item.active {
+        background: var(--blue-dim);
+        color: var(--blue);
+        border-color: rgba(79, 142, 247, 0.3);
+      }
+      .nav-icon {
+        font-size: 15px;
+        width: 18px;
+        text-align: center;
+      }
 
-.nav-bottom{margin-top:auto;padding:16px;border-top:1px solid var(--border)}
-.api-status{
-  display:flex;align-items:center;gap:8px;
-  font-size:11px;color:var(--muted);
-}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
-.status-dot.online{background:var(--green);box-shadow:0 0 6px var(--green)}
-.status-dot.offline{background:var(--red)}
+      .nav-bottom {
+        margin-top: auto;
+        padding: 16px;
+        border-top: 1px solid var(--border);
+      }
+      .api-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--muted);
+        flex-shrink: 0;
+      }
+      .status-dot.online {
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+      }
+      .status-dot.offline {
+        background: var(--red);
+      }
 
-/* ── MAIN ── */
-main{margin-left:220px;flex:1;padding:32px;min-height:100vh}
+      /* ── MAIN ── */
+      main {
+        margin-left: 220px;
+        flex: 1;
+        padding: 32px;
+        min-height: 100vh;
+      }
 
-/* ── TOPBAR ── */
-.topbar{
-  display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:32px;
-}
-.page-title{font-family:var(--font-display);font-size:28px;font-weight:700;letter-spacing:-.02em}
-.page-sub{font-size:12px;color:var(--muted);margin-top:4px}
-.topbar-right{display:flex;gap:10px;align-items:center}
+      /* ── TOPBAR ── */
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+      }
+      .page-title {
+        font-family: var(--font-display);
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .page-sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .topbar-right {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
 
-/* ── VIEWS ── */
-.view{display:none}
-.view.active{display:block}
+      /* ── VIEWS ── */
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+      }
 
-/* ── AUTH OVERLAY ── */
-#auth-overlay{
-  position:fixed;inset:0;
-  background:rgba(7,9,15,.95);
-  display:flex;align-items:center;justify-content:center;
-  z-index:200;
-  backdrop-filter:blur(8px);
-}
-.auth-card{
-  background:var(--card);
-  border:1px solid var(--border2);
-  border-radius:20px;
-  padding:40px;
-  width:380px;
-  box-shadow:0 40px 80px rgba(0,0,0,.6);
-}
-.auth-logo{
-  font-family:var(--font-display);
-  font-size:32px;font-weight:700;
-  background:linear-gradient(135deg,var(--blue),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;
-  margin-bottom:6px;
-}
-.auth-tagline{font-size:12px;color:var(--muted);margin-bottom:32px}
-.auth-tabs{display:flex;gap:0;margin-bottom:24px;background:var(--bg);border-radius:10px;padding:4px}
-.auth-tab{
-  flex:1;padding:8px;text-align:center;border-radius:7px;cursor:pointer;
-  font-size:12px;color:var(--muted);transition:all .15s;
-}
-.auth-tab.active{background:var(--blue-dim);color:var(--blue)}
+      /* ── AUTH OVERLAY ── */
+      #auth-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(7, 9, 15, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+        backdrop-filter: blur(8px);
+      }
+      .auth-card {
+        background: var(--card);
+        border: 1px solid var(--border2);
+        border-radius: 20px;
+        padding: 40px;
+        width: 380px;
+        box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+      }
+      .auth-logo {
+        font-family: var(--font-display);
+        font-size: 32px;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--blue), var(--cyan));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 6px;
+      }
+      .auth-tagline {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 32px;
+      }
+      .auth-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 24px;
+        background: var(--bg);
+        border-radius: 10px;
+        padding: 4px;
+      }
+      .auth-tab {
+        flex: 1;
+        padding: 8px;
+        text-align: center;
+        border-radius: 7px;
+        cursor: pointer;
+        font-size: 12px;
+        color: var(--muted);
+        transition: all 0.15s;
+      }
+      .auth-tab.active {
+        background: var(--blue-dim);
+        color: var(--blue);
+      }
 
-/* ── FORM ELEMENTS ── */
-.field{margin-bottom:16px}
-.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase}
-.field input,.field select,.field textarea{
-  width:100%;background:var(--bg);
-  border:1px solid var(--border2);border-radius:8px;
-  padding:10px 14px;color:var(--text);
-  font-family:var(--font-mono);font-size:13px;
-  outline:none;transition:border-color .15s;
-}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue)}
-.field select option{background:var(--bg)}
-.field textarea{resize:vertical;min-height:80px}
+      /* ── FORM ELEMENTS ── */
+      .field {
+        margin-bottom: 16px;
+      }
+      .field label {
+        display: block;
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 6px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .field input,
+      .field select,
+      .field textarea {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        padding: 10px 14px;
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .field input:focus,
+      .field select:focus,
+      .field textarea:focus {
+        border-color: var(--blue);
+      }
+      .field select option {
+        background: var(--bg);
+      }
+      .field textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
 
-/* ── BUTTONS ── */
-.btn{
-  display:inline-flex;align-items:center;gap:7px;
-  padding:9px 18px;border-radius:8px;cursor:pointer;
-  font-family:var(--font-mono);font-size:12px;font-weight:500;
-  border:1px solid transparent;transition:all .15s;
-  white-space:nowrap;
-}
-.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
-.btn-primary:hover{background:#6ba3ff;box-shadow:0 0 20px rgba(79,142,247,.4)}
-.btn-success{background:var(--green);color:#000;border-color:var(--green)}
-.btn-success:hover{background:#3de890}
-.btn-ghost{background:transparent;color:var(--text);border-color:var(--border2)}
-.btn-ghost:hover{background:var(--card);border-color:var(--border2)}
-.btn-danger{background:transparent;color:var(--red);border-color:var(--red-dim)}
-.btn-danger:hover{background:var(--red-dim)}
-.btn-full{width:100%;justify-content:center}
-.btn:disabled{opacity:.4;cursor:not-allowed}
+      /* ── BUTTONS ── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        transition: all 0.15s;
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: var(--blue);
+        color: #fff;
+        border-color: var(--blue);
+      }
+      .btn-primary:hover {
+        background: #6ba3ff;
+        box-shadow: 0 0 20px rgba(79, 142, 247, 0.4);
+      }
+      .btn-success {
+        background: var(--green);
+        color: #000;
+        border-color: var(--green);
+      }
+      .btn-success:hover {
+        background: #3de890;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--text);
+        border-color: var(--border2);
+      }
+      .btn-ghost:hover {
+        background: var(--card);
+        border-color: var(--border2);
+      }
+      .btn-danger {
+        background: transparent;
+        color: var(--red);
+        border-color: var(--red-dim);
+      }
+      .btn-danger:hover {
+        background: var(--red-dim);
+      }
+      .btn-full {
+        width: 100%;
+        justify-content: center;
+      }
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
 
-/* ── CARDS ── */
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:24px;
-  margin-bottom:20px;
-}
-.card-title{
-  font-family:var(--font-display);
-  font-size:16px;font-weight:600;
-  margin-bottom:16px;
-  display:flex;align-items:center;gap:10px;
-}
+      /* ── CARDS ── */
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 20px;
+      }
+      .card-title {
+        font-family: var(--font-display);
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-/* ── STAT TILES ── */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
-.stat-tile{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:12px;padding:20px;
-  position:relative;overflow:hidden;
-}
-.stat-tile::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-}
-.stat-tile.blue::before{background:linear-gradient(90deg,var(--blue),transparent)}
-.stat-tile.green::before{background:linear-gradient(90deg,var(--green),transparent)}
-.stat-tile.amber::before{background:linear-gradient(90deg,var(--amber),transparent)}
-.stat-tile.cyan::before{background:linear-gradient(90deg,var(--cyan),transparent)}
-.stat-val{font-family:var(--font-display);font-size:32px;font-weight:700;line-height:1}
-.stat-label{font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:.06em;text-transform:uppercase}
+      /* ── STAT TILES ── */
+      .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+      .stat-tile {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+      }
+      .stat-tile::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+      }
+      .stat-tile.blue::before {
+        background: linear-gradient(90deg, var(--blue), transparent);
+      }
+      .stat-tile.green::before {
+        background: linear-gradient(90deg, var(--green), transparent);
+      }
+      .stat-tile.amber::before {
+        background: linear-gradient(90deg, var(--amber), transparent);
+      }
+      .stat-tile.cyan::before {
+        background: linear-gradient(90deg, var(--cyan), transparent);
+      }
+      .stat-val {
+        font-family: var(--font-display);
+        font-size: 32px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .stat-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 6px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
 
-/* ── TABLE ── */
-.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
-table{width:100%;border-collapse:collapse}
-th{background:var(--surface);padding:11px 16px;text-align:left;font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
-td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(255,255,255,.02)}
+      /* ── TABLE ── */
+      .table-wrap {
+        overflow-x: auto;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th {
+        background: var(--surface);
+        padding: 11px 16px;
+        text-align: left;
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      td {
+        padding: 11px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 12px;
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
 
-/* ── BADGES ── */
-.badge{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:3px 10px;border-radius:20px;font-size:10px;font-weight:500;
-  letter-spacing:.04em;text-transform:uppercase;
-}
-.badge-green{background:var(--green-dim);color:var(--green)}
-.badge-red{background:var(--red-dim);color:var(--red)}
-.badge-amber{background:var(--amber-dim);color:var(--amber)}
-.badge-blue{background:var(--blue-dim);color:var(--blue)}
+      /* ── BADGES ── */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .badge-green {
+        background: var(--green-dim);
+        color: var(--green);
+      }
+      .badge-red {
+        background: var(--red-dim);
+        color: var(--red);
+      }
+      .badge-amber {
+        background: var(--amber-dim);
+        color: var(--amber);
+      }
+      .badge-blue {
+        background: var(--blue-dim);
+        color: var(--blue);
+      }
 
-/* ── SCORE RING ── */
-.score-ring-wrap{display:flex;align-items:center;gap:24px;margin-bottom:24px}
-.score-ring{position:relative;width:120px;height:120px;flex-shrink:0}
-.score-ring svg{transform:rotate(-90deg)}
-.score-ring-bg{fill:none;stroke:var(--border2);stroke-width:8}
-.score-ring-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)}
-.score-ring-text{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-}
-.score-ring-num{font-family:var(--font-display);font-size:26px;font-weight:700}
-.score-ring-pct{font-size:10px;color:var(--muted)}
+      /* ── SCORE RING ── */
+      .score-ring-wrap {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 24px;
+      }
+      .score-ring {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        flex-shrink: 0;
+      }
+      .score-ring svg {
+        transform: rotate(-90deg);
+      }
+      .score-ring-bg {
+        fill: none;
+        stroke: var(--border2);
+        stroke-width: 8;
+      }
+      .score-ring-fill {
+        fill: none;
+        stroke-width: 8;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .score-ring-text {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .score-ring-num {
+        font-family: var(--font-display);
+        font-size: 26px;
+        font-weight: 700;
+      }
+      .score-ring-pct {
+        font-size: 10px;
+        color: var(--muted);
+      }
 
-/* ── UPLOAD ZONE ── */
-.upload-zone{
-  border:2px dashed var(--border2);border-radius:14px;
-  padding:40px;text-align:center;cursor:pointer;
-  transition:all .2s;position:relative;
-}
-.upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:rgba(79,142,247,.05)}
-.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-.upload-icon{font-size:40px;margin-bottom:12px}
-.upload-label{font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:6px}
-.upload-hint{font-size:12px;color:var(--muted)}
+      /* ── UPLOAD ZONE ── */
+      .upload-zone {
+        border: 2px dashed var(--border2);
+        border-radius: 14px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+      }
+      .upload-zone:hover,
+      .upload-zone.drag {
+        border-color: var(--blue);
+        background: rgba(79, 142, 247, 0.05);
+      }
+      .upload-zone input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+      .upload-icon {
+        font-size: 40px;
+        margin-bottom: 12px;
+      }
+      .upload-label {
+        font-family: var(--font-display);
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .upload-hint {
+        font-size: 12px;
+        color: var(--muted);
+      }
 
-/* ── TOAST ── */
-#toast-container{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
-.toast{
-  padding:12px 18px;border-radius:10px;
-  font-size:12px;min-width:260px;max-width:360px;
-  display:flex;align-items:center;gap:10px;
-  animation:slideIn .2s ease;
-  box-shadow:0 8px 24px rgba(0,0,0,.4);
-}
-.toast-success{background:#0d3d26;border:1px solid var(--green);color:var(--green)}
-.toast-error{background:var(--red-dim);border:1px solid var(--red);color:var(--red)}
-.toast-info{background:var(--blue-dim);border:1px solid var(--blue);color:var(--blue)}
-@keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:none;opacity:1}}
+      /* ── TOAST ── */
+      #toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-size: 12px;
+        min-width: 260px;
+        max-width: 360px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: slideIn 0.2s ease;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      }
+      .toast-success {
+        background: #0d3d26;
+        border: 1px solid var(--green);
+        color: var(--green);
+      }
+      .toast-error {
+        background: var(--red-dim);
+        border: 1px solid var(--red);
+        color: var(--red);
+      }
+      .toast-info {
+        background: var(--blue-dim);
+        border: 1px solid var(--blue);
+        color: var(--blue);
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateX(120%);
+          opacity: 0;
+        }
+        to {
+          transform: none;
+          opacity: 1;
+        }
+      }
 
-/* ── MISC ── */
-.row{display:flex;gap:16px}
-.row .card{flex:1}
-.empty{text-align:center;padding:48px;color:var(--muted)}
-.empty-icon{font-size:36px;margin-bottom:12px}
-.divider{height:1px;background:var(--border);margin:20px 0}
-.chip{
-  display:inline-block;padding:2px 9px;border-radius:12px;
-  font-size:10px;background:var(--dim);color:var(--muted);margin:2px;
-}
-.progress-bar{height:6px;background:var(--dim);border-radius:3px;overflow:hidden}
-.progress-fill{height:100%;border-radius:3px;transition:width .6s ease}
-.text-right{text-align:right}
-.flex-between{display:flex;justify-content:space-between;align-items:center}
-.gap-8{gap:8px}
-.mt-16{margin-top:16px}
-.spinner{
-  width:18px;height:18px;border:2px solid var(--border2);
-  border-top-color:var(--blue);border-radius:50%;
-  animation:spin .6s linear infinite;display:inline-block;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-row{display:flex;align-items:center;justify-content:center;gap:10px;padding:32px;color:var(--muted)}
+      /* ── MISC ── */
+      .row {
+        display: flex;
+        gap: 16px;
+      }
+      .row .card {
+        flex: 1;
+      }
+      .empty {
+        text-align: center;
+        padding: 48px;
+        color: var(--muted);
+      }
+      .empty-icon {
+        font-size: 36px;
+        margin-bottom: 12px;
+      }
+      .divider {
+        height: 1px;
+        background: var(--border);
+        margin: 20px 0;
+      }
+      .chip {
+        display: inline-block;
+        padding: 2px 9px;
+        border-radius: 12px;
+        font-size: 10px;
+        background: var(--dim);
+        color: var(--muted);
+        margin: 2px;
+      }
+      .progress-bar {
+        height: 6px;
+        background: var(--dim);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.6s ease;
+      }
+      .text-right {
+        text-align: right;
+      }
+      .flex-between {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .gap-8 {
+        gap: 8px;
+      }
+      .mt-16 {
+        margin-top: 16px;
+      }
+      .spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--border2);
+        border-top-color: var(--blue);
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        display: inline-block;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .loading-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 32px;
+        color: var(--muted);
+      }
 
-/* ── RULE PARAMS ── */
-#rule-params-box{padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-top:8px}
+      /* ── RULE PARAMS ── */
+      #rule-params-box {
+        padding: 14px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-top: 8px;
+      }
 
-/* ── CHART ── */
-.chart-wrap{position:relative;height:260px}
+      /* ── CHART ── */
+      .chart-wrap {
+        position: relative;
+        height: 260px;
+      }
 
-/* responsive */
-@media(max-width:900px){
-  nav{width:60px}
-  .logo-mark,.logo-sub,.nav-section,.nav-item span{display:none}
-  main{margin-left:60px;padding:20px}
-  .stats-row{grid-template-columns:repeat(2,1fr)}
-}
-</style>
-</head>
-<body>
-
-<!-- AUTH OVERLAY -->
-<div id="auth-overlay">
-  <div class="auth-card">
-    <div class="auth-logo">DataPulse</div>
-    <div class="auth-tagline">Data Quality Monitoring Platform</div>
-    <div class="auth-tabs">
-      <div class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
-      <div class="auth-tab" onclick="switchAuthTab('register')">Register</div>
-    </div>
-    <div id="login-form">
-      <div class="field"><label>Email</label><input id="login-email" type="email" value="qa_user@datapulse.com" placeholder="you@example.com"/></div>
-      <div class="field"><label>Password</label><input id="login-password" type="password" value="qapassword12" placeholder="••••••••"/></div>
-      <button class="btn btn-primary btn-full" onclick="doLogin()">Sign In →</button>
-    </div>
-    <div id="register-form" style="display:none">
-      <div class="field"><label>Full Name</label><input id="reg-name" type="text" placeholder="Your name"/></div>
-      <div class="field"><label>Email</label><input id="reg-email" type="email" placeholder="you@example.com"/></div>
-      <div class="field"><label>Password</label><input id="reg-password" type="password" placeholder="min 8 chars"/></div>
-      <button class="btn btn-primary btn-full" onclick="doRegister()">Create Account →</button>
-    </div>
-    <div style="margin-top:16px;font-size:11px;color:var(--muted);text-align:center">
-      Default: qa_user@datapulse.com / qapassword12
-    </div>
-  </div>
-</div>
-
-<!-- SHELL -->
-<div class="shell">
-  <!-- SIDEBAR -->
-  <nav>
-    <div class="logo">
-      <div class="logo-mark">DataPulse</div>
-      <div class="logo-sub">Quality Monitor</div>
-    </div>
-    <div class="nav-section">Main</div>
-    <a class="nav-item active" onclick="showView('dashboard')" href="#">
-      <span class="nav-icon">◈</span><span>Dashboard</span>
-    </a>
-    <a class="nav-item" onclick="showView('upload')" href="#">
-      <span class="nav-icon">↑</span><span>Upload Data</span>
-    </a>
-    <a class="nav-item" onclick="showView('datasets')" href="#">
-      <span class="nav-icon">▦</span><span>Datasets</span>
-    </a>
-    <div class="nav-section">Quality</div>
-    <a class="nav-item" onclick="showView('rules')" href="#">
-      <span class="nav-icon">⚙</span><span>Rules</span>
-    </a>
-    <a class="nav-item" onclick="showView('checks')" href="#">
-      <span class="nav-icon">▶</span><span>Run Checks</span>
-    </a>
-    <a class="nav-item" onclick="showView('reports')" href="#">
-      <span class="nav-icon">≡</span><span>Reports</span>
-    </a>
-    <a class="nav-item" onclick="showView('trends')" href="#">
-      <span class="nav-icon">∿</span><span>Trends</span>
-    </a>
-    <div class="nav-section admin-only" style="display:none">Admin</div>
-    <a class="nav-item admin-only" style="display:none" onclick="showView('admin')" href="#">
-      <span class="nav-icon">⊞</span><span>Admin Panel</span>
-    </a>
-    <div class="nav-bottom">
-      <div class="api-status">
-        <div class="status-dot" id="status-dot"></div>
-        <span id="status-text">Connecting...</span>
+      /* responsive */
+      @media (max-width: 900px) {
+        nav {
+          width: 60px;
+        }
+        .logo-mark,
+        .logo-sub,
+        .nav-section,
+        .nav-item span {
+          display: none;
+        }
+        main {
+          margin-left: 60px;
+          padding: 20px;
+        }
+        .stats-row {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- AUTH OVERLAY -->
+    <div id="auth-overlay">
+      <div class="auth-card">
+        <div class="auth-logo">DataPulse</div>
+        <div class="auth-tagline">Data Quality Monitoring Platform</div>
+        <div class="auth-tabs">
+          <div class="auth-tab active" onclick="switchAuthTab('login')">
+            Sign In
+          </div>
+          <div class="auth-tab" onclick="switchAuthTab('register')">
+            Register
+          </div>
+        </div>
+        <div id="login-form">
+          <div class="field">
+            <label>Email</label
+            ><input
+              id="login-email"
+              type="email"
+              value="qa_user@datapulse.com"
+              placeholder="you@example.com"
+            />
+          </div>
+          <div class="field">
+            <label>Password</label
+            ><input
+              id="login-password"
+              type="password"
+              value="qapassword12"
+              placeholder="••••••••"
+            />
+          </div>
+          <button class="btn btn-primary btn-full" onclick="doLogin()">
+            Sign In →
+          </button>
+        </div>
+        <div id="register-form" style="display: none">
+          <div class="field">
+            <label>Full Name</label
+            ><input id="reg-name" type="text" placeholder="Your name" />
+          </div>
+          <div class="field">
+            <label>Email</label
+            ><input id="reg-email" type="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label>Password</label
+            ><input
+              id="reg-password"
+              type="password"
+              placeholder="min 8 chars"
+            />
+          </div>
+          <button class="btn btn-primary btn-full" onclick="doRegister()">
+            Create Account →
+          </button>
+        </div>
+        <div
+          style="
+            margin-top: 16px;
+            font-size: 11px;
+            color: var(--muted);
+            text-align: center;
+          "
+        >
+          Default: qa_user@datapulse.com / qapassword12
+        </div>
       </div>
-      <div style="margin-top:10px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px" id="user-info-bar" class="user-info-bar"></div>
-      <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:11px;padding:6px" onclick="doLogout()" id="logout-btn">↩ Sign Out</button>
-    </div>
-  </nav>
-
-  <!-- MAIN -->
-  <main>
-
-    <!-- ── DASHBOARD ── -->
-    <div class="view active" id="view-dashboard">
-      <div class="topbar">
-        <div>
-          <div class="page-title">Dashboard</div>
-          <div class="page-sub">Overview of your data quality landscape</div>
-        </div>
-        <button class="btn btn-ghost" onclick="loadDashboard()">↻ Refresh</button>
-      </div>
-      <div class="stats-row">
-        <div class="stat-tile blue">
-          <div class="stat-val" id="dash-total-datasets">—</div>
-          <div class="stat-label">Total Datasets</div>
-        </div>
-        <div class="stat-tile green">
-          <div class="stat-val" id="dash-avg-score">—</div>
-          <div class="stat-label">Avg Quality Score</div>
-        </div>
-        <div class="stat-tile amber">
-          <div class="stat-val" id="dash-total-rules">—</div>
-          <div class="stat-label">Active Rules</div>
-        </div>
-        <div class="stat-tile cyan">
-          <div class="stat-val" id="dash-checks-run">—</div>
-          <div class="stat-label">Checks Run</div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="card">
-          <div class="card-title">📂 Recent Datasets</div>
-          <div id="dash-recent-datasets"><div class="loading-row"><div class="spinner"></div> Loading...</div></div>
-        </div>
-        <div class="card">
-          <div class="card-title">∿ Score Trend (30 days)</div>
-          <div class="chart-wrap"><canvas id="dash-trend-chart"></canvas></div>
-        </div>
-      </div>
     </div>
 
-    <!-- ── UPLOAD ── -->
-    <div class="view" id="view-upload">
-      <div class="topbar">
-        <div>
-          <div class="page-title">Upload Dataset</div>
-          <div class="page-sub">Upload a CSV or JSON file for quality validation</div>
+    <!-- SHELL -->
+    <div class="shell">
+      <!-- SIDEBAR -->
+      <nav>
+        <div class="logo">
+          <div class="logo-mark">DataPulse</div>
+          <div class="logo-sub">Quality Monitor</div>
         </div>
-      </div>
-      <div class="card" style="max-width:600px">
-        <div class="upload-zone" id="upload-zone">
-          <input type="file" id="file-input" accept=".csv,.json" onchange="handleFileSelect(event)"/>
-          <div class="upload-icon">☁</div>
-          <div class="upload-label">Drop your file here</div>
-          <div class="upload-hint">Supports CSV and JSON · Max 50MB</div>
+        <div class="nav-section">Main</div>
+        <a class="nav-item active" onclick="showView('dashboard')" href="#">
+          <span class="nav-icon">◈</span><span>Dashboard</span>
+        </a>
+        <a class="nav-item" onclick="showView('upload')" href="#">
+          <span class="nav-icon">↑</span><span>Upload Data</span>
+        </a>
+        <a class="nav-item" onclick="showView('datasets')" href="#">
+          <span class="nav-icon">▦</span><span>Datasets</span>
+        </a>
+        <div class="nav-section">Quality</div>
+        <a class="nav-item" onclick="showView('rules')" href="#">
+          <span class="nav-icon">⚙</span><span>Rules</span>
+        </a>
+        <a class="nav-item" onclick="showView('checks')" href="#">
+          <span class="nav-icon">▶</span><span>Run Checks</span>
+        </a>
+        <a class="nav-item" onclick="showView('reports')" href="#">
+          <span class="nav-icon">≡</span><span>Reports</span>
+        </a>
+        <a class="nav-item" onclick="showView('trends')" href="#">
+          <span class="nav-icon">∿</span><span>Trends</span>
+        </a>
+        <div class="nav-section admin-only" style="display: none">Admin</div>
+        <a
+          class="nav-item admin-only"
+          style="display: none"
+          onclick="showView('admin')"
+          href="#"
+        >
+          <span class="nav-icon">⊞</span><span>Admin Panel</span>
+        </a>
+        <div class="nav-bottom">
+          <div class="api-status">
+            <div class="status-dot" id="status-dot"></div>
+            <span id="status-text">Connecting...</span>
+          </div>
+          <div
+            style="
+              margin-top: 10px;
+              font-size: 11px;
+              color: var(--muted);
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            "
+            id="user-info-bar"
+            class="user-info-bar"
+          ></div>
+          <button
+            class="btn btn-ghost btn-full"
+            style="margin-top: 8px; font-size: 11px; padding: 6px"
+            onclick="doLogout()"
+            id="logout-btn"
+          >
+            ↩ Sign Out
+          </button>
         </div>
-        <div id="file-preview" style="display:none;margin-top:16px">
-          <div class="card" style="margin-bottom:0;background:var(--bg)">
-            <div class="flex-between">
-              <div>
-                <div style="font-family:var(--font-display);font-weight:600" id="file-name-display">—</div>
-                <div style="font-size:11px;color:var(--muted);margin-top:4px" id="file-size-display">—</div>
+      </nav>
+
+      <!-- MAIN -->
+      <main>
+        <!-- ── DASHBOARD ── -->
+        <div class="view active" id="view-dashboard">
+          <div class="topbar">
+            <div>
+              <div class="page-title">Dashboard</div>
+              <div class="page-sub">
+                Overview of your data quality landscape
               </div>
-              <button class="btn btn-success" onclick="uploadFile()" id="upload-btn">Upload ↑</button>
+            </div>
+            <button class="btn btn-ghost" onclick="loadDashboard()">
+              ↻ Refresh
+            </button>
+          </div>
+          <div class="stats-row">
+            <div class="stat-tile blue">
+              <div class="stat-val" id="dash-total-datasets">—</div>
+              <div class="stat-label">Total Datasets</div>
+            </div>
+            <div class="stat-tile green">
+              <div class="stat-val" id="dash-avg-score">—</div>
+              <div class="stat-label">Avg Quality Score</div>
+            </div>
+            <div class="stat-tile amber">
+              <div class="stat-val" id="dash-total-rules">—</div>
+              <div class="stat-label">Active Rules</div>
+            </div>
+            <div class="stat-tile cyan">
+              <div class="stat-val" id="dash-checks-run">—</div>
+              <div class="stat-label">Checks Run</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="card">
+              <div class="card-title">📂 Recent Datasets</div>
+              <div id="dash-recent-datasets">
+                <div class="loading-row">
+                  <div class="spinner"></div>
+                  Loading...
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">∿ Score Trend (30 days)</div>
+              <div class="chart-wrap">
+                <canvas id="dash-trend-chart"></canvas>
+              </div>
             </div>
           </div>
         </div>
-        <div id="upload-result" style="display:none;margin-top:16px"></div>
-      </div>
-      <div class="card" style="max-width:600px">
-        <div class="card-title">💡 Tips</div>
-        <div style="color:var(--muted);font-size:12px;line-height:2">
-          • CSV files must have a header row with column names<br>
-          • JSON files should be an array of objects<br>
-          • Column names become available when creating rules<br>
-          • After upload, go to <b style="color:var(--text)">Rules</b> to define validation rules<br>
-          • Then go to <b style="color:var(--text)">Run Checks</b> to score your dataset
-        </div>
-      </div>
-    </div>
 
-    <!-- ── DATASETS ── -->
-    <div class="view" id="view-datasets">
-      <div class="topbar">
-        <div>
-          <div class="page-title">Datasets</div>
-          <div class="page-sub">All uploaded files and their quality status</div>
-        </div>
-        <button class="btn btn-ghost" onclick="loadDatasets()">↻ Refresh</button>
-      </div>
-      <div class="card">
-        <div id="datasets-table"><div class="loading-row"><div class="spinner"></div> Loading...</div></div>
-        <div id="datasets-pagination" class="flex-between mt-16" style="display:none">
-          <div style="font-size:12px;color:var(--muted)" id="datasets-page-info">Page 1 of 1</div>
-          <div class="flex-between gap-8">
-            <button class="btn btn-ghost" style="padding:5px 12px" onclick="changeDatasetsPage(-1)" id="datasets-prev-btn">← Prev</button>
-            <button class="btn btn-ghost" style="padding:5px 12px" onclick="changeDatasetsPage(1)" id="datasets-next-btn">Next →</button>
+        <!-- ── UPLOAD ── -->
+        <div class="view" id="view-upload">
+          <div class="topbar">
+            <div>
+              <div class="page-title">Upload Dataset</div>
+              <div class="page-sub">
+                Upload a CSV or JSON file for quality validation
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── RULES ── -->
-    <div class="view" id="view-rules">
-      <div class="topbar">
-        <div>
-          <div class="page-title">Validation Rules</div>
-          <div class="page-sub">Define what "good data" looks like</div>
-        </div>
-        <button class="btn btn-primary" onclick="toggleRuleForm()">+ New Rule</button>
-      </div>
-
-      <!-- RULE FORM (CREATE/EDIT) -->
-      <div class="card" id="rule-form-card" style="display:none;max-width:580px">
-        <div class="card-title" id="rule-form-title">⚙ Create Validation Rule</div>
-        <input type="hidden" id="edit-rule-id" value="">
-        <div class="field">
-          <label>Rule Name</label>
-          <input id="rule-name" placeholder="e.g. email_not_null"/>
-        </div>
-        <div class="row" style="gap:12px">
-          <div class="field" style="flex:1">
-            <label>Dataset Name / Type</label>
-            <input id="rule-dataset-type" list="dataset-names" placeholder="e.g. customers.csv"/>
-            <datalist id="dataset-names"></datalist>
-          </div>
-          <div class="field" style="flex:1">
-            <label>Severity</label>
-            <select id="rule-severity">
-              <option value="HIGH">HIGH (3×)</option>
-              <option value="MEDIUM" selected>MEDIUM (2×)</option>
-              <option value="LOW">LOW (1×)</option>
-            </select>
-          </div>
-        </div>
-        <div class="field">
-          <label>Column / Field Name</label>
-          <input id="rule-field" placeholder="e.g. email, age, user_id"/>
-        </div>
-        <div class="field">
-          <label>Rule Type</label>
-          <select id="rule-type" onchange="updateRuleParams()">
-            <option value="NOT_NULL">NOT_NULL — No empty values allowed</option>
-            <option value="DATA_TYPE">DATA_TYPE — Values must be a specific type</option>
-            <option value="RANGE">RANGE — Numbers must be within min/max</option>
-            <option value="UNIQUE">UNIQUE — All values must be distinct</option>
-            <option value="REGEX">REGEX — Values must match a pattern</option>
-          </select>
-        </div>
-        <div id="rule-params-box" style="display:none"></div>
-        <div style="display:flex;gap:10px;margin-top:8px">
-          <button class="btn btn-primary" id="rule-submit-btn" onclick="saveRule()">Create Rule</button>
-          <button class="btn btn-ghost" onclick="cancelRuleEdit()">Cancel</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="flex-between" style="margin-bottom:16px">
-          <div class="card-title" style="margin-bottom:0">Active Rules</div>
-          <select id="rules-filter" onchange="loadRules()" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-family:var(--font-mono);font-size:12px">
-            <option value="">All datasets</option>
-          </select>
-        </div>
-        <div id="rules-table"><div class="loading-row"><div class="spinner"></div> Loading...</div></div>
-      </div>
-    </div>
-
-    <!-- ── CHECKS ── -->
-    <div class="view" id="view-checks">
-      <div class="topbar">
-        <div>
-          <div class="page-title">Run Quality Checks</div>
-          <div class="page-sub">Execute validation rules against your datasets</div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="card" style="max-width:380px;flex:none">
-          <div class="card-title">▶ Select & Run</div>
-          <div class="field">
-            <label>Choose Dataset</label>
-            <select id="check-dataset-select">
-              <option value="">Loading datasets...</option>
-            </select>
-          </div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.8">
-            Checks will run all active rules matching the dataset's file type.
-            Score = weighted % of passing rules.
-          </div>
-          <button class="btn btn-success btn-full" id="run-check-btn" onclick="runChecks()">
-            ▶ Run Quality Checks
-          </button>
-        </div>
-        <div class="card" id="check-result-card" style="display:none">
-          <div class="card-title">Results</div>
-          <div id="check-result-content"></div>
-        </div>
-      </div>
-      <div class="card" id="check-results-detail" style="display:none">
-        <div class="card-title">Per-Rule Breakdown</div>
-        <div id="check-results-table"></div>
-      </div>
-    </div>
-
-    <!-- ── REPORTS ── -->
-    <div class="view" id="view-reports">
-      <div class="topbar">
-        <div>
-          <div class="page-title">Quality Reports</div>
-          <div class="page-sub">Detailed findings per rule for each dataset</div>
-        </div>
-        <button class="btn btn-ghost" id="report-download-btn" onclick="downloadCSV()" style="display:none">⬇ Download CSV</button>
-      </div>
-      <div class="card" style="max-width:400px">
-        <div class="card-title">📋 Select Dataset</div>
-        <div class="field">
-          <label>Dataset</label>
-          <select id="report-dataset-select"><option value="">Select...</option></select>
-        </div>
-        <button class="btn btn-primary btn-full" onclick="loadReport()">Generate Report</button>
-      </div>
-      <div id="report-output" style="display:none">
-        <div class="row">
-          <div class="card" style="flex:none;min-width:240px">
-            <div class="card-title">Quality Score</div>
-            <div class="score-ring-wrap">
-              <div class="score-ring">
-                <svg viewBox="0 0 120 120" width="120" height="120">
-                  <circle class="score-ring-bg" cx="60" cy="60" r="52"/>
-                  <circle class="score-ring-fill" id="report-ring-fill" cx="60" cy="60" r="52"
-                    stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
-                </svg>
-                <div class="score-ring-text">
-                  <div class="score-ring-num" id="report-score-num">—</div>
-                  <div class="score-ring-pct">/ 100</div>
+          <div class="card" style="max-width: 600px">
+            <div class="upload-zone" id="upload-zone">
+              <input
+                type="file"
+                id="file-input"
+                accept=".csv,.json"
+                onchange="handleFileSelect(event)"
+              />
+              <div class="upload-icon">☁</div>
+              <div class="upload-label">Drop your file here</div>
+              <div class="upload-hint">Supports CSV and JSON · Max 50MB</div>
+            </div>
+            <div id="file-preview" style="display: none; margin-top: 16px">
+              <div class="card" style="margin-bottom: 0; background: var(--bg)">
+                <div class="flex-between">
+                  <div>
+                    <div
+                      style="font-family: var(--font-display); font-weight: 600"
+                      id="file-name-display"
+                    >
+                      —
+                    </div>
+                    <div
+                      style="
+                        font-size: 11px;
+                        color: var(--muted);
+                        margin-top: 4px;
+                      "
+                      id="file-size-display"
+                    >
+                      —
+                    </div>
+                  </div>
+                  <button
+                    class="btn btn-success"
+                    onclick="uploadFile()"
+                    id="upload-btn"
+                  >
+                    Upload ↑
+                  </button>
                 </div>
               </div>
-              <div>
-                <div id="report-meta" style="font-size:12px;color:var(--muted);line-height:2"></div>
+            </div>
+            <div
+              id="upload-result"
+              style="display: none; margin-top: 16px"
+            ></div>
+          </div>
+          <div class="card" style="max-width: 600px">
+            <div class="card-title">💡 Tips</div>
+            <div style="color: var(--muted); font-size: 12px; line-height: 2">
+              • CSV files must have a header row with column names<br />
+              • JSON files should be an array of objects<br />
+              • Column names become available when creating rules<br />
+              • After upload, go to <b style="color: var(--text)">Rules</b> to
+              define validation rules<br />
+              • Then go to <b style="color: var(--text)">Run Checks</b> to score
+              your dataset
+            </div>
+          </div>
+        </div>
+
+        <!-- ── DATASETS ── -->
+        <div class="view" id="view-datasets">
+          <div class="topbar">
+            <div>
+              <div class="page-title">Datasets</div>
+              <div class="page-sub">
+                All uploaded files and their quality status
+              </div>
+            </div>
+            <button class="btn btn-ghost" onclick="loadDatasets()">
+              ↻ Refresh
+            </button>
+          </div>
+          <div class="card">
+            <div id="datasets-table">
+              <div class="loading-row">
+                <div class="spinner"></div>
+                Loading...
+              </div>
+            </div>
+            <div
+              id="datasets-pagination"
+              class="flex-between mt-16"
+              style="display: none"
+            >
+              <div
+                style="font-size: 12px; color: var(--muted)"
+                id="datasets-page-info"
+              >
+                Page 1 of 1
+              </div>
+              <div class="flex-between gap-8">
+                <button
+                  class="btn btn-ghost"
+                  style="padding: 5px 12px"
+                  onclick="changeDatasetsPage(-1)"
+                  id="datasets-prev-btn"
+                >
+                  ← Prev
+                </button>
+                <button
+                  class="btn btn-ghost"
+                  style="padding: 5px 12px"
+                  onclick="changeDatasetsPage(1)"
+                  id="datasets-next-btn"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── RULES ── -->
+        <div class="view" id="view-rules">
+          <div class="topbar">
+            <div>
+              <div class="page-title">Validation Rules</div>
+              <div class="page-sub">Define what "good data" looks like</div>
+            </div>
+            <button class="btn btn-primary" onclick="toggleRuleForm()">
+              + New Rule
+            </button>
+          </div>
+
+          <!-- RULE FORM (CREATE/EDIT) -->
+          <div
+            class="card"
+            id="rule-form-card"
+            style="display: none; max-width: 580px"
+          >
+            <div class="card-title" id="rule-form-title">
+              ⚙ Create Validation Rule
+            </div>
+            <input type="hidden" id="edit-rule-id" value="" />
+            <div class="field">
+              <label>Rule Name</label>
+              <input id="rule-name" placeholder="e.g. email_not_null" />
+            </div>
+            <div class="row" style="gap: 12px">
+              <div class="field" style="flex: 1">
+                <label>Dataset Name / Type</label>
+                <input
+                  id="rule-dataset-type"
+                  list="dataset-names"
+                  placeholder="e.g. customers.csv"
+                />
+                <datalist id="dataset-names"></datalist>
+              </div>
+              <div class="field" style="flex: 1">
+                <label>Severity</label>
+                <select id="rule-severity">
+                  <option value="HIGH">HIGH (3×)</option>
+                  <option value="MEDIUM" selected>MEDIUM (2×)</option>
+                  <option value="LOW">LOW (1×)</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label>Column / Field Name</label>
+              <input id="rule-field" placeholder="e.g. email, age, user_id" />
+            </div>
+            <div class="field">
+              <label>Rule Type</label>
+              <select id="rule-type" onchange="updateRuleParams()">
+                <option value="NOT_NULL">
+                  NOT_NULL — No empty values allowed
+                </option>
+                <option value="DATA_TYPE">
+                  DATA_TYPE — Values must be a specific type
+                </option>
+                <option value="RANGE">
+                  RANGE — Numbers must be within min/max
+                </option>
+                <option value="UNIQUE">
+                  UNIQUE — All values must be distinct
+                </option>
+                <option value="REGEX">
+                  REGEX — Values must match a pattern
+                </option>
+              </select>
+            </div>
+            <div id="rule-params-box" style="display: none"></div>
+            <div style="display: flex; gap: 10px; margin-top: 8px">
+              <button
+                class="btn btn-primary"
+                id="rule-submit-btn"
+                onclick="saveRule()"
+              >
+                Create Rule
+              </button>
+              <button class="btn btn-ghost" onclick="cancelRuleEdit()">
+                Cancel
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="flex-between" style="margin-bottom: 16px">
+              <div class="card-title" style="margin-bottom: 0">
+                Active Rules
+              </div>
+              <select
+                id="rules-filter"
+                onchange="loadRules()"
+                style="
+                  background: var(--bg);
+                  border: 1px solid var(--border2);
+                  border-radius: 6px;
+                  padding: 6px 10px;
+                  color: var(--text);
+                  font-family: var(--font-mono);
+                  font-size: 12px;
+                "
+              >
+                <option value="">All datasets</option>
+              </select>
+            </div>
+            <div id="rules-table">
+              <div class="loading-row">
+                <div class="spinner"></div>
+                Loading...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CHECKS ── -->
+        <div class="view" id="view-checks">
+          <div class="topbar">
+            <div>
+              <div class="page-title">Run Quality Checks</div>
+              <div class="page-sub">
+                Execute validation rules against your datasets
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="card" style="max-width: 380px; flex: none">
+              <div class="card-title">▶ Select & Run</div>
+              <div class="field">
+                <label>Choose Dataset</label>
+                <select id="check-dataset-select">
+                  <option value="">Loading datasets...</option>
+                </select>
+              </div>
+              <div
+                style="
+                  font-size: 11px;
+                  color: var(--muted);
+                  margin-bottom: 16px;
+                  line-height: 1.8;
+                "
+              >
+                Checks will run all active rules matching the dataset's file
+                type. Score = weighted % of passing rules.
+              </div>
+              <button
+                class="btn btn-success btn-full"
+                id="run-check-btn"
+                onclick="runChecks()"
+              >
+                ▶ Run Quality Checks
+              </button>
+            </div>
+            <div class="card" id="check-result-card" style="display: none">
+              <div class="card-title">Results</div>
+              <div id="check-result-content"></div>
+            </div>
+          </div>
+          <div class="card" id="check-results-detail" style="display: none">
+            <div class="card-title">Per-Rule Breakdown</div>
+            <div id="check-results-table"></div>
+          </div>
+        </div>
+
+        <!-- ── REPORTS ── -->
+        <div class="view" id="view-reports">
+          <div class="topbar">
+            <div>
+              <div class="page-title">Quality Reports</div>
+              <div class="page-sub">
+                Detailed findings per rule for each dataset
+              </div>
+            </div>
+            <button
+              class="btn btn-ghost"
+              id="report-download-btn"
+              onclick="downloadCSV()"
+              style="display: none"
+            >
+              ⬇ Download CSV
+            </button>
+          </div>
+          <div class="card" style="max-width: 400px">
+            <div class="card-title">📋 Select Dataset</div>
+            <div class="field">
+              <label>Dataset</label>
+              <select id="report-dataset-select">
+                <option value="">Select...</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-full" onclick="loadReport()">
+              Generate Report
+            </button>
+          </div>
+          <div id="report-output" style="display: none">
+            <div class="row">
+              <div class="card" style="flex: none; min-width: 240px">
+                <div class="card-title">Quality Score</div>
+                <div class="score-ring-wrap">
+                  <div class="score-ring">
+                    <svg viewBox="0 0 120 120" width="120" height="120">
+                      <circle class="score-ring-bg" cx="60" cy="60" r="52" />
+                      <circle
+                        class="score-ring-fill"
+                        id="report-ring-fill"
+                        cx="60"
+                        cy="60"
+                        r="52"
+                        stroke-dasharray="326.73"
+                        stroke-dashoffset="326.73"
+                      />
+                    </svg>
+                    <div class="score-ring-text">
+                      <div class="score-ring-num" id="report-score-num">—</div>
+                      <div class="score-ring-pct">/ 100</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div
+                      id="report-meta"
+                      style="
+                        font-size: 12px;
+                        color: var(--muted);
+                        line-height: 2;
+                      "
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-title">Rule Results</div>
+                <div id="report-rules-output"></div>
+              </div>
+            </div>
+            <div class="row" style="margin-top: 20px">
+              <div class="card" style="flex: 1">
+                <div class="card-title">Executive Summary</div>
+                <div
+                  id="report-summary-output"
+                  style="font-size: 13px; line-height: 1.6; color: var(--text)"
+                ></div>
+              </div>
+              <div class="card" style="flex: 1">
+                <div class="card-title">Recommendations</div>
+                <div
+                  id="report-recommendations-output"
+                  style="font-size: 13px; line-height: 1.6; color: var(--text)"
+                ></div>
+              </div>
+            </div>
+            <div class="card" style="margin-top: 20px">
+              <div class="card-title">Top Failure Patterns</div>
+              <div id="report-patterns-output"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TRENDS ── -->
+        <div class="view" id="view-trends">
+          <div class="topbar">
+            <div>
+              <div class="page-title">Quality Trends</div>
+              <div class="page-sub">
+                Track how data quality changes over time
+              </div>
+            </div>
+            <div class="topbar-right">
+              <select
+                id="trend-dataset-select"
+                onchange="loadTrends()"
+                style="
+                  background: var(--bg);
+                  border: 1px solid var(--border2);
+                  border-radius: 6px;
+                  padding: 8px 12px;
+                  color: var(--text);
+                  font-family: var(--font-mono);
+                  font-size: 12px;
+                "
+              >
+                <option value="">All Datasets</option>
+              </select>
+              <select
+                id="trend-interval"
+                onchange="loadTrends()"
+                style="
+                  background: var(--bg);
+                  border: 1px solid var(--border2);
+                  border-radius: 6px;
+                  padding: 8px 12px;
+                  color: var(--text);
+                  font-family: var(--font-mono);
+                  font-size: 12px;
+                "
+              >
+                <option value="day" selected>Daily</option>
+                <option value="week">Weekly</option>
+                <option value="month">Monthly</option>
+              </select>
+              <select
+                id="trend-days"
+                onchange="loadTrends()"
+                style="
+                  background: var(--bg);
+                  border: 1px solid var(--border2);
+                  border-radius: 6px;
+                  padding: 8px 12px;
+                  color: var(--text);
+                  font-family: var(--font-mono);
+                  font-size: 12px;
+                "
+              >
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="365">Last 365 days</option>
+              </select>
+              <button class="btn btn-ghost" onclick="loadTrends()">
+                ↻ Refresh
+              </button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">∿ Score Over Time</div>
+            <div class="chart-wrap" style="height: 320px">
+              <canvas id="trend-chart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">History</div>
+            <div id="trend-table">
+              <div class="loading-row">
+                <div class="spinner"></div>
+                Loading...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ADMIN PANEL ── -->
+        <div class="view" id="view-admin">
+          <div class="topbar">
+            <div>
+              <div class="page-title">Admin Panel</div>
+              <div class="page-sub">
+                System-wide overview — all users, datasets, and rules
+              </div>
+            </div>
+            <button class="btn btn-ghost" onclick="loadAdminPanel()">
+              ↻ Refresh
+            </button>
+          </div>
+          <div class="stats-row">
+            <div class="stat-tile blue">
+              <div class="stat-val" id="admin-total-datasets">—</div>
+              <div class="stat-label">All Datasets</div>
+            </div>
+            <div class="stat-tile green">
+              <div class="stat-val" id="admin-avg-score">—</div>
+              <div class="stat-label">Avg Score</div>
+            </div>
+            <div class="stat-tile amber">
+              <div class="stat-val" id="admin-total-rules">—</div>
+              <div class="stat-label">Total Rules</div>
+            </div>
+            <div class="stat-tile cyan">
+              <div class="stat-val" id="admin-trend-dir">—</div>
+              <div class="stat-label">Trend Direction</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">📂 All Datasets (All Users)</div>
+            <div id="admin-datasets-table">
+              <div class="loading-row">
+                <div class="spinner"></div>
+                Loading...
               </div>
             </div>
           </div>
           <div class="card">
-            <div class="card-title">Rule Results</div>
-            <div id="report-rules-output"></div>
+            <div class="card-title">⚙ All Active Rules</div>
+            <div id="admin-rules-table">
+              <div class="loading-row">
+                <div class="spinner"></div>
+                Loading...
+              </div>
+            </div>
           </div>
         </div>
-        <div class="row" style="margin-top:20px">
-          <div class="card" style="flex:1">
-            <div class="card-title">Executive Summary</div>
-            <div id="report-summary-output" style="font-size:13px;line-height:1.6;color:var(--text)"></div>
-          </div>
-          <div class="card" style="flex:1">
-            <div class="card-title">Recommendations</div>
-            <div id="report-recommendations-output" style="font-size:13px;line-height:1.6;color:var(--text)"></div>
-          </div>
-        </div>
-        <div class="card" style="margin-top:20px">
-          <div class="card-title">Top Failure Patterns</div>
-          <div id="report-patterns-output"></div>
-        </div>
-      </div>
+      </main>
     </div>
 
-    <!-- ── TRENDS ── -->
-    <div class="view" id="view-trends">
-      <div class="topbar">
-        <div>
-          <div class="page-title">Quality Trends</div>
-          <div class="page-sub">Track how data quality changes over time</div>
-        </div>
-        <div class="topbar-right">
-          <select id="trend-dataset-select" onchange="loadTrends()" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--font-mono);font-size:12px">
-            <option value="">All Datasets</option>
-          </select>
-          <select id="trend-interval" onchange="loadTrends()" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--font-mono);font-size:12px">
-            <option value="day" selected>Daily</option>
-            <option value="week">Weekly</option>
-            <option value="month">Monthly</option>
-          </select>
-          <select id="trend-days" onchange="loadTrends()" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--font-mono);font-size:12px">
-            <option value="7">Last 7 days</option>
-            <option value="30" selected>Last 30 days</option>
-            <option value="90">Last 90 days</option>
-            <option value="365">Last 365 days</option>
-          </select>
-          <button class="btn btn-ghost" onclick="loadTrends()">↻ Refresh</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">∿ Score Over Time</div>
-        <div class="chart-wrap" style="height:320px"><canvas id="trend-chart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">History</div>
-        <div id="trend-table"><div class="loading-row"><div class="spinner"></div> Loading...</div></div>
-      </div>
-    </div>
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container"></div>
 
-    <!-- ── ADMIN PANEL ── -->
-    <div class="view" id="view-admin">
-      <div class="topbar">
-        <div>
-          <div class="page-title">Admin Panel</div>
-          <div class="page-sub">System-wide overview — all users, datasets, and rules</div>
-        </div>
-        <button class="btn btn-ghost" onclick="loadAdminPanel()">↻ Refresh</button>
-      </div>
-      <div class="stats-row">
-        <div class="stat-tile blue"><div class="stat-val" id="admin-total-datasets">—</div><div class="stat-label">All Datasets</div></div>
-        <div class="stat-tile green"><div class="stat-val" id="admin-avg-score">—</div><div class="stat-label">Avg Score</div></div>
-        <div class="stat-tile amber"><div class="stat-val" id="admin-total-rules">—</div><div class="stat-label">Total Rules</div></div>
-        <div class="stat-tile cyan"><div class="stat-val" id="admin-trend-dir">—</div><div class="stat-label">Trend Direction</div></div>
-      </div>
-      <div class="card">
-        <div class="card-title">📂 All Datasets (All Users)</div>
-        <div id="admin-datasets-table"><div class="loading-row"><div class="spinner"></div> Loading...</div></div>
-      </div>
-      <div class="card">
-        <div class="card-title">⚙ All Active Rules</div>
-        <div id="admin-rules-table"><div class="loading-row"><div class="spinner"></div> Loading...</div></div>
-      </div>
-    </div>
+    <script>
+      // ── CONFIG ──────────────────────────────────────────────────────────────────
+      // Use relative URLs so API calls go through the ALB (works in both local and production)
+      const API = "";
+      let token = localStorage.getItem("dp_token") || "";
+      let isAdmin = localStorage.getItem("dp_is_admin") === "true";
+      let userEmail = localStorage.getItem("dp_user_email") || "";
+      let dashTrendChart = null;
+      let trendChart = null;
+      let currentDatasetPage = 0;
+      const DATASET_LIMIT = 10;
 
-  </main>
-</div>
+      // ── JWT DECODE ───────────────────────────────────────────────────────────────
+      function decodeJWT(t) {
+        try {
+          const payload = t.split(".")[1];
+          return JSON.parse(
+            atob(payload.replace(/-/g, "+").replace(/_/g, "/")),
+          );
+        } catch {
+          return null;
+        }
+      }
 
-<!-- TOAST CONTAINER -->
-<div id="toast-container"></div>
+      function updateAdminUI() {
+        document.querySelectorAll(".admin-only").forEach((el) => {
+          el.style.display = isAdmin ? "" : "none";
+        });
+        const bar = $("user-info-bar");
+        if (bar) {
+          bar.innerHTML = userEmail
+            ? `<span style="color:var(--text)">${userEmail}</span>${isAdmin ? ' <span class="badge badge-amber">ADMIN</span>' : ""}`
+            : "";
+        }
+      }
 
-<script>
-// ── CONFIG ──────────────────────────────────────────────────────────────────
-const API = 'http://localhost:8000';
-let token = localStorage.getItem('dp_token') || '';
-let isAdmin = localStorage.getItem('dp_is_admin') === 'true';
-let userEmail = localStorage.getItem('dp_user_email') || '';
-let dashTrendChart = null;
-let trendChart = null;
-let currentDatasetPage = 0;
-const DATASET_LIMIT = 10;
+      async function detectAdminStatus() {
+        // The JWT only has "sub" (email). We detect admin by checking known admin email
+        // or by trying the API and seeing if we get all datasets (admin behavior).
+        const payload = decodeJWT(token);
+        if (payload && payload.sub) {
+          userEmail = payload.sub;
+          localStorage.setItem("dp_user_email", userEmail);
+        }
+        // Check if user is admin by observing dataset count behavior
+        // Admin emails from config: admin@amalitech.com
+        // We also try a heuristic: load datasets and see if uploaded_by varies
+        try {
+          const data = await api("GET", "/api/datasets?limit=100");
+          const datasets = data.datasets || [];
+          if (datasets.length > 1) {
+            const owners = new Set(
+              datasets.map((d) => d.uploaded_by).filter(Boolean),
+            );
+            if (owners.size > 1) {
+              isAdmin = true;
+            }
+          }
+          // Also check known admin email
+          if (userEmail === "admin@amalitech.com") {
+            isAdmin = true;
+          }
+        } catch {}
+        localStorage.setItem("dp_is_admin", isAdmin ? "true" : "false");
+        updateAdminUI();
+      }
 
-// ── JWT DECODE ───────────────────────────────────────────────────────────────
-function decodeJWT(t) {
-  try {
-    const payload = t.split('.')[1];
-    return JSON.parse(atob(payload.replace(/-/g,'+').replace(/_/g,'/')));
-  } catch { return null; }
-}
+      function doLogout() {
+        token = "";
+        isAdmin = false;
+        userEmail = "";
+        localStorage.removeItem("dp_token");
+        localStorage.removeItem("dp_is_admin");
+        localStorage.removeItem("dp_user_email");
+        $("auth-overlay").style.display = "";
+        updateAdminUI();
+        toast("Signed out", "info");
+      }
 
-function updateAdminUI() {
-  document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = isAdmin ? '' : 'none';
-  });
-  const bar = $('user-info-bar');
-  if (bar) {
-    bar.innerHTML = userEmail
-      ? `<span style="color:var(--text)">${userEmail}</span>${isAdmin ? ' <span class="badge badge-amber">ADMIN</span>' : ''}`
-      : '';
-  }
-}
+      // ── UTILS ────────────────────────────────────────────────────────────────────
+      const $ = (id) => document.getElementById(id);
 
-async function detectAdminStatus() {
-  // The JWT only has "sub" (email). We detect admin by checking known admin email
-  // or by trying the API and seeing if we get all datasets (admin behavior).
-  const payload = decodeJWT(token);
-  if (payload && payload.sub) {
-    userEmail = payload.sub;
-    localStorage.setItem('dp_user_email', userEmail);
-  }
-  // Check if user is admin by observing dataset count behavior
-  // Admin emails from config: admin@amalitech.com
-  // We also try a heuristic: load datasets and see if uploaded_by varies
-  try {
-    const data = await api('GET', '/api/datasets?limit=100');
-    const datasets = data.datasets || [];
-    if (datasets.length > 1) {
-      const owners = new Set(datasets.map(d => d.uploaded_by).filter(Boolean));
-      if (owners.size > 1) { isAdmin = true; }
-    }
-    // Also check known admin email
-    if (userEmail === 'admin@amalitech.com') { isAdmin = true; }
-  } catch {}
-  localStorage.setItem('dp_is_admin', isAdmin ? 'true' : 'false');
-  updateAdminUI();
-}
+      function toast(msg, type = "info") {
+        const el = document.createElement("div");
+        el.className = `toast toast-${type}`;
+        el.innerHTML = `<span>${type === "success" ? "✓" : type === "error" ? "✗" : "ℹ"}</span><span>${msg}</span>`;
+        $("toast-container").appendChild(el);
+        setTimeout(() => el.remove(), 3500);
+      }
 
-function doLogout() {
-  token = '';
-  isAdmin = false;
-  userEmail = '';
-  localStorage.removeItem('dp_token');
-  localStorage.removeItem('dp_is_admin');
-  localStorage.removeItem('dp_user_email');
-  $('auth-overlay').style.display = '';
-  updateAdminUI();
-  toast('Signed out', 'info');
-}
+      async function api(method, path, body = null, isForm = false) {
+        const opts = {
+          method,
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        };
+        if (body && !isForm) {
+          opts.headers["Content-Type"] = "application/json";
+          opts.body = JSON.stringify(body);
+        }
+        if (isForm) opts.body = body;
+        const res = await fetch(API + path, opts);
+        if (res.status === 204) return null;
+        if (res.status === 401) {
+          doLogout();
+          throw new Error("Session expired. Please sign in again.");
+        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+        return data;
+      }
 
-// ── UTILS ────────────────────────────────────────────────────────────────────
-const $ = id => document.getElementById(id);
+      function scoreColor(s) {
+        if (s >= 80) return "var(--green)";
+        if (s >= 50) return "var(--amber)";
+        return "var(--red)";
+      }
 
-function toast(msg, type='info') {
-  const el = document.createElement('div');
-  el.className = `toast toast-${type}`;
-  el.innerHTML = `<span>${type==='success'?'✓':type==='error'?'✗':'ℹ'}</span><span>${msg}</span>`;
-  $('toast-container').appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
+      function scoreBadge(s) {
+        const cls = s >= 80 ? "green" : s >= 50 ? "amber" : "red";
+        return `<span class="badge badge-${cls}">${s.toFixed(1)}</span>`;
+      }
 
-async function api(method, path, body=null, isForm=false) {
-  const opts = {
-    method,
-    headers: { ...(token ? {Authorization:`Bearer ${token}`} : {}) }
-  };
-  if (body && !isForm) { opts.headers['Content-Type']='application/json'; opts.body=JSON.stringify(body); }
-  if (isForm) opts.body = body;
-  const res = await fetch(API + path, opts);
-  if (res.status === 204) return null;
-  if (res.status === 401) { doLogout(); throw new Error('Session expired. Please sign in again.'); }
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
-  return data;
-}
+      function statusBadge(s) {
+        const map = {
+          PENDING: "badge-blue",
+          VALIDATED: "badge-green",
+          FAILED: "badge-red",
+        };
+        return `<span class="badge ${map[s] || "badge-blue"}">${s}</span>`;
+      }
 
-function scoreColor(s) {
-  if (s >= 80) return 'var(--green)';
-  if (s >= 50) return 'var(--amber)';
-  return 'var(--red)';
-}
+      function fmtDate(d) {
+        return new Date(d).toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
 
-function scoreBadge(s) {
-  const cls = s >= 80 ? 'green' : s >= 50 ? 'amber' : 'red';
-  return `<span class="badge badge-${cls}">${s.toFixed(1)}</span>`;
-}
+      // ── API STATUS ───────────────────────────────────────────────────────────────
+      async function checkApiStatus() {
+        try {
+          await fetch(API + "/health");
+          $("status-dot").className = "status-dot online";
+          $("status-text").textContent = "API Online";
+        } catch {
+          $("status-dot").className = "status-dot offline";
+          $("status-text").textContent = "API Offline";
+        }
+      }
+      setInterval(checkApiStatus, 10000);
+      checkApiStatus();
 
-function statusBadge(s) {
-  const map = { PENDING:'badge-blue', VALIDATED:'badge-green', FAILED:'badge-red' };
-  return `<span class="badge ${map[s]||'badge-blue'}">${s}</span>`;
-}
+      // ── AUTH ─────────────────────────────────────────────────────────────────────
+      function switchAuthTab(tab) {
+        document
+          .querySelectorAll(".auth-tab")
+          .forEach((t, i) =>
+            t.classList.toggle(
+              "active",
+              (i === 0 && tab === "login") || (i === 1 && tab === "register"),
+            ),
+          );
+        $("login-form").style.display = tab === "login" ? "" : "none";
+        $("register-form").style.display = tab === "register" ? "" : "none";
+      }
 
-function fmtDate(d) {
-  return new Date(d).toLocaleString('en-GB', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-}
+      async function doLogin() {
+        try {
+          const data = await api("POST", "/api/auth/login", {
+            email: $("login-email").value,
+            password: $("login-password").value,
+          });
+          token = data.access_token;
+          localStorage.setItem("dp_token", token);
+          $("auth-overlay").style.display = "none";
+          toast("Signed in successfully", "success");
+          await detectAdminStatus();
+          loadDashboard();
+          loadAllDropdowns();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
 
-// ── API STATUS ───────────────────────────────────────────────────────────────
-async function checkApiStatus() {
-  try {
-    await fetch(API + '/health');
-    $('status-dot').className = 'status-dot online';
-    $('status-text').textContent = 'API Online';
-  } catch {
-    $('status-dot').className = 'status-dot offline';
-    $('status-text').textContent = 'API Offline';
-  }
-}
-setInterval(checkApiStatus, 10000);
-checkApiStatus();
+      async function doRegister() {
+        try {
+          const data = await api("POST", "/api/auth/register", {
+            email: $("reg-email").value,
+            password: $("reg-password").value,
+            full_name: $("reg-name").value,
+          });
+          token = data.access_token;
+          localStorage.setItem("dp_token", token);
+          $("auth-overlay").style.display = "none";
+          toast("Account created & signed in", "success");
+          await detectAdminStatus();
+          loadDashboard();
+          loadAllDropdowns();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
 
-// ── AUTH ─────────────────────────────────────────────────────────────────────
-function switchAuthTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
-  $('login-form').style.display = tab==='login' ? '' : 'none';
-  $('register-form').style.display = tab==='register' ? '' : 'none';
-}
+      // Auto-login if token exists
+      if (token) {
+        $("auth-overlay").style.display = "none";
+        detectAdminStatus();
+        loadDashboard();
+        loadAllDropdowns();
+      }
 
-async function doLogin() {
-  try {
-    const data = await api('POST', '/api/auth/login', {
-      email: $('login-email').value, password: $('login-password').value
-    });
-    token = data.access_token;
-    localStorage.setItem('dp_token', token);
-    $('auth-overlay').style.display = 'none';
-    toast('Signed in successfully', 'success');
-    await detectAdminStatus();
-    loadDashboard();
-    loadAllDropdowns();
-  } catch(e) { toast(e.message, 'error'); }
-}
+      // ── NAVIGATION ───────────────────────────────────────────────────────────────
+      function showView(name) {
+        document
+          .querySelectorAll(".view")
+          .forEach((v) => v.classList.remove("active"));
+        document
+          .querySelectorAll(".nav-item")
+          .forEach((n) => n.classList.remove("active"));
+        $(`view-${name}`).classList.add("active");
+        event.currentTarget.classList.add("active");
 
-async function doRegister() {
-  try {
-    const data = await api('POST', '/api/auth/register', {
-      email: $('reg-email').value,
-      password: $('reg-password').value,
-      full_name: $('reg-name').value
-    });
-    token = data.access_token;
-    localStorage.setItem('dp_token', token);
-    $('auth-overlay').style.display = 'none';
-    toast('Account created & signed in', 'success');
-    await detectAdminStatus();
-    loadDashboard();
-    loadAllDropdowns();
-  } catch(e) { toast(e.message, 'error'); }
-}
+        if (name === "dashboard") loadDashboard();
+        if (name === "datasets") loadDatasets();
+        if (name === "rules") loadRules();
+        if (name === "checks") loadChecksView();
+        if (name === "reports") loadReportsView();
+        if (name === "trends") loadTrends();
+        if (name === "admin") loadAdminPanel();
+      }
 
-// Auto-login if token exists
-if (token) {
-  $('auth-overlay').style.display = 'none';
-  detectAdminStatus();
-  loadDashboard();
-  loadAllDropdowns();
-}
+      // ── LOAD ALL DROPDOWNS ───────────────────────────────────────────────────────
+      async function loadAllDropdowns() {
+        try {
+          const data = await api("GET", "/api/datasets?limit=100");
+          const datasets = data.datasets || [];
+          [
+            "check-dataset-select",
+            "report-dataset-select",
+            "rules-filter",
+            "trend-dataset-select",
+          ].forEach((id) => {
+            const el = $(id);
+            if (!el) return;
+            el.innerHTML = `<option value="">${id === "rules-filter" ? "All datasets" : id === "trend-dataset-select" ? "All Datasets" : "Select a dataset..."}</option>`;
+            datasets.forEach((d) => {
+              el.innerHTML += `<option value="${id === "rules-filter" ? d.name : d.id}">[${d.file_type.toUpperCase()}] ${d.name}</option>`;
+            });
+          });
+          // Populate datalist for rules
+          $("dataset-names").innerHTML = datasets
+            .map((d) => `<option value="${d.name}">`)
+            .join("");
+        } catch {}
+      }
 
-// ── NAVIGATION ───────────────────────────────────────────────────────────────
-function showView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  $(`view-${name}`).classList.add('active');
-  event.currentTarget.classList.add('active');
+      // ── DASHBOARD ────────────────────────────────────────────────────────────────
+      async function loadDashboard() {
+        try {
+          const [datasetsData, rulesData, trendsData] = await Promise.all([
+            api("GET", "/api/datasets?limit=100"),
+            api("GET", "/api/rules"),
+            api("GET", "/api/reports/trends?days=30").catch(() => null),
+          ]);
 
-  if (name==='dashboard')  loadDashboard();
-  if (name==='datasets')   loadDatasets();
-  if (name==='rules')      loadRules();
-  if (name==='checks')     loadChecksView();
-  if (name==='reports')    loadReportsView();
-  if (name==='trends')     loadTrends();
-  if (name==='admin')      loadAdminPanel();
-}
+          const datasets = datasetsData.datasets || [];
+          const rules = rulesData || [];
+          const trendPoints = (trendsData && trendsData.trend_data) || [];
 
-// ── LOAD ALL DROPDOWNS ───────────────────────────────────────────────────────
-async function loadAllDropdowns() {
-  try {
-    const data = await api('GET', '/api/datasets?limit=100');
-    const datasets = data.datasets || [];
-    ['check-dataset-select','report-dataset-select','rules-filter','trend-dataset-select'].forEach(id => {
-      const el = $(id);
-      if (!el) return;
-      el.innerHTML = `<option value="">${id==='rules-filter'?'All datasets':id==='trend-dataset-select'?'All Datasets':'Select a dataset...'}</option>`;
-      datasets.forEach(d => {
-        el.innerHTML += `<option value="${id==='rules-filter'?d.name:d.id}">[${d.file_type.toUpperCase()}] ${d.name}</option>`;
-      });
-    });
-    // Populate datalist for rules
-    $('dataset-names').innerHTML = datasets.map(d => `<option value="${d.name}">`).join('');
-  } catch {}
-}
+          $("dash-total-datasets").textContent = datasetsData.total || 0;
+          $("dash-total-rules").textContent = rules.length;
+          $("dash-checks-run").textContent = trendPoints.reduce(
+            (s, t) => s + t.check_count,
+            0,
+          );
 
-// ── DASHBOARD ────────────────────────────────────────────────────────────────
-async function loadDashboard() {
-  try {
-    const [datasetsData, rulesData, trendsData] = await Promise.all([
-      api('GET', '/api/datasets?limit=100'),
-      api('GET', '/api/rules'),
-      api('GET', '/api/reports/trends?days=30').catch(()=>null)
-    ]);
+          const avgScore = trendsData
+            ? trendsData.average_score.toFixed(1)
+            : "—";
+          $("dash-avg-score").textContent = avgScore;
 
-    const datasets = datasetsData.datasets || [];
-    const rules = rulesData || [];
-    const trendPoints = (trendsData && trendsData.trend_data) || [];
-
-    $('dash-total-datasets').textContent = datasetsData.total || 0;
-    $('dash-total-rules').textContent = rules.length;
-    $('dash-checks-run').textContent = trendPoints.reduce((s,t)=>s+t.check_count,0);
-
-    const avgScore = trendsData ? trendsData.average_score.toFixed(1) : '—';
-    $('dash-avg-score').textContent = avgScore;
-
-    // Recent datasets table
-    if (datasets.length === 0) {
-      $('dash-recent-datasets').innerHTML = '<div class="empty"><div class="empty-icon">📂</div><div>No datasets yet.<br>Upload a file to get started.</div></div>';
-    } else {
-      $('dash-recent-datasets').innerHTML = `
+          // Recent datasets table
+          if (datasets.length === 0) {
+            $("dash-recent-datasets").innerHTML =
+              '<div class="empty"><div class="empty-icon">📂</div><div>No datasets yet.<br>Upload a file to get started.</div></div>';
+          } else {
+            $("dash-recent-datasets").innerHTML = `
         <div class="table-wrap">
           <table>
             <thead><tr><th>Name</th><th>Type</th><th>Rows</th><th>Status</th><th>Uploaded</th></tr></thead>
-            <tbody>${datasets.slice(0,6).map(d=>`
+            <tbody>${datasets
+              .slice(0, 6)
+              .map(
+                (d) => `
               <tr>
                 <td><b>${d.name}</b></td>
                 <td><span class="chip">${d.file_type.toUpperCase()}</span></td>
                 <td>${d.row_count}</td>
                 <td>${statusBadge(d.status)}</td>
                 <td style="color:var(--muted)">${fmtDate(d.uploaded_at)}</td>
-              </tr>`).join('')}
+              </tr>`,
+              )
+              .join("")}
             </tbody>
           </table>
         </div>`;
-    }
+          }
 
-    // Trend chart — using trend_data from QualityTrendResponse
-    renderDashTrendChart(trendPoints);
-  } catch(e) { toast('Dashboard load error: '+e.message, 'error'); }
-}
+          // Trend chart — using trend_data from QualityTrendResponse
+          renderDashTrendChart(trendPoints);
+        } catch (e) {
+          toast("Dashboard load error: " + e.message, "error");
+        }
+      }
 
-// ── DATASETS ─────────────────────────────────────────────────────────────────
-async function loadDatasets() {
-  try {
-    const data = await api('GET', `/api/datasets?skip=${currentDatasetPage * DATASET_LIMIT}&limit=${DATASET_LIMIT}`);
-    const datasets = data.datasets || [];
-    const total = data.total || 0;
+      // ── DATASETS ─────────────────────────────────────────────────────────────────
+      async function loadDatasets() {
+        try {
+          const data = await api(
+            "GET",
+            `/api/datasets?skip=${currentDatasetPage * DATASET_LIMIT}&limit=${DATASET_LIMIT}`,
+          );
+          const datasets = data.datasets || [];
+          const total = data.total || 0;
 
-    if (!datasets.length && currentDatasetPage === 0) {
-      $('datasets-table').innerHTML = '<div class="empty"><div class="empty-icon">📂</div><div>No datasets uploaded yet.</div></div>';
-      $('datasets-pagination').style.display = 'none';
-      return;
-    }
+          if (!datasets.length && currentDatasetPage === 0) {
+            $("datasets-table").innerHTML =
+              '<div class="empty"><div class="empty-icon">📂</div><div>No datasets uploaded yet.</div></div>';
+            $("datasets-pagination").style.display = "none";
+            return;
+          }
 
-    $('datasets-pagination').style.display = 'flex';
-    const totalPages = Math.ceil(total / DATASET_LIMIT) || 1;
-    $('datasets-page-info').textContent = `Page ${currentDatasetPage + 1} of ${totalPages} (${total} total)`;
-    $('datasets-prev-btn').disabled = currentDatasetPage === 0;
-    $('datasets-next-btn').disabled = (currentDatasetPage + 1) >= totalPages;
+          $("datasets-pagination").style.display = "flex";
+          const totalPages = Math.ceil(total / DATASET_LIMIT) || 1;
+          $("datasets-page-info").textContent =
+            `Page ${currentDatasetPage + 1} of ${totalPages} (${total} total)`;
+          $("datasets-prev-btn").disabled = currentDatasetPage === 0;
+          $("datasets-next-btn").disabled =
+            currentDatasetPage + 1 >= totalPages;
 
-    $('datasets-table').innerHTML = `
+          $("datasets-table").innerHTML = `
       <div class="table-wrap">
         <table>
-          <thead><tr><th>ID</th><th>Name</th><th>Type</th>${isAdmin?'<th>Owner</th>':''}<th>Rows</th><th>Cols</th><th>Status</th><th>Uploaded</th><th>Actions</th></tr></thead>
-          <tbody>${datasets.map(d=>{
-            let cols = [];
-            try { cols = JSON.parse(d.column_names||'[]'); } catch{}
-            return `
+          <thead><tr><th>ID</th><th>Name</th><th>Type</th>${isAdmin ? "<th>Owner</th>" : ""}<th>Rows</th><th>Cols</th><th>Status</th><th>Uploaded</th><th>Actions</th></tr></thead>
+          <tbody>${datasets
+            .map((d) => {
+              let cols = [];
+              try {
+                cols = JSON.parse(d.column_names || "[]");
+              } catch {}
+              return `
             <tr>
               <td style="color:var(--muted)">#${d.id}</td>
               <td><b>${d.name}</b></td>
               <td><span class="chip">${d.file_type.toUpperCase()}</span></td>
-              ${isAdmin?`<td><span class="badge badge-blue">User #${d.uploaded_by}</span></td>`:''}
+              ${isAdmin ? `<td><span class="badge badge-blue">User #${d.uploaded_by}</span></td>` : ""}
               <td>${d.row_count}</td>
               <td>
                 <div style="max-width:200px;display:flex;flex-wrap:wrap;gap:4px">
-                  ${cols.slice(0,3).map(c=>`<span class="chip">${c}</span>`).join('')}${cols.length>3?`<span class="chip">+${cols.length-3}</span>`:''}
+                  ${cols
+                    .slice(0, 3)
+                    .map((c) => `<span class="chip">${c}</span>`)
+                    .join(
+                      "",
+                    )}${cols.length > 3 ? `<span class="chip">+${cols.length - 3}</span>` : ""}
                 </div>
               </td>
               <td>${statusBadge(d.status)}</td>
@@ -1006,57 +1827,68 @@ async function loadDatasets() {
                 <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="quickRunChecks(${d.id})">▶ Run</button>
                 <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="quickViewReport(${d.id})">≡ Report</button>
               </td>
-            </tr>`;}).join('')}
+            </tr>`;
+            })
+            .join("")}
           </tbody>
         </table>
       </div>`;
-  } catch(e) { toast('Error loading datasets: '+e.message,'error'); }
-}
+        } catch (e) {
+          toast("Error loading datasets: " + e.message, "error");
+        }
+      }
 
-function changeDatasetsPage(delta) {
-  currentDatasetPage += delta;
-  if (currentDatasetPage < 0) currentDatasetPage = 0;
-  loadDatasets();
-}
+      function changeDatasetsPage(delta) {
+        currentDatasetPage += delta;
+        if (currentDatasetPage < 0) currentDatasetPage = 0;
+        loadDatasets();
+      }
 
-async function quickRunChecks(id) {
-  try {
-    toast('Running checks...','info');
-    const r = await api('POST', `/api/checks/run/${id}`);
-    toast(`Score: ${r.score.toFixed(1)} — ${r.passed_rules}/${r.total_rules} rules passed`, 'success');
-    loadDatasets();
-    loadAllDropdowns();
-  } catch(e) { toast(e.message,'error'); }
-}
+      async function quickRunChecks(id) {
+        try {
+          toast("Running checks...", "info");
+          const r = await api("POST", `/api/checks/run/${id}`);
+          toast(
+            `Score: ${r.score.toFixed(1)} — ${r.passed_rules}/${r.total_rules} rules passed`,
+            "success",
+          );
+          loadDatasets();
+          loadAllDropdowns();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
 
-async function quickViewReport(id) {
-  showView('reports');
-  $('report-dataset-select').value = id;
-  await loadReport();
-}
+      async function quickViewReport(id) {
+        showView("reports");
+        $("report-dataset-select").value = id;
+        await loadReport();
+      }
 
-// ── UPLOAD ───────────────────────────────────────────────────────────────────
-let selectedFile = null;
+      // ── UPLOAD ───────────────────────────────────────────────────────────────────
+      let selectedFile = null;
 
-function handleFileSelect(e) {
-  selectedFile = e.target.files[0];
-  if (!selectedFile) return;
-  $('file-name-display').textContent = selectedFile.name;
-  $('file-size-display').textContent = (selectedFile.size/1024).toFixed(1) + ' KB · ' + selectedFile.type;
-  $('file-preview').style.display = '';
-  $('upload-result').style.display = 'none';
-}
+      function handleFileSelect(e) {
+        selectedFile = e.target.files[0];
+        if (!selectedFile) return;
+        $("file-name-display").textContent = selectedFile.name;
+        $("file-size-display").textContent =
+          (selectedFile.size / 1024).toFixed(1) + " KB · " + selectedFile.type;
+        $("file-preview").style.display = "";
+        $("upload-result").style.display = "none";
+      }
 
-async function uploadFile() {
-  if (!selectedFile) return;
-  const btn = $('upload-btn');
-  btn.disabled = true; btn.textContent = 'Uploading...';
-  try {
-    const fd = new FormData();
-    fd.append('file', selectedFile);
-    const data = await api('POST', '/api/datasets/upload', fd, true);
-    $('upload-result').style.display = '';
-    $('upload-result').innerHTML = `
+      async function uploadFile() {
+        if (!selectedFile) return;
+        const btn = $("upload-btn");
+        btn.disabled = true;
+        btn.textContent = "Uploading...";
+        try {
+          const fd = new FormData();
+          fd.append("file", selectedFile);
+          const data = await api("POST", "/api/datasets/upload", fd, true);
+          $("upload-result").style.display = "";
+          $("upload-result").innerHTML = `
       <div class="card" style="background:var(--green-dim);border-color:var(--green);margin-bottom:0">
         <div style="color:var(--green);font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:8px">✓ Uploaded Successfully</div>
         <div style="font-size:12px;color:var(--muted);line-height:2">
@@ -1070,190 +1902,240 @@ async function uploadFile() {
           <button class="btn btn-ghost" onclick="quickRunChecks(${data.id})">▶ Run Checks Now</button>
         </div>
       </div>`;
-    selectedFile = null;
-    $('file-preview').style.display = 'none';
-    loadAllDropdowns();
-    toast('File uploaded successfully','success');
-  } catch(e) {
-    toast('Upload failed: '+e.message,'error');
-  } finally { btn.disabled=false; btn.textContent='Upload ↑'; }
-}
+          selectedFile = null;
+          $("file-preview").style.display = "none";
+          loadAllDropdowns();
+          toast("File uploaded successfully", "success");
+        } catch (e) {
+          toast("Upload failed: " + e.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Upload ↑";
+        }
+      }
 
-// Drag and drop
-const zone = $('upload-zone');
-zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
-zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
-zone.addEventListener('drop', e => {
-  e.preventDefault(); zone.classList.remove('drag');
-  const f = e.dataTransfer.files[0];
-  if (f) { selectedFile=f; handleFileSelect({target:{files:[f]}}); }
-});
+      // Drag and drop
+      const zone = $("upload-zone");
+      zone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        zone.classList.add("drag");
+      });
+      zone.addEventListener("dragleave", () => zone.classList.remove("drag"));
+      zone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        zone.classList.remove("drag");
+        const f = e.dataTransfer.files[0];
+        if (f) {
+          selectedFile = f;
+          handleFileSelect({ target: { files: [f] } });
+        }
+      });
 
-// ── RULES ────────────────────────────────────────────────────────────────────
-function toggleRuleForm() {
-  const card = $('rule-form-card');
-  const isOpening = card.style.display==='none';
-  card.style.display = isOpening ? '' : 'none';
-  if (isOpening) {
-    $('rule-form-title').textContent = '⚙ Create Validation Rule';
-    $('rule-submit-btn').textContent = 'Create Rule';
-    $('edit-rule-id').value = '';
-    $('rule-name').value = '';
-    $('rule-field').value = '';
-    $('rule-params-box').style.display = 'none';
-  }
-}
+      // ── RULES ────────────────────────────────────────────────────────────────────
+      function toggleRuleForm() {
+        const card = $("rule-form-card");
+        const isOpening = card.style.display === "none";
+        card.style.display = isOpening ? "" : "none";
+        if (isOpening) {
+          $("rule-form-title").textContent = "⚙ Create Validation Rule";
+          $("rule-submit-btn").textContent = "Create Rule";
+          $("edit-rule-id").value = "";
+          $("rule-name").value = "";
+          $("rule-field").value = "";
+          $("rule-params-box").style.display = "none";
+        }
+      }
 
-function cancelRuleEdit() {
-  $('rule-form-card').style.display = 'none';
-  $('edit-rule-id').value = '';
-}
+      function cancelRuleEdit() {
+        $("rule-form-card").style.display = "none";
+        $("edit-rule-id").value = "";
+      }
 
-function updateRuleParams() {
-  const type = $('rule-type').value;
-  const box = $('rule-params-box');
-  const templates = {
-    DATA_TYPE: `<div class="field" style="margin-bottom:0"><label>Expected Type</label>
+      function updateRuleParams() {
+        const type = $("rule-type").value;
+        const box = $("rule-params-box");
+        const templates = {
+          DATA_TYPE: `<div class="field" style="margin-bottom:0"><label>Expected Type</label>
       <select id="param-expected-type">
         <option value="int">int — whole numbers</option>
         <option value="float">float — decimals</option>
         <option value="str">str — text</option>
         <option value="bool">bool — true/false</option>
       </select></div>`,
-    RANGE: `<div style="display:flex;gap:12px">
+          RANGE: `<div style="display:flex;gap:12px">
       <div class="field" style="flex:1;margin-bottom:0"><label>Min Value</label><input id="param-min" type="number" placeholder="0"/></div>
       <div class="field" style="flex:1;margin-bottom:0"><label>Max Value</label><input id="param-max" type="number" placeholder="100"/></div>
     </div>`,
-    REGEX: `<div class="field" style="margin-bottom:0"><label>Regex Pattern</label>
+          REGEX: `<div class="field" style="margin-bottom:0"><label>Regex Pattern</label>
       <input id="param-pattern" placeholder="e.g. ^[\\w.]+@[\\w]+\\.[\\w]+$"/>
       <div style="font-size:10px;color:var(--muted);margin-top:4px">
         Examples: email: ^[\\w.]+@\\w+\\.\\w+$ &nbsp;|&nbsp; phone: ^\\d{3}-\\d{4}$
       </div></div>`,
-  };
-  if (templates[type]) { box.style.display=''; box.innerHTML=templates[type]; }
-  else box.style.display='none';
-}
+        };
+        if (templates[type]) {
+          box.style.display = "";
+          box.innerHTML = templates[type];
+        } else box.style.display = "none";
+      }
 
-async function saveRule() {
-  const id = $('edit-rule-id').value;
-  const type = $('rule-type').value;
-  let params = null;
-  if (type==='DATA_TYPE') params = JSON.stringify({expected_type: $('param-expected-type').value});
-  if (type==='RANGE') {
-    const mn = $('param-min').value, mx = $('param-max').value;
-    params = JSON.stringify({min: mn?parseFloat(mn):null, max: mx?parseFloat(mx):null});
-  }
-  if (type==='REGEX') params = JSON.stringify({pattern: $('param-pattern').value});
+      async function saveRule() {
+        const id = $("edit-rule-id").value;
+        const type = $("rule-type").value;
+        let params = null;
+        if (type === "DATA_TYPE")
+          params = JSON.stringify({
+            expected_type: $("param-expected-type").value,
+          });
+        if (type === "RANGE") {
+          const mn = $("param-min").value,
+            mx = $("param-max").value;
+          params = JSON.stringify({
+            min: mn ? parseFloat(mn) : null,
+            max: mx ? parseFloat(mx) : null,
+          });
+        }
+        if (type === "REGEX")
+          params = JSON.stringify({ pattern: $("param-pattern").value });
 
-  const payload = {
-    name: $('rule-name').value,
-    dataset_type: $('rule-dataset-type').value,
-    field_name: $('rule-field').value,
-    rule_type: type,
-    severity: $('rule-severity').value,
-    parameters: params
-  };
+        const payload = {
+          name: $("rule-name").value,
+          dataset_type: $("rule-dataset-type").value,
+          field_name: $("rule-field").value,
+          rule_type: type,
+          severity: $("rule-severity").value,
+          parameters: params,
+        };
 
-  try {
-    if (id) {
-      await api('PATCH', `/api/rules/${id}`, payload);
-      toast('Rule updated successfully','success');
-    } else {
-      await api('POST', '/api/rules', payload);
-      toast('Rule created successfully','success');
-    }
-    $('rule-form-card').style.display = 'none';
-    loadRules();
-  } catch(e) { toast('Failed to save rule: '+e.message,'error'); }
-}
+        try {
+          if (id) {
+            await api("PATCH", `/api/rules/${id}`, payload);
+            toast("Rule updated successfully", "success");
+          } else {
+            await api("POST", "/api/rules", payload);
+            toast("Rule created successfully", "success");
+          }
+          $("rule-form-card").style.display = "none";
+          loadRules();
+        } catch (e) {
+          toast("Failed to save rule: " + e.message, "error");
+        }
+      }
 
-async function editRule(id) {
-  try {
-    const rules = await api('GET', '/api/rules');
-    const r = rules.find(rule => rule.id === id);
-    if (!r) return;
+      async function editRule(id) {
+        try {
+          const rules = await api("GET", "/api/rules");
+          const r = rules.find((rule) => rule.id === id);
+          if (!r) return;
 
-    $('rule-form-card').style.display = '';
-    $('rule-form-title').textContent = '⚙ Edit Validation Rule';
-    $('rule-submit-btn').textContent = 'Update Rule';
-    $('edit-rule-id').value = r.id;
-    $('rule-name').value = r.name;
-    $('rule-field').value = r.field_name;
-    $('rule-dataset-type').value = r.dataset_type;
-    $('rule-severity').value = r.severity;
-    $('rule-type').value = r.rule_type;
-    updateRuleParams();
+          $("rule-form-card").style.display = "";
+          $("rule-form-title").textContent = "⚙ Edit Validation Rule";
+          $("rule-submit-btn").textContent = "Update Rule";
+          $("edit-rule-id").value = r.id;
+          $("rule-name").value = r.name;
+          $("rule-field").value = r.field_name;
+          $("rule-dataset-type").value = r.dataset_type;
+          $("rule-severity").value = r.severity;
+          $("rule-type").value = r.rule_type;
+          updateRuleParams();
 
-    // Fill params if any
-    if (r.parameters) {
-      const p = JSON.parse(r.parameters);
-      if (r.rule_type === 'DATA_TYPE') $('param-expected-type').value = p.expected_type;
-      if (r.rule_type === 'RANGE') { $('param-min').value = p.min; $('param-max').value = p.max; }
-      if (r.rule_type === 'REGEX') $('param-pattern').value = p.pattern;
-    }
-    window.scrollTo({top: 0, behavior: 'smooth'});
-  } catch(e) { toast('Error loading rule details','error'); }
-}
+          // Fill params if any
+          if (r.parameters) {
+            const p = JSON.parse(r.parameters);
+            if (r.rule_type === "DATA_TYPE")
+              $("param-expected-type").value = p.expected_type;
+            if (r.rule_type === "RANGE") {
+              $("param-min").value = p.min;
+              $("param-max").value = p.max;
+            }
+            if (r.rule_type === "REGEX") $("param-pattern").value = p.pattern;
+          }
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (e) {
+          toast("Error loading rule details", "error");
+        }
+      }
 
-async function loadRules() {
-  const filter = $('rules-filter').value;
-  try {
-    const rules = await api('GET', '/api/rules' + (filter?`?dataset_type=${filter}`:''));
-    if (!rules.length) {
-      $('rules-table').innerHTML = '<div class="empty"><div class="empty-icon">⚙</div><div>No rules yet. Click <b>+ New Rule</b> to create one.</div></div>';
-      return;
-    }
-    const typeColors = {NOT_NULL:'blue',DATA_TYPE:'cyan',RANGE:'amber',UNIQUE:'green',REGEX:'blue'};
-    $('rules-table').innerHTML = `
+      async function loadRules() {
+        const filter = $("rules-filter").value;
+        try {
+          const rules = await api(
+            "GET",
+            "/api/rules" + (filter ? `?dataset_type=${filter}` : ""),
+          );
+          if (!rules.length) {
+            $("rules-table").innerHTML =
+              '<div class="empty"><div class="empty-icon">⚙</div><div>No rules yet. Click <b>+ New Rule</b> to create one.</div></div>';
+            return;
+          }
+          const typeColors = {
+            NOT_NULL: "blue",
+            DATA_TYPE: "cyan",
+            RANGE: "amber",
+            UNIQUE: "green",
+            REGEX: "blue",
+          };
+          $("rules-table").innerHTML = `
       <div class="table-wrap">
         <table>
           <thead><tr><th>Name</th><th>Field</th><th>Rule Type</th><th>Dataset</th><th>Severity</th><th>Parameters</th><th>Actions</th></tr></thead>
-          <tbody>${rules.map(r=>`
+          <tbody>${rules
+            .map(
+              (r) => `
             <tr>
               <td><b>${r.name}</b></td>
               <td><span class="chip">${r.field_name}</span></td>
-              <td><span class="badge badge-${typeColors[r.rule_type]||'blue'}">${r.rule_type}</span></td>
+              <td><span class="badge badge-${typeColors[r.rule_type] || "blue"}">${r.rule_type}</span></td>
               <td><span class="chip">${r.dataset_type.toUpperCase()}</span></td>
-              <td><span class="badge ${r.severity==='HIGH'?'badge-red':r.severity==='MEDIUM'?'badge-amber':'badge-green'}">${r.severity}</span></td>
-              <td style="color:var(--muted);font-size:11px">${r.parameters||'—'}</td>
+              <td><span class="badge ${r.severity === "HIGH" ? "badge-red" : r.severity === "MEDIUM" ? "badge-amber" : "badge-green"}">${r.severity}</span></td>
+              <td style="color:var(--muted);font-size:11px">${r.parameters || "—"}</td>
               <td>
                 <div style="display:flex;gap:6px">
                   <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="editRule(${r.id})">✎ Edit</button>
                   <button class="btn btn-danger" style="padding:5px 10px;font-size:11px" onclick="deleteRule(${r.id})">✕</button>
                 </div>
               </td>
-            </tr>`).join('')}
+            </tr>`,
+            )
+            .join("")}
           </tbody>
         </table>
       </div>`;
-  } catch(e) { toast('Error loading rules: '+e.message,'error'); }
-}
+        } catch (e) {
+          toast("Error loading rules: " + e.message, "error");
+        }
+      }
 
-async function deleteRule(id) {
-  if (!confirm('Delete this rule?')) return;
-  try {
-    await api('DELETE', `/api/rules/${id}`);
-    toast('Rule deleted','success');
-    loadRules();
-  } catch(e) { toast(e.message,'error'); }
-}
+      async function deleteRule(id) {
+        if (!confirm("Delete this rule?")) return;
+        try {
+          await api("DELETE", `/api/rules/${id}`);
+          toast("Rule deleted", "success");
+          loadRules();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
 
-// ── CHECKS ───────────────────────────────────────────────────────────────────
-async function loadChecksView() {
-  await loadAllDropdowns();
-}
+      // ── CHECKS ───────────────────────────────────────────────────────────────────
+      async function loadChecksView() {
+        await loadAllDropdowns();
+      }
 
-async function runChecks() {
-  const id = $('check-dataset-select').value;
-  if (!id) { toast('Please select a dataset','error'); return; }
-  const btn = $('run-check-btn');
-  btn.disabled=true; btn.innerHTML='<div class="spinner"></div> Running...';
+      async function runChecks() {
+        const id = $("check-dataset-select").value;
+        if (!id) {
+          toast("Please select a dataset", "error");
+          return;
+        }
+        const btn = $("run-check-btn");
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner"></div> Running...';
 
-  try {
-    const result = await api('POST', `/api/checks/run/${id}`);
-    const color = scoreColor(result.score);
-    $('check-result-card').style.display='';
-    $('check-result-content').innerHTML = `
+        try {
+          const result = await api("POST", `/api/checks/run/${id}`);
+          const color = scoreColor(result.score);
+          $("check-result-card").style.display = "";
+          $("check-result-content").innerHTML = `
       <div style="text-align:center;padding:20px 0">
         <div style="font-family:var(--font-display);font-size:64px;font-weight:700;color:${color};line-height:1">${result.score.toFixed(1)}</div>
         <div style="font-size:13px;color:var(--muted);margin-top:4px">Quality Score</div>
@@ -1270,21 +2152,29 @@ async function runChecks() {
         <div style="margin-top:16px">${statusBadge(result.status)}</div>
       </div>`;
 
-    // Load per-rule breakdown
-    const results = await api('GET', `/api/checks/results/${id}`);
-    if (results && results.length) {
-      $('check-results-detail').style.display='';
-      $('check-results-table').innerHTML = `
+          // Load per-rule breakdown
+          const results = await api("GET", `/api/checks/results/${id}`);
+          if (results && results.length) {
+            $("check-results-detail").style.display = "";
+            $("check-results-table").innerHTML = `
         <div class="table-wrap">
           <table>
             <thead><tr><th>Rule ID</th><th>Status</th><th>Failed Rows</th><th>Total Rows</th><th>Pass Rate</th><th>Details</th></tr></thead>
-            <tbody>${results.slice(0,20).map(r=>{
-              const pct = r.total_rows>0 ? ((r.total_rows-r.failed_rows)/r.total_rows*100).toFixed(1) : 100;
-              const col = r.passed ? 'var(--green)' : 'var(--red)';
-              return `<tr>
+            <tbody>${results
+              .slice(0, 20)
+              .map((r) => {
+                const pct =
+                  r.total_rows > 0
+                    ? (
+                        ((r.total_rows - r.failed_rows) / r.total_rows) *
+                        100
+                      ).toFixed(1)
+                    : 100;
+                const col = r.passed ? "var(--green)" : "var(--red)";
+                return `<tr>
                 <td style="color:var(--muted)">#${r.rule_id}</td>
                 <td>${r.passed ? '<span class="badge badge-green">✓ PASS</span>' : '<span class="badge badge-red">✗ FAIL</span>'}</td>
-                <td style="color:${r.failed_rows>0?'var(--red)':'var(--muted)'}">${r.failed_rows}</td>
+                <td style="color:${r.failed_rows > 0 ? "var(--red)" : "var(--muted)"}">${r.failed_rows}</td>
                 <td style="color:var(--muted)">${r.total_rows}</td>
                 <td>
                   <div style="display:flex;align-items:center;gap:8px">
@@ -1294,137 +2184,187 @@ async function runChecks() {
                     <span style="color:${col}">${pct}%</span>
                   </div>
                 </td>
-                <td style="color:var(--muted);font-size:11px">${r.details||'—'}</td>
+                <td style="color:var(--muted);font-size:11px">${r.details || "—"}</td>
               </tr>`;
-            }).join('')}
+              })
+              .join("")}
             </tbody>
           </table>
         </div>`;
-    }
-    toast(`Checks complete — Score: ${result.score.toFixed(1)}`, 'success');
-    loadAllDropdowns();
-  } catch(e) { toast('Check failed: '+e.message,'error'); }
-  finally { btn.disabled=false; btn.innerHTML='▶ Run Quality Checks'; }
-}
+          }
+          toast(
+            `Checks complete — Score: ${result.score.toFixed(1)}`,
+            "success",
+          );
+          loadAllDropdowns();
+        } catch (e) {
+          toast("Check failed: " + e.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = "▶ Run Quality Checks";
+        }
+      }
 
-// ── REPORTS ──────────────────────────────────────────────────────────────────
-async function loadReportsView() { await loadAllDropdowns(); }
+      // ── REPORTS ──────────────────────────────────────────────────────────────────
+      async function loadReportsView() {
+        await loadAllDropdowns();
+      }
 
-async function loadReport() {
-  const id = $('report-dataset-select').value;
-  if (!id) { toast('Select a dataset first','error'); return; }
-  try {
-    const report = await api('GET', `/api/reports/${id}`);
-    $('report-output').style.display='';
+      async function loadReport() {
+        const id = $("report-dataset-select").value;
+        if (!id) {
+          toast("Select a dataset first", "error");
+          return;
+        }
+        try {
+          const report = await api("GET", `/api/reports/${id}`);
+          $("report-output").style.display = "";
 
-    // Score ring
-    const score = report.score;
-    const circumference = 326.73;
-    const offset = circumference - (score/100)*circumference;
-    const fill = $('report-ring-fill');
-    fill.style.strokeDashoffset = offset;
-    fill.style.stroke = scoreColor(score);
-    $('report-score-num').textContent = score.toFixed(1);
-    $('report-score-num').style.color = scoreColor(score);
+          // Score ring
+          const score = report.score;
+          const circumference = 326.73;
+          const offset = circumference - (score / 100) * circumference;
+          const fill = $("report-ring-fill");
+          fill.style.strokeDashoffset = offset;
+          fill.style.stroke = scoreColor(score);
+          $("report-score-num").textContent = score.toFixed(1);
+          $("report-score-num").style.color = scoreColor(score);
 
-    $('report-meta').innerHTML = `
+          $("report-meta").innerHTML = `
       <b style="color:var(--text)">${report.dataset_name}</b><br>
       Total Rules: ${report.total_rules}<br>
       Checked: ${fmtDate(report.checked_at)}<br>
-      Status: ${statusBadge(score>=50?'VALIDATED':'FAILED')}`;
+      Status: ${statusBadge(score >= 50 ? "VALIDATED" : "FAILED")}`;
 
-    // Rules breakdown
-    if (!report.results || !report.results.length) {
-      $('report-rules-output').innerHTML = '<div style="color:var(--muted)">No rule results yet.</div>';
-    } else {
-      $('report-rules-output').innerHTML = `
+          // Rules breakdown
+          if (!report.results || !report.results.length) {
+            $("report-rules-output").innerHTML =
+              '<div style="color:var(--muted)">No rule results yet.</div>';
+          } else {
+            $("report-rules-output").innerHTML = `
         <div class="table-wrap">
           <table>
             <thead><tr><th>Rule ID</th><th>Status</th><th>Failed Rows</th><th>Total Rows</th><th>Details</th></tr></thead>
-            <tbody>${report.results.map(r=>`
+            <tbody>${report.results
+              .map(
+                (r) => `
               <tr>
                 <td style="color:var(--muted)">#${r.rule_id}</td>
                 <td>${r.passed ? '<span class="badge badge-green">✓ PASS</span>' : '<span class="badge badge-red">✗ FAIL</span>'}</td>
-                <td style="color:${r.failed_rows>0?'var(--red)':'var(--muted)'}">${r.failed_rows}</td>
+                <td style="color:${r.failed_rows > 0 ? "var(--red)" : "var(--muted)"}">${r.failed_rows}</td>
                 <td style="color:var(--muted)">${r.total_rows}</td>
-                <td style="color:var(--muted);font-size:11px">${r.details||'—'}</td>
-              </tr>`).join('')}
+                <td style="color:var(--muted);font-size:11px">${r.details || "—"}</td>
+              </tr>`,
+              )
+              .join("")}
             </tbody>
           </table>
         </div>`;
-    }
+          }
 
-    // Detailed Report additions
-    $('report-download-btn').style.display = '';
-    const scorePct = parseFloat(report.executive_summary.score_percentage) || 0;
-    $('report-summary-output').innerHTML = `
+          // Detailed Report additions
+          $("report-download-btn").style.display = "";
+          const scorePct =
+            parseFloat(report.executive_summary.score_percentage) || 0;
+          $("report-summary-output").innerHTML = `
       <p><b>Status:</b> ${report.executive_summary.status}</p>
       <p><b>Score:</b> ${scorePct.toFixed(1)}%</p>
       <p><b>Rules Pass/Fail:</b> ${report.executive_summary.passed_rules} / ${report.executive_summary.failed_rules}</p>
     `;
 
-    $('report-recommendations-output').innerHTML = report.recommendations.length > 0
-      ? `<ul>${report.recommendations.map(rec => `<li>${rec}</li>`).join('')}</ul>`
-      : '<p style="color:var(--muted)">No recommendations available.</p>';
+          $("report-recommendations-output").innerHTML =
+            report.recommendations.length > 0
+              ? `<ul>${report.recommendations.map((rec) => `<li>${rec}</li>`).join("")}</ul>`
+              : '<p style="color:var(--muted)">No recommendations available.</p>';
 
-    if (report.top_failure_patterns && report.top_failure_patterns.length > 0) {
-      $('report-patterns-output').innerHTML = `
+          if (
+            report.top_failure_patterns &&
+            report.top_failure_patterns.length > 0
+          ) {
+            $("report-patterns-output").innerHTML = `
         <div class="table-wrap">
           <table>
             <thead><tr><th>Rule Name</th><th>Occurrence (Rows Affected)</th></tr></thead>
-            <tbody>${report.top_failure_patterns.map(p => `
+            <tbody>${report.top_failure_patterns
+              .map(
+                (p) => `
               <tr>
                 <td><b>${p.rule_name}</b></td>
                 <td><span class="badge badge-amber">${p.failed_rows}</span> rows</td>
-              </tr>`).join('')}
+              </tr>`,
+              )
+              .join("")}
             </tbody>
           </table>
         </div>`;
-    } else {
-      $('report-patterns-output').innerHTML = '<div class="empty">No significant failure patterns detected.</div>';
-    }
+          } else {
+            $("report-patterns-output").innerHTML =
+              '<div class="empty">No significant failure patterns detected.</div>';
+          }
+        } catch (e) {
+          toast(
+            e.message.includes("No quality checks")
+              ? "Run checks first before viewing a report"
+              : e.message,
+            "error",
+          );
+        }
+      }
 
-  } catch(e) {
-    toast(e.message.includes('No quality checks') ? 'Run checks first before viewing a report' : e.message, 'error');
-  }
-}
+      async function downloadCSV() {
+        const id = $("report-dataset-select").value;
+        if (!id) return;
+        try {
+          window.open(
+            `${API}/api/reports/${id}?format=csv&token=${token}`,
+            "_blank",
+          );
+          toast("CSV Download requested", "info");
+        } catch (e) {
+          toast("Download failed", "error");
+        }
+      }
 
-async function downloadCSV() {
-  const id = $('report-dataset-select').value;
-  if (!id) return;
-  try {
-    window.open(`${API}/api/reports/${id}?format=csv&token=${token}`, '_blank');
-    toast('CSV Download requested','info');
-  } catch(e) { toast('Download failed','error'); }
-}
+      // ── TRENDS ───────────────────────────────────────────────────────────────────
+      async function loadTrends() {
+        const days = $("trend-days").value;
+        const datasetId = $("trend-dataset-select").value;
+        const interval = $("trend-interval").value;
+        try {
+          let url = `/api/reports/trends?days=${days}&interval=${interval}`;
+          if (datasetId) url += `&dataset_id=${datasetId}`;
 
+          const trendsData = await api("GET", url);
+          const trendPoints = (trendsData && trendsData.trend_data) || [];
 
-// ── TRENDS ───────────────────────────────────────────────────────────────────
-async function loadTrends() {
-  const days = $('trend-days').value;
-  const datasetId = $('trend-dataset-select').value;
-  const interval = $('trend-interval').value;
-  try {
-    let url = `/api/reports/trends?days=${days}&interval=${interval}`;
-    if (datasetId) url += `&dataset_id=${datasetId}`;
+          if (!trendPoints.length) {
+            $("trend-table").innerHTML =
+              '<div class="empty"><div class="empty-icon">∿</div><div>No trend data yet.<br>Run some quality checks first.</div></div>';
+            if (trendChart) {
+              trendChart.destroy();
+              trendChart = null;
+            }
+            return;
+          }
 
-    const trendsData = await api('GET', url);
-    const trendPoints = (trendsData && trendsData.trend_data) || [];
+          // Render chart with trend_data
+          renderTrendsPageChart(trendPoints);
 
-    if (!trendPoints.length) {
-      $('trend-table').innerHTML = '<div class="empty"><div class="empty-icon">∿</div><div>No trend data yet.<br>Run some quality checks first.</div></div>';
-      if (trendChart) { trendChart.destroy(); trendChart=null; }
-      return;
-    }
+          // Summary stats
+          const dirArrow =
+            trendsData.trend_direction === "up"
+              ? "↑"
+              : trendsData.trend_direction === "down"
+                ? "↓"
+                : "→";
+          const dirColor =
+            trendsData.trend_direction === "up"
+              ? "var(--green)"
+              : trendsData.trend_direction === "down"
+                ? "var(--red)"
+                : "var(--muted)";
 
-    // Render chart with trend_data
-    renderTrendsPageChart(trendPoints);
-
-    // Summary stats
-    const dirArrow = trendsData.trend_direction === 'up' ? '↑' : trendsData.trend_direction === 'down' ? '↓' : '→';
-    const dirColor = trendsData.trend_direction === 'up' ? 'var(--green)' : trendsData.trend_direction === 'down' ? 'var(--red)' : 'var(--muted)';
-
-    $('trend-table').innerHTML = `
+          $("trend-table").innerHTML = `
       <div style="display:flex;gap:24px;margin-bottom:20px">
         <div class="stat-tile green" style="flex:1"><div class="stat-val">${trendsData.average_score.toFixed(1)}</div><div class="stat-label">Average Score</div></div>
         <div class="stat-tile" style="flex:1"><div class="stat-val" style="color:${dirColor}">${dirArrow} ${trendsData.trend_direction}</div><div class="stat-label">Trend Direction</div></div>
@@ -1433,162 +2373,228 @@ async function loadTrends() {
       <div class="table-wrap">
         <table>
           <thead><tr><th>Date</th><th>Avg Score</th><th>Checks Run</th></tr></thead>
-          <tbody>${[...trendPoints].reverse().map(t=>`
+          <tbody>${[...trendPoints]
+            .reverse()
+            .map(
+              (t) => `
             <tr>
               <td style="color:var(--muted)">${t.date}</td>
               <td>${scoreBadge(t.average_score)}</td>
               <td>${t.check_count}</td>
-            </tr>`).join('')}
+            </tr>`,
+            )
+            .join("")}
           </tbody>
         </table>
       </div>`;
-  } catch(e) { toast('Error loading trends: '+e.message,'error'); }
-}
+        } catch (e) {
+          toast("Error loading trends: " + e.message, "error");
+        }
+      }
 
-// ── ADMIN PANEL ──────────────────────────────────────────────────────────────
-async function loadAdminPanel() {
-  if (!isAdmin) { toast('Admin access required','error'); return; }
-  try {
-    const [datasetsData, rulesData, trendsData] = await Promise.all([
-      api('GET', '/api/datasets?limit=100'),
-      api('GET', '/api/rules'),
-      api('GET', '/api/reports/trends?days=30').catch(()=>null)
-    ]);
+      // ── ADMIN PANEL ──────────────────────────────────────────────────────────────
+      async function loadAdminPanel() {
+        if (!isAdmin) {
+          toast("Admin access required", "error");
+          return;
+        }
+        try {
+          const [datasetsData, rulesData, trendsData] = await Promise.all([
+            api("GET", "/api/datasets?limit=100"),
+            api("GET", "/api/rules"),
+            api("GET", "/api/reports/trends?days=30").catch(() => null),
+          ]);
 
-    const datasets = datasetsData.datasets || [];
-    const rules = rulesData || [];
+          const datasets = datasetsData.datasets || [];
+          const rules = rulesData || [];
 
-    $('admin-total-datasets').textContent = datasetsData.total || 0;
-    $('admin-total-rules').textContent = rules.length;
-    $('admin-avg-score').textContent = trendsData ? trendsData.average_score.toFixed(1) : '—';
-    const dir = trendsData ? trendsData.trend_direction : '—';
-    const dirArrow = dir === 'up' ? '↑' : dir === 'down' ? '↓' : dir === 'flat' ? '→' : '—';
-    $('admin-trend-dir').textContent = dirArrow + ' ' + dir;
+          $("admin-total-datasets").textContent = datasetsData.total || 0;
+          $("admin-total-rules").textContent = rules.length;
+          $("admin-avg-score").textContent = trendsData
+            ? trendsData.average_score.toFixed(1)
+            : "—";
+          const dir = trendsData ? trendsData.trend_direction : "—";
+          const dirArrow =
+            dir === "up"
+              ? "↑"
+              : dir === "down"
+                ? "↓"
+                : dir === "flat"
+                  ? "→"
+                  : "—";
+          $("admin-trend-dir").textContent = dirArrow + " " + dir;
 
-    // All datasets table
-    if (!datasets.length) {
-      $('admin-datasets-table').innerHTML = '<div class="empty">No datasets found.</div>';
-    } else {
-      $('admin-datasets-table').innerHTML = `
+          // All datasets table
+          if (!datasets.length) {
+            $("admin-datasets-table").innerHTML =
+              '<div class="empty">No datasets found.</div>';
+          } else {
+            $("admin-datasets-table").innerHTML = `
         <div class="table-wrap">
           <table>
             <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Rows</th><th>Cols</th><th>Owner ID</th><th>Status</th><th>Uploaded</th><th>Columns</th></tr></thead>
-            <tbody>${datasets.map(d=>{
-              let cols = [];
-              try { cols = JSON.parse(d.column_names||'[]'); } catch{}
-              return `<tr>
+            <tbody>${datasets
+              .map((d) => {
+                let cols = [];
+                try {
+                  cols = JSON.parse(d.column_names || "[]");
+                } catch {}
+                return `<tr>
                 <td style="color:var(--muted)">#${d.id}</td>
                 <td><b>${d.name}</b></td>
                 <td><span class="chip">${d.file_type.toUpperCase()}</span></td>
                 <td>${d.row_count}</td>
                 <td>${d.column_count}</td>
-                <td><span class="badge badge-blue">User #${d.uploaded_by||'?'}</span></td>
+                <td><span class="badge badge-blue">User #${d.uploaded_by || "?"}</span></td>
                 <td>${statusBadge(d.status)}</td>
                 <td style="color:var(--muted)">${fmtDate(d.uploaded_at)}</td>
-                <td>${cols.slice(0,5).map(c=>`<span class="chip">${c}</span>`).join('')}${cols.length>5?`<span class="chip">+${cols.length-5}</span>`:''}</td>
-              </tr>`;}).join('')}
+                <td>${cols
+                  .slice(0, 5)
+                  .map((c) => `<span class="chip">${c}</span>`)
+                  .join(
+                    "",
+                  )}${cols.length > 5 ? `<span class="chip">+${cols.length - 5}</span>` : ""}</td>
+              </tr>`;
+              })
+              .join("")}
             </tbody>
           </table>
         </div>`;
-    }
+          }
 
-    // All rules table
-    if (!rules.length) {
-      $('admin-rules-table').innerHTML = '<div class="empty">No rules found.</div>';
-    } else {
-      const typeColors = {NOT_NULL:'blue',DATA_TYPE:'cyan',RANGE:'amber',UNIQUE:'green',REGEX:'blue'};
-      $('admin-rules-table').innerHTML = `
+          // All rules table
+          if (!rules.length) {
+            $("admin-rules-table").innerHTML =
+              '<div class="empty">No rules found.</div>';
+          } else {
+            const typeColors = {
+              NOT_NULL: "blue",
+              DATA_TYPE: "cyan",
+              RANGE: "amber",
+              UNIQUE: "green",
+              REGEX: "blue",
+            };
+            $("admin-rules-table").innerHTML = `
         <div class="table-wrap">
           <table>
             <thead><tr><th>ID</th><th>Name</th><th>Field</th><th>Type</th><th>Dataset</th><th>Severity</th><th>Owner</th><th>Created</th></tr></thead>
-            <tbody>${rules.map(r=>`
+            <tbody>${rules
+              .map(
+                (r) => `
               <tr>
                 <td style="color:var(--muted)">#${r.id}</td>
                 <td><b>${r.name}</b></td>
                 <td><span class="chip">${r.field_name}</span></td>
-                <td><span class="badge badge-${typeColors[r.rule_type]||'blue'}">${r.rule_type}</span></td>
+                <td><span class="badge badge-${typeColors[r.rule_type] || "blue"}">${r.rule_type}</span></td>
                 <td><span class="chip">${r.dataset_type}</span></td>
-                <td><span class="badge ${r.severity==='HIGH'?'badge-red':r.severity==='MEDIUM'?'badge-amber':'badge-green'}">${r.severity}</span></td>
-                <td><span class="badge badge-blue">User #${r.created_by||'?'}</span></td>
+                <td><span class="badge ${r.severity === "HIGH" ? "badge-red" : r.severity === "MEDIUM" ? "badge-amber" : "badge-green"}">${r.severity}</span></td>
+                <td><span class="badge badge-blue">User #${r.created_by || "?"}</span></td>
                 <td style="color:var(--muted)">${fmtDate(r.created_at)}</td>
-              </tr>`).join('')}
+              </tr>`,
+              )
+              .join("")}
             </tbody>
           </table>
         </div>`;
-    }
-  } catch(e) { toast('Admin panel error: '+e.message,'error'); }
-}
-
-// ── CHART HELPERS ─────────────────────────────────────────────────────────────
-function buildLineChart(canvas, labels, scores, full=false) {
-  const ctx = canvas.getContext('2d');
-  const colors = scores.map(s => scoreColor(s));
-  return new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Quality Score',
-        data: scores,
-        borderColor: '#4f8ef7',
-        backgroundColor: 'rgba(79,142,247,0.08)',
-        borderWidth: 2,
-        pointBackgroundColor: colors,
-        pointBorderColor: colors,
-        pointRadius: full ? 5 : 4,
-        pointHoverRadius: 7,
-        tension: 0.4,
-        fill: true,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#131720',
-          borderColor: '#1c2233', borderWidth: 1,
-          titleColor: '#dde4f0', bodyColor: '#5a6580',
-          callbacks: { label: ctx => ` Score: ${ctx.parsed.y} / 100` }
-        }
-      },
-      scales: {
-        x: {
-          ticks: { color:'#5a6580', font:{family:'DM Mono',size:10}, maxTicksLimit:8 },
-          grid: { color:'rgba(28,34,51,.8)' },
-          border: { color:'#1c2233' }
-        },
-        y: {
-          min: 0, max: 100,
-          ticks: { color:'#5a6580', font:{family:'DM Mono',size:11}, callback: v=>`${v}` },
-          grid: { color:'rgba(28,34,51,.8)' },
-          border: { color:'#1c2233' }
+          }
+        } catch (e) {
+          toast("Admin panel error: " + e.message, "error");
         }
       }
-    }
-  });
-}
 
-function renderDashTrendChart(trendPoints) {
-  const canvas = $('dash-trend-chart');
-  if (!canvas) return;
-  if (dashTrendChart) { dashTrendChart.destroy(); dashTrendChart=null; }
-  if (!trendPoints.length) return;
-  const labels = trendPoints.map(t => t.date);
-  const scores = trendPoints.map(t => parseFloat(t.average_score.toFixed(1)));
-  dashTrendChart = buildLineChart(canvas, labels, scores);
-}
+      // ── CHART HELPERS ─────────────────────────────────────────────────────────────
+      function buildLineChart(canvas, labels, scores, full = false) {
+        const ctx = canvas.getContext("2d");
+        const colors = scores.map((s) => scoreColor(s));
+        return new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Quality Score",
+                data: scores,
+                borderColor: "#4f8ef7",
+                backgroundColor: "rgba(79,142,247,0.08)",
+                borderWidth: 2,
+                pointBackgroundColor: colors,
+                pointBorderColor: colors,
+                pointRadius: full ? 5 : 4,
+                pointHoverRadius: 7,
+                tension: 0.4,
+                fill: true,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: "#131720",
+                borderColor: "#1c2233",
+                borderWidth: 1,
+                titleColor: "#dde4f0",
+                bodyColor: "#5a6580",
+                callbacks: { label: (ctx) => ` Score: ${ctx.parsed.y} / 100` },
+              },
+            },
+            scales: {
+              x: {
+                ticks: {
+                  color: "#5a6580",
+                  font: { family: "DM Mono", size: 10 },
+                  maxTicksLimit: 8,
+                },
+                grid: { color: "rgba(28,34,51,.8)" },
+                border: { color: "#1c2233" },
+              },
+              y: {
+                min: 0,
+                max: 100,
+                ticks: {
+                  color: "#5a6580",
+                  font: { family: "DM Mono", size: 11 },
+                  callback: (v) => `${v}`,
+                },
+                grid: { color: "rgba(28,34,51,.8)" },
+                border: { color: "#1c2233" },
+              },
+            },
+          },
+        });
+      }
 
-function renderTrendsPageChart(trendPoints) {
-  const canvas = $('trend-chart');
-  if (!canvas) return;
-  if (trendChart) { trendChart.destroy(); trendChart=null; }
-  if (!trendPoints.length) return;
-  const labels = trendPoints.map(t => t.date);
-  const scores = trendPoints.map(t => parseFloat(t.average_score.toFixed(1)));
-  trendChart = buildLineChart(canvas, labels, scores, true);
-}
+      function renderDashTrendChart(trendPoints) {
+        const canvas = $("dash-trend-chart");
+        if (!canvas) return;
+        if (dashTrendChart) {
+          dashTrendChart.destroy();
+          dashTrendChart = null;
+        }
+        if (!trendPoints.length) return;
+        const labels = trendPoints.map((t) => t.date);
+        const scores = trendPoints.map((t) =>
+          parseFloat(t.average_score.toFixed(1)),
+        );
+        dashTrendChart = buildLineChart(canvas, labels, scores);
+      }
 
-</script>
-</body>
+      function renderTrendsPageChart(trendPoints) {
+        const canvas = $("trend-chart");
+        if (!canvas) return;
+        if (trendChart) {
+          trendChart.destroy();
+          trendChart = null;
+        }
+        if (!trendPoints.length) return;
+        const labels = trendPoints.map((t) => t.date);
+        const scores = trendPoints.map((t) =>
+          parseFloat(t.average_score.toFixed(1)),
+        );
+        trendChart = buildLineChart(canvas, labels, scores, true);
+      }
+    </script>
+  </body>
 </html>
