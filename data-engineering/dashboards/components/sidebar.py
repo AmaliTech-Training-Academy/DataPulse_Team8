@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-import pandas as pd
 import streamlit as st
 
-from data.loaders import LOG_FILE, load_all_datasets
+from data.loaders import LOG_FILE
 
 
-def render(engine) -> tuple[list[int], int]:
-    """Render sidebar, return (selected_dataset_ids, day_window)."""
+def render(engine) -> int:
+    """Render sidebar, return day_window."""
     with st.sidebar:
         # Brand
         st.markdown(
@@ -23,30 +22,6 @@ def render(engine) -> tuple[list[int], int]:
             """,
             unsafe_allow_html=True,
         )
-        st.divider()
-
-        # Dataset filter
-        datasets_df = load_all_datasets(engine)
-        selected_ids: list[int] = []
-
-        if datasets_df.empty:
-            st.warning("No datasets found yet.")
-        else:
-            choices = datasets_df.set_index("name")["id"].to_dict()
-            st.markdown(
-                "<div style='font-size:.7rem;font-weight:700;color:#64748b;"
-                "text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px'>"
-                "Filter by Dataset</div>",
-                unsafe_allow_html=True,
-            )
-            selected_names = st.multiselect(
-                "Datasets",
-                options=list(choices.keys()),
-                default=list(choices.keys()),
-                label_visibility="collapsed",
-            )
-            selected_ids = [choices[n] for n in selected_names]
-
         st.divider()
 
         # Time window
@@ -78,4 +53,4 @@ def render(engine) -> tuple[list[int], int]:
             unsafe_allow_html=True,
         )
 
-    return selected_ids, int(day_window)
+    return int(day_window)

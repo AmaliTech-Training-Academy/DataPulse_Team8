@@ -2,16 +2,6 @@
 
 Run:
     streamlit run data-engineering/dashboards/quality_dashboard.py
-
-The app is split into focused modules:
-    config.py               — thresholds, colours, constants
-    styles.py               — all custom CSS
-    data/loaders.py         — SQL queries + caching + logging
-    components/kpi_cards.py — KPI strip + health banner
-    components/charts.py    — Plotly chart builders
-    components/sidebar.py   — sidebar filters
-    components/dataset_cards.py — dataset card grid + insights
-    components/etl_health.py    — ETL health section
 """
 
 from __future__ import annotations
@@ -81,8 +71,8 @@ def main() -> None:
         loaders.LOGGER.critical("DB connection failed: %s", exc)
         st.stop()
 
-    # Sidebar
-    selected_ids, day_window = sidebar.render(engine)
+    # Sidebar (Time Window only)
+    day_window = sidebar.render(engine)
 
     # Hero banner
     st.markdown(
@@ -95,7 +85,25 @@ def main() -> None:
         unsafe_allow_html=True,
     )
 
-    # Load all data
+    # ── Dataset Selector (NEW: Moved from Sidebar) ──────────────────────────
+    datasets_df = loaders.load_all_datasets(engine)
+    selected_ids: list[int] = []
+
+    if datasets_df.empty:
+        st.warning("No datasets found yet.")
+    else:
+        choices = datasets_df.set_index("name")["id"].to_dict()
+        selected_names = st.multiselect(
+            "Filter Dashboard by Datasets",
+            options=list(choices.keys()),
+            default=list(choices.keys()),
+            help="Select one or more datasets to visualize their quality metrics."
+        )
+        selected_ids = [choices[n] for n in selected_names]
+
+    st.write("---")
+
+    # Load data based on filters
     latest_df  = loaders.load_latest_scores(engine, selected_ids)
     trend_df   = loaders.load_daily_trend(engine, selected_ids, day_window)
     failure_df = loaders.load_rule_failures(engine, selected_ids)
