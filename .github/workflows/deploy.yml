@@ -1,26 +1,25 @@
 name: Deploy to ECR with Blue-Green
 
 on:
-  push:
-    branches:
-      - main
-      - develop
+  # Only run manually - use deploy-ecs.yml for automatic deployments
   workflow_dispatch:
     inputs:
       environment:
         description: "Deployment environment"
         required: true
-        default: "staging"
+        default: "production"
         type: choice
         options:
+          - dev
           - staging
           - production
 
 env:
   AWS_REGION: us-east-1
+  # OIDC Role ARN - replace with your actual role ARN from Terraform output
+  # Format: arn:aws:iam::ACCOUNT_ID:role/github-actions-deploy-ENVIRONMENT
+  GITHUB_OIDC_ROLE: ${{ secrets.GITHUB_OIDC_ROLE_ARN }}
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-  ECS_CLUSTER: datapulse-cluster
-  ECS_SERVICE: datapulse-service
 
 jobs:
   # Build and push Docker images to ECR
@@ -34,11 +33,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # OIDC: Authenticate to AWS using OIDC (no credentials needed)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.GITHUB_OIDC_ROLE }}
+          role-session-name: GitHubActions-${{ github.run_id }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
@@ -90,11 +90,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # OIDC: Authenticate to AWS using OIDC (no credentials needed)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.GITHUB_OIDC_ROLE }}
+          role-session-name: GitHubActions-${{ github.run_id }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Create Blue Task Definition
@@ -155,11 +156,12 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'production'
 
     steps:
+      # OIDC: Authenticate to AWS using OIDC (no credentials needed)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.GITHUB_OIDC_ROLE }}
+          role-session-name: GitHubActions-${{ github.run_id }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Create Green Task Definition
@@ -226,11 +228,12 @@ jobs:
     if: failure()
 
     steps:
+      # OIDC: Authenticate to AWS using OIDC (no credentials needed)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.GITHUB_OIDC_ROLE }}
+          role-session-name: GitHubActions-${{ github.run_id }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Rollback deployment

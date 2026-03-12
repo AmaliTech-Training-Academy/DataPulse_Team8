@@ -124,3 +124,17 @@ output "public_subnet_ids" {
   description = "Public subnet IDs"
   value       = [aws_subnet.public_1.id, aws_subnet.public_2.id]
 }
+
+# =====================================================
+# GitHub OIDC Outputs (already defined in github_oidc.tf)
+# =====================================================
+
+output "github_actions_deploy_role_arn" {
+  description = "ARN of the IAM role for GitHub Actions deployment - add this as GITHUB_OIDC_ROLE_ARN secret"
+  value       = aws_iam_role.github_actions_deploy.arn
+}
+
+output "github_actions_deploy_role_name" {
+  description = "Name of the IAM role for GitHub Actions deployment"
+  value       = aws_iam_role.github_actions_deploy.name
+}

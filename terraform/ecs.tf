@@ -410,11 +410,10 @@ resource "aws_lb" "main" {
 
 # Target Groups for Blue-Green Deployment
 resource "aws_lb_target_group" "backend_blue" {
-  name_prefix = "be-bl-"
-  port        = 8000
-  protocol    = "HTTP"
-  vpc_id      = aws_vpc.main.id
-  target_type = "ip"
+  name     = "datapulse-backend-blue-${var.environment}"
+  port     = 8000
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
 
   health_check {
     enabled             = true
@@ -439,11 +438,10 @@ resource "aws_lb_target_group" "backend_blue" {
 }
 
 resource "aws_lb_target_group" "backend_green" {
-  name_prefix = "be-gn-"
-  port        = 8000
-  protocol    = "HTTP"
-  vpc_id      = aws_vpc.main.id
-  target_type = "ip"
+  name     = "datapulse-backend-green-${var.environment}"
+  port     = 8000
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
 
   health_check {
     enabled             = true
@@ -581,7 +579,12 @@ resource "aws_ecs_service" "backend_blue" {
     type = "CODE_DEPLOY"
   }
 
-  # Blue-Green deployment configuration managed by CodeDeploy
+  # Blue-Green deployment configuration
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
   depends_on = [aws_lb_listener.frontend]
 
   tags = {

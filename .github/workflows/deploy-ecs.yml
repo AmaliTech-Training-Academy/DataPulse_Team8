@@ -1,0 +1,97 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  # OIDC Role ARN - replace with your actual role ARN from Terraform output
+  # Format: arn:aws:iam::ACCOUNT_ID:role/github-actions-deploy-ENVIRONMENT
+  GITHUB_OIDC_ROLE: ${{ secrets.GITHUB_OIDC_ROLE_ARN }}
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "name=prod" >> $GITHUB_OUTPUT
+            echo "cluster=datapulse-prod" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            echo "name=dev" >> $GITHUB_OUTPUT
+            echo "cluster=datapulse-dev" >> $GITHUB_OUTPUT
+          else
+            echo "name=dev" >> $GITHUB_OUTPUT
+            echo "cluster=datapulse-dev" >> $GITHUB_OUTPUT
+          fi
+
+      # Note: Cluster name should match Terraform: datapulse-${var.environment}
+
+      # OIDC: Authenticate to AWS using OIDC (no credentials needed)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.GITHUB_OIDC_ROLE }}
+          role-session-name: GitHubActions-${{ github.run_id }}
+          aws-region: ${{ secrets.AWS_REGION || 'eu-west-1' }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/datapulse-backend:${{ github.sha }} ./backend
+
+      - name: Push Docker image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker push $ECR_REGISTRY/datapulse-backend:${{ github.sha }}
+
+      - name: Deploy to ECS
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        run: |
+          echo "Deploying to ${{ steps.env.outputs.cluster }} cluster..."
+
+          # Register new task definition
+          TASK_DEF=$(aws ecs register-task-definition \
+            --family datapulse-backend \
+            --network-mode awsvpc \
+            --requires-compatibilities FARGATE \
+            --cpu 512 \
+            --memory 1024 \
+            --execution-role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/datapulse-ecs-task-execution-${{ steps.env.outputs.name }} \
+            --task-role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/datapulse-ecs-task-${{ steps.env.outputs.name }} \
+            --container-definitions '[{"name":"backend","image":"${{ env.ECR_REGISTRY }}/datapulse-backend:${{ github.sha }}","essential":true,"portMappings":[{"containerPort":8000,"hostPort":8000,"protocol":"tcp"}],"logConfiguration":{"logDriver":"awslogs","options":{"awslogs-group":"/ecs/datapulse-${{ steps.env.outputs.name }}","awslogs-region":"${{ secrets.AWS_REGION || 'eu-west-1' }}","awslogs-stream-prefix":"ecs"}}}]' \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "Task definition: $TASK_DEF"
+
+          # Update service
+          aws ecs update-service \
+            --cluster ${{ steps.env.outputs.cluster }} \
+            --service datapulse-backend-blue-${{ steps.env.outputs.name }} \
+            --task-definition $TASK_DEF \
+            --desired-count 2 \
+            --force-new-deployment
+
+          echo "Waiting for service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster ${{ steps.env.outputs.cluster }} \
+            --services datapulse-backend-blue-${{ steps.env.outputs.name }}
+
+          echo "Successfully deployed to ${{ steps.env.outputs.name }} environment!"
