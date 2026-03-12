@@ -17,9 +17,15 @@ html, body, [class*="css"] {
 .stApp { background: #0a0b10; }
 .block-container { padding: 1rem 1.5rem 2rem; max-width: 1400px; }
 
-/* Hide Streamlit header/footer for cleaner embed */
-#MainMenu, header, footer { visibility: hidden; height: 0; }
-[data-testid="stHeader"] { display: none; }
+/* ── Sidebar: Force Non-Collapsible ──────────────────────── */
+/* Hide the 'X' button inside the expanded sidebar */
+[data-testid="stSidebar"] button[kind="headerNoPadding"] {
+    display: none !important;
+}
+/* Hide the 'hamburger' button in the top left when collapsed */
+[data-testid="collapsedControl"] {
+    display: none !important;
+}
 
 /* Force dark colors on all widgets to prevent "white parts" */
 div[data-baseweb="select"] > div, 

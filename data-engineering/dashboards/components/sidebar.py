@@ -66,8 +66,6 @@ def render(engine) -> tuple[list[int], int]:
 
         st.divider()
 
-        
-
         # Footer meta
         st.markdown(
             f"""

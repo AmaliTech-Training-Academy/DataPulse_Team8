@@ -11,6 +11,9 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Automate execution of analytics schema on fresh setups
+      - ./data-engineering/sql/analytics_schema.sql:/docker-entrypoint-initdb.d/01_analytics_schema.sql:ro
+      - ./data-engineering/sql/seed_dim_date.sql:/docker-entrypoint-initdb.d/02_seed_dim_date.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
@@ -73,7 +76,6 @@ services:
   # Airflow bootstrap (run once before scheduler/webserver)
   airflow-init:
     image: apache/airflow:2.9.3-python3.11
-    profiles: ["de"]
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
@@ -98,7 +100,6 @@ services:
   # Airflow web UI for DE monitoring
   airflow-webserver:
     image: apache/airflow:2.9.3-python3.11
-    profiles: ["de"]
     restart: unless-stopped
     ports:
       - "8088:8080"
@@ -119,12 +120,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
     command: webserver
 
   # Airflow scheduler for DAG execution
   airflow-scheduler:
     image: apache/airflow:2.9.3-python3.11
-    profiles: ["de"]
     restart: unless-stopped
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -143,6 +145,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
     command: scheduler
 
   # Prometheus for Metrics Collection
