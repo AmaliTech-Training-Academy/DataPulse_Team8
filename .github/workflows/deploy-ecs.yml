@@ -96,6 +96,7 @@ jobs:
           # Note: If service uses CODE_DEPLOY, this action will use CodeDeploy if codedeploy-app is provided
           codedeploy-application: datapulse-backend-${{ steps.env.outputs.name }}
           codedeploy-deployment-group: datapulse-backend-dg-${{ steps.env.outputs.name }}
+          codedeploy-appspec: appspec.yaml
 
       - name: Restart auxiliary ECS Services
         run: |
