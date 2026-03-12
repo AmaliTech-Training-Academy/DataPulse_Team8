@@ -14,7 +14,7 @@ def render_dataset_cards(latest_df: pd.DataFrame) -> None:
         st.markdown(
             """
 <div class="dp-empty">
-  <span class="dp-empty-icon">📂</span>
+  <span class="dp-empty-icon"></span>
   <div class="dp-empty-title">No datasets analysed yet</div>
   <div class="dp-empty-sub">Upload a file via the backend API and run a quality check to see results here.</div>
 </div>
@@ -99,7 +99,7 @@ def render_insights(failure_df: pd.DataFrame, latest_df: pd.DataFrame) -> None:
     st.markdown(
         f"""
 <div class="insight-box">
-  <h4>💡 What does this mean?</h4>
+  <h4>What does this mean?</h4>
   {bullets}
 </div>
         """,

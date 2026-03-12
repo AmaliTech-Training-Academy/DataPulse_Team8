@@ -28,7 +28,7 @@ COLORS = {
 }
 
 # ── Default DB URL ────────────────────────────────────────────────────────────
-DEFAULT_DB_URL = "postgresql://datapulse:datapulse123@127.0.0.1:5433/datapulse"
+DEFAULT_DB_URL = "postgresql://datapulse:datapulse123@127.0.0.1:5432/datapulse"
 
 # ── Plotly shared layout ──────────────────────────────────────────────────────
 PLOTLY_BASE = dict(

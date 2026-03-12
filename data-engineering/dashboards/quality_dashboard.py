@@ -144,7 +144,7 @@ def main() -> None:
 
     # ── Rule failures ─────────────────────────────────────────────────────────
     has_failures = not failure_df.empty and failure_df["failed_checks_count"].sum() > 0
-    section("Rule Failure Analysis", "What's going wrong and why")
+    section("Rule Failure Analysis", "Global patterns and severity")
 
     col_bar, col_donut = st.columns([2, 1])
 

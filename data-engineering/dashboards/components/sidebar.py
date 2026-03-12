@@ -36,7 +36,7 @@ def render(engine) -> tuple[list[int], int]:
             st.markdown(
                 "<div style='font-size:.7rem;font-weight:700;color:#64748b;"
                 "text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px'>"
-                "📁 Filter by Dataset</div>",
+                "Filter by Dataset</div>",
                 unsafe_allow_html=True,
             )
             selected_names = st.multiselect(
@@ -53,7 +53,7 @@ def render(engine) -> tuple[list[int], int]:
         st.markdown(
             "<div style='font-size:.7rem;font-weight:700;color:#64748b;"
             "text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px'>"
-            "📅 Trend Window</div>",
+            "Trend Window</div>",
             unsafe_allow_html=True,
         )
         day_window = st.selectbox(
@@ -66,20 +66,15 @@ def render(engine) -> tuple[list[int], int]:
 
         st.divider()
 
-        # Refresh
-        if st.button("Refresh Dashboard", use_container_width=True):
-            st.cache_data.clear()
-            st.rerun()
-
-        st.divider()
+        
 
         # Footer meta
         st.markdown(
             f"""
 <div style="font-size:.7rem;color:#475569;line-height:1.8">
-  🕐 {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}<br>
-  📄 Log: <code>{LOG_FILE.name}</code><br>
-  🔁 Auto-refresh every 60s
+  {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}<br>
+  Log: <code>{LOG_FILE.name}</code><br>
+  Auto-refresh every 60s
 </div>
             """,
             unsafe_allow_html=True,
