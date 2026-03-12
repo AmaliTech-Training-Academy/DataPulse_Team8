@@ -146,7 +146,9 @@ resource "aws_iam_role_policy" "github_actions_ecs_deploy" {
           "codedeploy:DeployApplication",
           "codedeploy:GetDeployment",
           "codedeploy:GetDeploymentConfig",
-          "codedeploy:RegisterApplicationRevision"
+          "codedeploy:RegisterApplicationRevision",
+          "codedeploy:ListDeployments",
+          "codedeploy:StopDeployment"
         ]
         Resource = "*"
       },
