@@ -524,32 +524,7 @@ resource "aws_lb_listener_rule" "prometheus" {
   }
 }
 
-# Test Listener for Blue-Green Deployments
-resource "aws_lb_listener" "test" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = "8080"
-  protocol          = "HTTP"
 
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.backend_green.arn
-  }
-}
-
-# Test Listener for Blue-Green Deployments
-resource "aws_lb_listener" "test" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = "8080"
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.backend_green.arn
-  }
-}
-
-# =====================================================
-# ECS Task Definitions
 # =====================================================
 
 # Backend Task Definition
