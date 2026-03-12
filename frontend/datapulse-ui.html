@@ -1725,7 +1725,7 @@
 
     <script>
       // ── CONFIG ──────────────────────────────────────────────────────────────────
-      const API = "";
+      const API = window.location.protocol === "file:" ? "http://localhost:8000" : "";
       let token = localStorage.getItem("dp_token") || "";
       let isAdmin = localStorage.getItem("dp_is_admin") === "true";
       let userEmail = localStorage.getItem("dp_user_email") || "";
