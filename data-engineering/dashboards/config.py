@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 # ── Score health bands ────────────────────────────────────────────────────────
 SCORE_BANDS = {
     "excellent": {"min": 90,  "label": "Excellent",  "color": "#22c55e"},
@@ -28,7 +30,10 @@ COLORS = {
 }
 
 # ── Default DB URL ────────────────────────────────────────────────────────────
-DEFAULT_DB_URL = "postgresql://datapulse:datapulse123@127.0.0.1:5432/datapulse"
+DEFAULT_DB_URL = os.environ.get(
+    "DATABASE_URL",
+    "postgresql://datapulse:datapulse@localhost:5432/datapulse",
+)
 
 # ── Plotly shared layout ──────────────────────────────────────────────────────
 PLOTLY_BASE = dict(
