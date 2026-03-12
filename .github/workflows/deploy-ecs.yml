@@ -87,6 +87,22 @@ jobs:
           image: ${{ steps.build-images.outputs.image }}
 
       - name: Deploy to Amazon ECS
+        run: |
+          # Stop any active CodeDeploy deployment to prevent conflicts
+          ACTIVE=$(aws deploy list-deployments \
+            --application-name datapulse-backend-${{ steps.env.outputs.name }} \
+            --deployment-group-name datapulse-backend-dg-${{ steps.env.outputs.name }} \
+            --include-only-statuses InProgress \
+            --region eu-west-1 \
+            --query 'deployments[0]' \
+            --output text 2>/dev/null || echo "")
+          if [ -n "$ACTIVE" ] && [ "$ACTIVE" != "None" ]; then
+            echo "Stopping active deployment: $ACTIVE"
+            aws deploy stop-deployment --deployment-id $ACTIVE --auto-rollback-enabled --region eu-west-1
+            sleep 10
+          fi
+
+      - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.render-task-def.outputs.task-definition }}
