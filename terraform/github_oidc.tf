@@ -143,7 +143,7 @@ resource "aws_iam_role_policy" "github_actions_ecs_deploy" {
           "codedeploy:ListApplications",
           "codedeploy:ListDeploymentGroups",
           "codedeploy:CreateDeploymentGroup",
-          "codedeploy:DeployApplication",
+          "codedeploy:CreateDeployment",
           "codedeploy:GetDeployment",
           "codedeploy:GetDeploymentConfig",
           "codedeploy:RegisterApplicationRevision",
