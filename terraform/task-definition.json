@@ -21,7 +21,7 @@
       "environment": [
         {
           "name": "DATABASE_URL",
-          "value": "postgresql://datapulse-postgres-prod:5432/datapulse"
+          "value": "postgresql://datapulse:ChangeMe2024!@datapulse-postgres-prod.cbsow4aus0ew.eu-west-1.rds.amazonaws.com:5432/datapulse"
         }
       ],
       "secrets": [
