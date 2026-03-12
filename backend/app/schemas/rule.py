@@ -36,3 +36,7 @@ class RuleUpdate(BaseModel):
     parameters: Optional[str] = None
     severity: Optional[str] = None
     is_active: Optional[bool] = None
+
+
+class RunChecksRequest(BaseModel):
+    rule_ids: Optional[list[int]] = None

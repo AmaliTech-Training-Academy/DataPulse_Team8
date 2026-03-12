@@ -11,25 +11,27 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
       :root {
-        --bg: #07090f;
-        --surface: #0e1118;
-        --card: #131720;
-        --border: #1c2233;
-        --border2: #252d42;
-        --blue: #4f8ef7;
-        --blue-dim: #1e3a6e;
-        --cyan: #26d9c7;
-        --green: #22c97a;
-        --green-dim: #0d3d26;
-        --amber: #f5a623;
-        --amber-dim: #3d2a08;
-        --red: #f05a5a;
-        --red-dim: #3d1212;
-        --text: #dde4f0;
-        --muted: #5a6580;
-        --dim: #2a3350;
-        --font-display: "Clash Display", sans-serif;
-        --font-mono: "DM Mono", monospace;
+        --bg: #050505;
+        --surface: #0a0a0a;
+        --card: #111111;
+        --border: rgba(255, 255, 255, 0.08);
+        --border2: rgba(255, 255, 255, 0.12);
+        --blue: #3b82f6;
+        --blue-bright: #60a5fa;
+        --blue-dim: rgba(59, 130, 246, 0.1);
+        --cyan: #06b6d4;
+        --green: #10b981;
+        --green-dim: rgba(16, 185, 129, 0.1);
+        --amber: #f59e0b;
+        --amber-dim: rgba(245, 158, 11, 0.1);
+        --red: #ef4444;
+        --red-dim: rgba(239, 68, 68, 0.1);
+        --text: #f9fafb;
+        --muted: #9ca3af;
+        --dim: #1f2937;
+        --primary: #f3f4f6; /* Softer contrast primary */
+        --font-display: "Clash Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --font-mono: "DM Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
       }
       * {
         box-sizing: border-box;
@@ -43,9 +45,12 @@
         background: var(--bg);
         color: var(--text);
         font-family: var(--font-mono);
-        font-size: 13px;
+        font-size: 14px;
+        line-height: 1.6;
+        letter-spacing: -0.01em;
         min-height: 100vh;
         overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
       }
       body::before {
         content: "";
@@ -76,7 +81,7 @@
 
       /* ── SIDEBAR ── */
       nav {
-        width: 220px;
+        width: 240px;
         flex-shrink: 0;
         background: var(--surface);
         border-right: 1px solid var(--border);
@@ -87,10 +92,13 @@
         left: 0;
         bottom: 0;
         z-index: 100;
+        padding-bottom: 20px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
       }
       .logo {
-        padding: 24px 20px 20px;
-        border-bottom: 1px solid var(--border);
+        padding: 40px 24px 32px;
       }
       .logo-mark {
         font-family: var(--font-display);
@@ -111,35 +119,36 @@
       }
 
       .nav-section {
-        padding: 16px 12px 8px;
-        font-size: 9px;
+        padding: 24px 24px 12px;
+        font-size: 10px;
+        font-weight: 600;
         color: var(--muted);
-        letter-spacing: 0.18em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
       }
       .nav-item {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 10px 16px;
-        margin: 2px 8px;
-        border-radius: 8px;
+        gap: 12px;
+        padding: 12px 16px;
+        margin: 4px 12px;
+        border-radius: 12px;
         cursor: pointer;
         color: var(--muted);
-        font-size: 12px;
-        transition: all 0.15s;
-        border: 1px solid transparent;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         text-decoration: none;
+        border: 1px solid transparent;
       }
       .nav-item:hover {
-        background: var(--card);
+        background: rgba(255, 255, 255, 0.05);
         color: var(--text);
-        border-color: var(--border);
       }
       .nav-item.active {
-        background: var(--blue-dim);
-        color: var(--blue);
-        border-color: rgba(79, 142, 247, 0.3);
+        background: var(--primary);
+        color: #000;
+        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
       }
       .nav-icon {
         font-size: 15px;
@@ -156,8 +165,35 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 11px;
+        font-size: 10px;
+        font-weight: 600;
         color: var(--muted);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .user-info-bar {
+        margin-top: 12px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        opacity: 0.8;
+      }
+      .logout-btn {
+        margin-top: 16px;
+        font-family: var(--font-display);
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        transition: all 0.2s;
+      }
+      .logout-btn:hover {
+        background: rgba(239, 68, 68, 0.1) !important;
+        color: var(--red) !important;
+        border-color: rgba(239, 68, 68, 0.5) !important;
       }
       .status-dot {
         width: 7px;
@@ -176,9 +212,9 @@
 
       /* ── MAIN ── */
       main {
-        margin-left: 220px;
+        margin-left: 240px;
         flex: 1;
-        padding: 32px;
+        padding: 48px;
         min-height: 100vh;
       }
 
@@ -187,18 +223,19 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 32px;
+        margin-bottom: 48px;
       }
       .page-title {
         font-family: var(--font-display);
-        font-size: 28px;
+        font-size: 32px;
         font-weight: 700;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
       }
       .page-sub {
-        font-size: 12px;
+        font-size: 14px;
         color: var(--muted);
-        margin-top: 4px;
+        margin-top: 8px;
       }
       .topbar-right {
         display: flex;
@@ -218,89 +255,152 @@
       #auth-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(7, 9, 15, 0.95);
+        background: rgba(0, 0, 0, 0.8);
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 200;
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(20px);
       }
       .auth-card {
-        background: var(--card);
-        border: 1px solid var(--border2);
-        border-radius: 20px;
-        padding: 40px;
-        width: 380px;
-        box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+        background: #0a0a0a;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 48px;
+        width: 420px;
+        box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
       }
       .auth-logo {
         font-family: var(--font-display);
-        font-size: 32px;
+        font-size: 40px;
         font-weight: 700;
-        background: linear-gradient(135deg, var(--blue), var(--cyan));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 6px;
+        color: var(--text);
+        letter-spacing: -0.04em;
+        margin-bottom: 8px;
+        text-align: center;
       }
       .auth-tagline {
-        font-size: 12px;
+        font-size: 14px;
         color: var(--muted);
-        margin-bottom: 32px;
+        margin-bottom: 40px;
+        text-align: center;
       }
       .auth-tabs {
         display: flex;
-        gap: 0;
-        margin-bottom: 24px;
-        background: var(--bg);
-        border-radius: 10px;
-        padding: 4px;
+        gap: 8px;
+        margin-bottom: 32px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 14px;
+        padding: 6px;
       }
       .auth-tab {
         flex: 1;
-        padding: 8px;
+        padding: 10px;
         text-align: center;
-        border-radius: 7px;
+        border-radius: 10px;
         cursor: pointer;
-        font-size: 12px;
+        font-size: 14px;
+        font-weight: 600;
         color: var(--muted);
-        transition: all 0.15s;
+        transition: all 0.2s;
       }
       .auth-tab.active {
-        background: var(--blue-dim);
-        color: var(--blue);
+        background: var(--primary);
+        color: #000;
+      }
+
+      /* ── AUTH CARD IMPROVEMENTS ── */
+      .auth-card {
+        background: rgba(10, 10, 10, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(30px) saturate(180%);
+        -webkit-backdrop-filter: blur(30px) saturate(180%);
+        border-radius: 28px;
+        position: relative;
+        overflow: hidden;
+      }
+      .auth-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15), transparent 70%);
+        pointer-events: none;
+      }
+      .error-msg {
+        background: var(--red-dim);
+        border: 1px solid var(--red);
+        color: #ff8080;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 13px;
+        margin-bottom: 24px;
+        display: none;
+        align-items: center;
+        gap: 10px;
+        animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+      }
+      @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+        40%, 60% { transform: translate3d(4px, 0, 0); }
+      }
+      .password-field-wrap {
+        position: relative;
+      }
+      .pass-toggle {
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        font-size: 16px;
+        color: var(--muted);
+        transition: color 0.2s;
+        background: none;
+        border: none;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .pass-toggle:hover {
+        color: var(--text);
       }
 
       /* ── FORM ELEMENTS ── */
       .field {
-        margin-bottom: 16px;
+        margin-bottom: 24px;
       }
       .field label {
         display: block;
         font-size: 11px;
+        font-weight: 600;
         color: var(--muted);
-        margin-bottom: 6px;
-        letter-spacing: 0.06em;
+        margin-bottom: 10px;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
       }
       .field input,
       .field select,
       .field textarea {
         width: 100%;
-        background: var(--bg);
-        border: 1px solid var(--border2);
-        border-radius: 8px;
-        padding: 10px 14px;
+        background: #111;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 18px;
         color: var(--text);
         font-family: var(--font-mono);
-        font-size: 13px;
+        font-size: 14px;
         outline: none;
-        transition: border-color 0.15s;
+        transition: all 0.2s;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
       }
       .field input:focus,
       .field select:focus,
       .field textarea:focus {
-        border-color: var(--blue);
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
       }
       .field select option {
         background: var(--bg);
@@ -314,50 +414,55 @@
       .btn {
         display: inline-flex;
         align-items: center;
-        gap: 7px;
-        padding: 9px 18px;
-        border-radius: 8px;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 12px;
         cursor: pointer;
         font-family: var(--font-mono);
-        font-size: 12px;
-        font-weight: 500;
+        font-size: 14px;
+        font-weight: 600;
         border: 1px solid transparent;
-        transition: all 0.15s;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         white-space: nowrap;
+        outline: none;
       }
       .btn-primary {
-        background: var(--blue);
-        color: #fff;
-        border-color: var(--blue);
+        background: var(--primary);
+        color: #000;
+        border-color: var(--primary);
       }
       .btn-primary:hover {
-        background: #6ba3ff;
-        box-shadow: 0 0 20px rgba(79, 142, 247, 0.4);
+        background: #f0f0f0;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
       }
       .btn-success {
         background: var(--green);
-        color: #000;
+        color: #fff;
         border-color: var(--green);
       }
       .btn-success:hover {
-        background: #3de890;
+        background: #12d192;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px var(--green-dim);
       }
       .btn-ghost {
         background: transparent;
         color: var(--text);
-        border-color: var(--border2);
+        border: 1px solid var(--border2);
       }
       .btn-ghost:hover {
-        background: var(--card);
-        border-color: var(--border2);
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--muted);
       }
       .btn-danger {
-        background: transparent;
+        background: var(--red-dim);
         color: var(--red);
-        border-color: var(--red-dim);
+        border: 1px solid var(--red-dim);
       }
       .btn-danger:hover {
-        background: var(--red-dim);
+        background: rgba(239, 68, 68, 0.2);
+        border-color: var(--red);
       }
       .btn-full {
         width: 100%;
@@ -372,18 +477,23 @@
       .card {
         background: var(--card);
         border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 24px;
-        margin-bottom: 20px;
+        border-radius: 20px;
+        padding: 32px;
+        margin-bottom: 24px;
+        transition: border-color 0.2s;
+      }
+      .card:hover {
+        border-color: var(--border2);
       }
       .card-title {
         font-family: var(--font-display);
-        font-size: 16px;
+        font-size: 18px;
         font-weight: 600;
-        margin-bottom: 16px;
+        margin-bottom: 24px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
+        letter-spacing: -0.01em;
       }
 
       /* ── STAT TILES ── */
@@ -396,10 +506,15 @@
       .stat-tile {
         background: var(--card);
         border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 20px;
+        border-radius: 20px;
+        padding: 28px;
         position: relative;
         overflow: hidden;
+        transition: transform 0.2s, border-color 0.2s;
+      }
+      .stat-tile:hover {
+        transform: translateY(-2px);
+        border-color: var(--border2);
       }
       .stat-tile::before {
         content: "";
@@ -407,49 +522,46 @@
         top: 0;
         left: 0;
         right: 0;
-        height: 2px;
+        height: 3px;
       }
-      .stat-tile.blue::before {
-        background: linear-gradient(90deg, var(--blue), transparent);
-      }
-      .stat-tile.green::before {
-        background: linear-gradient(90deg, var(--green), transparent);
-      }
-      .stat-tile.amber::before {
-        background: linear-gradient(90deg, var(--amber), transparent);
-      }
-      .stat-tile.cyan::before {
-        background: linear-gradient(90deg, var(--cyan), transparent);
-      }
+      .stat-tile.blue::before { background: var(--blue); }
+      .stat-tile.green::before { background: var(--green); }
+      .stat-tile.amber::before { background: var(--amber); }
+      .stat-tile.cyan::before { background: var(--cyan); }
+
       .stat-val {
         font-family: var(--font-display);
-        font-size: 32px;
+        font-size: 36px;
         font-weight: 700;
         line-height: 1;
+        letter-spacing: -0.02em;
+        margin-top: 4px;
       }
       .stat-label {
-        font-size: 11px;
+        font-size: 12px;
+        font-weight: 500;
         color: var(--muted);
-        margin-top: 6px;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.04em;
         text-transform: uppercase;
       }
 
       /* ── TABLE ── */
       .table-wrap {
         overflow-x: auto;
-        border-radius: 10px;
+        border-radius: 16px;
         border: 1px solid var(--border);
+        background: var(--card);
       }
       table {
         width: 100%;
         border-collapse: collapse;
       }
       th {
-        background: var(--surface);
-        padding: 11px 16px;
+        background: #161616;
+        padding: 16px 20px;
         text-align: left;
-        font-size: 10px;
+        font-size: 11px;
+        font-weight: 600;
         color: var(--muted);
         letter-spacing: 0.1em;
         text-transform: uppercase;
@@ -457,45 +569,49 @@
         white-space: nowrap;
       }
       td {
-        padding: 11px 16px;
+        padding: 16px 20px;
         border-bottom: 1px solid var(--border);
-        font-size: 12px;
+        font-size: 14px;
         vertical-align: middle;
       }
       tr:last-child td {
         border-bottom: none;
       }
       tr:hover td {
-        background: rgba(255, 255, 255, 0.02);
+        background: rgba(255, 255, 255, 0.03);
       }
 
       /* ── BADGES ── */
       .badge {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 500;
-        letter-spacing: 0.04em;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
         text-transform: uppercase;
       }
       .badge-green {
-        background: var(--green-dim);
-        color: var(--green);
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.2);
       }
       .badge-red {
-        background: var(--red-dim);
-        color: var(--red);
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.2);
       }
       .badge-amber {
-        background: var(--amber-dim);
-        color: var(--amber);
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.2);
       }
       .badge-blue {
-        background: var(--blue-dim);
-        color: var(--blue);
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+        border: 1px solid rgba(59, 130, 246, 0.2);
       }
 
       /* ── SCORE RING ── */
@@ -513,17 +629,18 @@
       }
       .score-ring svg {
         transform: rotate(-90deg);
+        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.1));
       }
       .score-ring-bg {
         fill: none;
-        stroke: var(--border2);
-        stroke-width: 8;
+        stroke: var(--border);
+        stroke-width: 10;
       }
       .score-ring-fill {
         fill: none;
-        stroke-width: 8;
+        stroke-width: 10;
         stroke-linecap: round;
-        transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .score-ring-text {
         position: absolute;
@@ -535,12 +652,16 @@
       }
       .score-ring-num {
         font-family: var(--font-display);
-        font-size: 26px;
+        font-size: 32px;
         font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.04em;
       }
       .score-ring-pct {
-        font-size: 10px;
+        font-size: 11px;
+        font-weight: 500;
         color: var(--muted);
+        margin-top: 4px;
       }
 
       /* ── UPLOAD ZONE ── */
@@ -590,31 +711,33 @@
         gap: 8px;
       }
       .toast {
-        padding: 12px 18px;
-        border-radius: 10px;
-        font-size: 12px;
-        min-width: 260px;
-        max-width: 360px;
+        padding: 16px 20px;
+        border-radius: 14px;
+        font-size: 14px;
+        font-weight: 500;
+        min-width: 300px;
+        max-width: 400px;
         display: flex;
         align-items: center;
-        gap: 10px;
-        animation: slideIn 0.2s ease;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        gap: 12px;
+        animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(10px);
       }
       .toast-success {
-        background: #0d3d26;
+        background: rgba(16, 185, 129, 0.1);
         border: 1px solid var(--green);
-        color: var(--green);
+        color: #fff;
       }
       .toast-error {
-        background: var(--red-dim);
+        background: rgba(239, 68, 68, 0.1);
         border: 1px solid var(--red);
-        color: var(--red);
+        color: #fff;
       }
       .toast-info {
-        background: var(--blue-dim);
+        background: rgba(59, 130, 246, 0.1);
         border: 1px solid var(--blue);
-        color: var(--blue);
+        color: #fff;
       }
       @keyframes slideIn {
         from {
@@ -630,114 +753,119 @@
       /* ── MISC ── */
       .row {
         display: flex;
-        gap: 16px;
+        gap: 24px;
       }
       .row .card {
         flex: 1;
       }
       .empty {
         text-align: center;
-        padding: 48px;
+        padding: 80px 48px;
         color: var(--muted);
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 20px;
+        border: 1px dashed var(--border);
       }
       .empty-icon {
-        font-size: 36px;
-        margin-bottom: 12px;
+        font-size: 48px;
+        margin-bottom: 20px;
+        opacity: 0.5;
       }
       .divider {
         height: 1px;
         background: var(--border);
-        margin: 20px 0;
+        margin: 32px 0;
       }
       .chip {
         display: inline-block;
-        padding: 2px 9px;
-        border-radius: 12px;
-        font-size: 10px;
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 500;
         background: var(--dim);
         color: var(--muted);
         margin: 2px;
       }
       .progress-bar {
-        height: 6px;
+        height: 8px;
         background: var(--dim);
-        border-radius: 3px;
+        border-radius: 4px;
         overflow: hidden;
       }
       .progress-fill {
         height: 100%;
-        border-radius: 3px;
-        transition: width 0.6s ease;
+        border-radius: 4px;
+        transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
       }
-      .text-right {
-        text-align: right;
+      .spinner {
+        width: 24px;
+        height: 24px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        display: inline-block;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
       }
       .flex-between {
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
-      .gap-8 {
-        gap: 8px;
-      }
       .mt-16 {
         margin-top: 16px;
       }
-      .spinner {
-        width: 18px;
-        height: 18px;
-        border: 2px solid var(--border2);
-        border-top-color: var(--blue);
-        border-radius: 50%;
-        animation: spin 0.6s linear infinite;
-        display: inline-block;
+      .gap-8 {
+        gap: 8px;
       }
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-      .loading-row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding: 32px;
-        color: var(--muted);
-      }
-
-      /* ── RULE PARAMS ── */
-      #rule-params-box {
-        padding: 14px;
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        margin-top: 8px;
-      }
-
-      /* ── CHART ── */
-      .chart-wrap {
-        position: relative;
-        height: 260px;
+      .text-right {
+        text-align: right;
       }
 
       /* responsive */
-      @media (max-width: 900px) {
+      @media (max-width: 1024px) {
         nav {
-          width: 60px;
+          width: 80px;
         }
-        .logo-mark,
-        .logo-sub,
-        .nav-section,
-        .nav-item span {
+        .logo, .logo-sub, .nav-section, .nav-item span {
           display: none;
         }
+        .logo-mark {
+          display: block;
+          font-size: 16px;
+          text-align: center;
+          padding: 20px 0;
+        }
+        .nav-item {
+          margin: 8px;
+          padding: 12px;
+          justify-content: center;
+        }
+        .nav-icon {
+          font-size: 20px;
+          margin: 0;
+        }
         main {
-          margin-left: 60px;
-          padding: 20px;
+          margin-left: 80px;
+          padding: 32px;
         }
         .stats-row {
           grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 640px) {
+        .stats-row {
+          grid-template-columns: 1fr;
+        }
+        .topbar {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 20px;
+        }
+        .row {
+          flex-direction: column;
         }
       }
     </style>
@@ -756,26 +884,30 @@
             Register
           </div>
         </div>
+        <div id="auth-error" class="error-msg"></div>
         <div id="login-form">
           <div class="field">
             <label>Email</label
             ><input
               id="login-email"
               type="email"
-              value="qa_user@datapulse.com"
               placeholder="you@example.com"
             />
           </div>
           <div class="field">
-            <label>Password</label
-            ><input
-              id="login-password"
-              type="password"
-              value="qapassword12"
-              placeholder="••••••••"
-            />
+            <label>Password</label>
+            <div class="password-field-wrap">
+              <input
+                id="login-password"
+                type="password"
+                placeholder="••••••••"
+              />
+              <button class="pass-toggle" type="button" onclick="togglePassword('login-password')">
+                👁
+              </button>
+            </div>
           </div>
-          <button class="btn btn-primary btn-full" onclick="doLogin()">
+          <button class="btn btn-primary btn-full" onclick="doLogin()" id="login-btn">
             Sign In →
           </button>
         </div>
@@ -789,26 +921,21 @@
             ><input id="reg-email" type="email" placeholder="you@example.com" />
           </div>
           <div class="field">
-            <label>Password</label
-            ><input
-              id="reg-password"
-              type="password"
-              placeholder="min 8 chars"
-            />
+            <label>Password</label>
+            <div class="password-field-wrap">
+              <input
+                id="reg-password"
+                type="password"
+                placeholder="min 8 chars"
+              />
+              <button class="pass-toggle" type="button" onclick="togglePassword('reg-password')">
+                👁
+              </button>
+            </div>
           </div>
-          <button class="btn btn-primary btn-full" onclick="doRegister()">
+          <button class="btn btn-primary btn-full" onclick="doRegister()" id="reg-btn">
             Create Account →
           </button>
-        </div>
-        <div
-          style="
-            margin-top: 16px;
-            font-size: 11px;
-            color: var(--muted);
-            text-align: center;
-          "
-        >
-          Default: qa_user@datapulse.com / qapassword12
         </div>
       </div>
     </div>
@@ -844,6 +971,9 @@
         <a class="nav-item" onclick="showView('trends')" href="#">
           <span class="nav-icon">∿</span><span>Trends</span>
         </a>
+        <a class="nav-item" onclick="showView('analytics')" href="#">
+          <span class="nav-icon">↑</span><span>Analytics</span>
+        </a>
         <div class="nav-section admin-only" style="display: none">Admin</div>
         <a
           class="nav-item admin-only"
@@ -858,21 +988,9 @@
             <div class="status-dot" id="status-dot"></div>
             <span id="status-text">Connecting...</span>
           </div>
-          <div
-            style="
-              margin-top: 10px;
-              font-size: 11px;
-              color: var(--muted);
-              display: flex;
-              align-items: center;
-              gap: 6px;
-            "
-            id="user-info-bar"
-            class="user-info-bar"
-          ></div>
+          <div id="user-info-bar" class="user-info-bar"></div>
           <button
-            class="btn btn-ghost btn-full"
-            style="margin-top: 8px; font-size: 11px; padding: 6px"
+            class="btn btn-ghost btn-full logout-btn"
             onclick="doLogout()"
             id="logout-btn"
           >
@@ -1018,41 +1136,51 @@
               ↻ Refresh
             </button>
           </div>
-          <div class="card">
-            <div id="datasets-table">
-              <div class="loading-row">
-                <div class="spinner"></div>
-                Loading...
+
+          <div style="display: flex; flex-direction: column; gap: 32px">
+            <div class="card" style="margin-bottom: 0; padding: 32px">
+              <div id="datasets-table" style="margin-bottom: 24px">
+                <div class="loading-row">
+                  <div class="spinner"></div>
+                  Loading...
+                </div>
+              </div>
+              <div
+                id="datasets-pagination"
+                class="flex-between"
+                style="display: none; padding-top: 24px; border-top: 1px solid var(--border)"
+              >
+                <div
+                  style="font-size: 14px; font-weight: 500; color: var(--muted)"
+                  id="datasets-page-info"
+                >
+                  Page 1 of 1
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center">
+                  <button
+                    class="btn btn-ghost"
+                    style="padding: 10px 20px"
+                    onclick="changeDatasetsPage(-1)"
+                    id="datasets-prev-btn"
+                  >
+                    ← Previous
+                  </button>
+                  <button
+                    class="btn btn-ghost"
+                    style="padding: 10px 20px"
+                    onclick="changeDatasetsPage(1)"
+                    id="datasets-next-btn"
+                  >
+                    Next →
+                  </button>
+                </div>
               </div>
             </div>
-            <div
-              id="datasets-pagination"
-              class="flex-between mt-16"
-              style="display: none"
-            >
-              <div
-                style="font-size: 12px; color: var(--muted)"
-                id="datasets-page-info"
-              >
-                Page 1 of 1
-              </div>
-              <div class="flex-between gap-8">
-                <button
-                  class="btn btn-ghost"
-                  style="padding: 5px 12px"
-                  onclick="changeDatasetsPage(-1)"
-                  id="datasets-prev-btn"
-                >
-                  ← Prev
-                </button>
-                <button
-                  class="btn btn-ghost"
-                  style="padding: 5px 12px"
-                  onclick="changeDatasetsPage(1)"
-                  id="datasets-next-btn"
-                >
-                  Next →
-                </button>
+
+            <div class="card" style="max-width: 600px">
+              <div class="card-title">💡 Dataset Management</div>
+              <div style="color: var(--muted); font-size: 14px; line-height: 1.8">
+                Manage your data sources efficiently. You can run checks directly from the table or view detailed reports for each dataset.
               </div>
             </div>
           </div>
@@ -1065,7 +1193,7 @@
               <div class="page-title">Validation Rules</div>
               <div class="page-sub">Define what "good data" looks like</div>
             </div>
-            <button class="btn btn-primary" onclick="toggleRuleForm()">
+            <button class="btn btn-success" onclick="toggleRuleForm()">
               + New Rule
             </button>
           </div>
@@ -1183,8 +1311,9 @@
             </div>
           </div>
           <div class="row">
-            <div class="card" style="max-width: 380px; flex: none">
-              <div class="card-title">▶ Select & Run</div>
+            <!-- Left: Dataset Selection -->
+            <div class="card" style="flex: 1">
+              <div class="card-title">📦 1. Select Dataset</div>
               <div class="field">
                 <label>Choose Dataset</label>
                 <select id="check-dataset-select">
@@ -1195,22 +1324,75 @@
                 style="
                   font-size: 11px;
                   color: var(--muted);
-                  margin-bottom: 16px;
                   line-height: 1.8;
                 "
               >
-                Checks will run all active rules matching the dataset's file
-                type. Score = weighted % of passing rules.
+                Choose the dataset you want to validate. We will match it with your active rules based on the dataset name.
+              </div>
+            </div>
+
+            <!-- Right: Rule Selection -->
+            <div class="card" style="flex: 1.5">
+              <div class="flex-between" style="margin-bottom: 16px">
+                <div class="card-title" style="margin-bottom: 0">⚙ 2. Select Rules</div>
+                <label
+                  style="
+                    font-size: 11px;
+                    color: var(--muted);
+                    text-transform: none;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                  "
+                >
+                  <input
+                    type="checkbox"
+                    id="check-rules-all"
+                    checked
+                    onchange="toggleSelectAllRules()"
+                  />
+                  Select All
+                </label>
+              </div>
+              <div
+                id="check-rules-list"
+                style="
+                  max-height: 180px;
+                  overflow-y: auto;
+                  background: var(--bg);
+                  border: 1px solid var(--border2);
+                  border-radius: 8px;
+                  padding: 12px;
+                "
+              >
+                <div style="color: var(--muted); font-size: 12px">
+                  Loading rules...
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Area -->
+          <div class="card" style="background: linear-gradient(90deg, var(--card), var(--surface)); border-color: var(--border2)">
+            <div class="flex-between">
+              <div>
+                <div style="font-family: var(--font-display); font-size: 14px; font-weight: 600">Ready to Validate?</div>
+                <div style="font-size: 11px; color: var(--muted); margin-top: 4px">Selected rules will be executed on the target dataset using our weighted scoring engine.</div>
               </div>
               <button
-                class="btn btn-success btn-full"
+                class="btn btn-success"
+                style="padding: 12px 24px; font-size: 13px"
                 id="run-check-btn"
                 onclick="runChecks()"
               >
                 ▶ Run Quality Checks
               </button>
             </div>
-            <div class="card" id="check-result-card" style="display: none">
+          </div>
+
+          <div class="row">
+            <div class="card" id="check-result-card" style="display: none; flex: 1">
               <div class="card-title">Results</div>
               <div id="check-result-content"></div>
             </div>
@@ -1230,13 +1412,8 @@
                 Detailed findings per rule for each dataset
               </div>
             </div>
-            <button
-              class="btn btn-ghost"
-              id="report-download-btn"
-              onclick="downloadCSV()"
-              style="display: none"
-            >
-              ⬇ Download CSV
+            <button class="btn btn-ghost" id="report-download-btn" style="display: none" onclick="toast('Download feature coming soon', 'info')">
+              ↓ Download PDF
             </button>
           </div>
           <div class="card" style="max-width: 400px">
@@ -1247,7 +1424,7 @@
                 <option value="">Select...</option>
               </select>
             </div>
-            <button class="btn btn-primary btn-full" onclick="loadReport()">
+            <button class="btn btn-success btn-full" onclick="loadReport()">
               Generate Report
             </button>
           </div>
@@ -1355,6 +1532,7 @@
                 <option value="day" selected>Daily</option>
                 <option value="week">Weekly</option>
                 <option value="month">Monthly</option>
+                <option value="time">Time-Based (Specific Day)</option>
               </select>
               <select
                 id="trend-days"
@@ -1374,6 +1552,21 @@
                 <option value="90">Last 90 days</option>
                 <option value="365">Last 365 days</option>
               </select>
+              <input
+                type="date"
+                id="trend-date"
+                onchange="loadTrends()"
+                style="
+                  display: none;
+                  background: var(--bg);
+                  border: 1px solid var(--border2);
+                  border-radius: 6px;
+                  padding: 8px 12px;
+                  color: var(--text);
+                  font-family: var(--font-mono);
+                  font-size: 12px;
+                "
+              />
               <button class="btn btn-ghost" onclick="loadTrends()">
                 ↻ Refresh
               </button>
@@ -1454,8 +1647,7 @@
 
     <script>
       // ── CONFIG ──────────────────────────────────────────────────────────────────
-      // Use relative URLs so API calls go through the ALB (works in both local and production)
-      const API = "";
+      const API = "http://localhost:8000";
       let token = localStorage.getItem("dp_token") || "";
       let isAdmin = localStorage.getItem("dp_is_admin") === "true";
       let userEmail = localStorage.getItem("dp_user_email") || "";
@@ -1554,19 +1746,26 @@
         if (isForm) opts.body = body;
         const res = await fetch(API + path, opts);
         if (res.status === 204) return null;
+
+        // AUTH ERROR HANDLING
         if (res.status === 401) {
-          doLogout();
-          throw new Error("Session expired. Please sign in again.");
+          // If NOT on login path, it's a session expiry
+          if (path !== "/api/auth/login") {
+            doLogout();
+            throw new Error("Session expired. Please sign in again.");
+          }
+          // If ON login path, let the caller handle the 401 (Invalid credentials)
         }
+
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
         return data;
       }
 
       function scoreColor(s) {
-        if (s >= 80) return "var(--green)";
-        if (s >= 50) return "var(--amber)";
-        return "var(--red)";
+        if (s >= 80) return "#10b981"; // --green
+        if (s >= 50) return "#f59e0b"; // --amber
+        return "#ef4444"; // --red
       }
 
       function scoreBadge(s) {
@@ -1620,11 +1819,66 @@
         $("register-form").style.display = tab === "register" ? "" : "none";
       }
 
+      function togglePassword(id) {
+        const input = $(id);
+        input.type = input.type === "password" ? "text" : "password";
+      }
+
+      function showAuthError(msg) {
+        const el = $("auth-error");
+        if (!msg) {
+          el.style.display = "none";
+          return;
+        }
+        el.style.display = "flex";
+
+        // Handle backend validation lists (FastAPI detail: [...])
+        let displayMsg = msg;
+        if (Array.isArray(msg)) {
+          displayMsg = msg.map(err => err.msg || err).join("<br>");
+        } else if (typeof msg === 'object') {
+          displayMsg = msg.detail || JSON.stringify(msg);
+        }
+
+        el.innerHTML = `<span>✗</span> <span>${displayMsg}</span>`;
+      }
+
+      function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+      }
+
+      function validatePassword(pass) {
+        // Min 8 chars, at least one letter and one number
+        if (pass.length < 8) return "Password must be at least 8 characters long";
+        if (!/[a-zA-Z]/.test(pass)) return "Password must contain at least one letter";
+        if (!/[0-9]/.test(pass)) return "Password must contain at least one number";
+        return null;
+      }
+
       async function doLogin() {
+        showAuthError("");
+        const btn = $("login-btn");
+        const email = $("login-email").value.trim();
+        const pass = $("login-password").value;
+
+        if (!email || !pass) {
+          showAuthError("Please enter your credentials");
+          return;
+        }
+
+        if (!validateEmail(email)) {
+          showAuthError("Please enter a valid email address (e.g., user@example.com)");
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px"></div> Signing in...';
+
         try {
           const data = await api("POST", "/api/auth/login", {
-            email: $("login-email").value,
-            password: $("login-password").value,
+            email: email,
+            password: pass,
           });
           token = data.access_token;
           localStorage.setItem("dp_token", token);
@@ -1634,16 +1888,44 @@
           loadDashboard();
           loadAllDropdowns();
         } catch (e) {
-          toast(e.message, "error");
+          showAuthError(e.message);
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = "Sign In →";
         }
       }
 
       async function doRegister() {
+        showAuthError("");
+        const btn = $("reg-btn");
+        const email = $("reg-email").value.trim();
+        const pass = $("reg-password").value;
+        const name = $("reg-name").value.trim();
+
+        if (!email || !pass || !name) {
+          showAuthError("All fields are required");
+          return;
+        }
+
+        if (!validateEmail(email)) {
+          showAuthError("Please enter a valid email address (e.g., user@example.com)");
+          return;
+        }
+
+        const passErr = validatePassword(pass);
+        if (passErr) {
+          showAuthError(passErr);
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px"></div> Creating...';
+
         try {
           const data = await api("POST", "/api/auth/register", {
-            email: $("reg-email").value,
-            password: $("reg-password").value,
-            full_name: $("reg-name").value,
+            email: email,
+            password: pass,
+            full_name: name,
           });
           token = data.access_token;
           localStorage.setItem("dp_token", token);
@@ -1653,7 +1935,10 @@
           loadDashboard();
           loadAllDropdowns();
         } catch (e) {
-          toast(e.message, "error");
+          showAuthError(e.message);
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = "Create Account →";
         }
       }
 
@@ -1812,20 +2097,20 @@
               ${isAdmin ? `<td><span class="badge badge-blue">User #${d.uploaded_by}</span></td>` : ""}
               <td>${d.row_count}</td>
               <td>
-                <div style="max-width:200px;display:flex;flex-wrap:wrap;gap:4px">
+                <div style="max-width: 220px; display: flex; flex-wrap: wrap; gap: 6px">
                   ${cols
                     .slice(0, 3)
-                    .map((c) => `<span class="chip">${c}</span>`)
-                    .join(
-                      "",
-                    )}${cols.length > 3 ? `<span class="chip">+${cols.length - 3}</span>` : ""}
+                    .map((c) => `<span class="chip" style="font-size: 11px; padding: 3px 8px">${c}</span>`)
+                    .join("")}${cols.length > 3 ? `<span class="chip" style="font-size: 11px; padding: 3px 8px">+${cols.length - 3}</span>` : ""}
                 </div>
               </td>
               <td>${statusBadge(d.status)}</td>
               <td style="color:var(--muted)">${fmtDate(d.uploaded_at)}</td>
               <td>
-                <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="quickRunChecks(${d.id})">▶ Run</button>
-                <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="quickViewReport(${d.id})">≡ Report</button>
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="quickRunChecks(${d.id})">▶ Run</button>
+                  <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="quickViewReport(${d.id})">≡ Report</button>
+                </div>
               </td>
             </tr>`;
             })
@@ -2119,6 +2404,51 @@
       // ── CHECKS ───────────────────────────────────────────────────────────────────
       async function loadChecksView() {
         await loadAllDropdowns();
+        await loadRulesForCheck();
+      }
+
+      async function loadRulesForCheck() {
+        const container = $("check-rules-list");
+        try {
+          const rules = await api("GET", "/api/rules");
+          if (!rules.length) {
+            container.innerHTML =
+              '<div style="color:var(--muted);font-size:11px;padding:4px">No rules found. Create some in the Rules view.</div>';
+            $("check-rules-all").checked = false;
+            $("check-rules-all").disabled = true;
+            return;
+          }
+
+          $("check-rules-all").checked = true;
+          $("check-rules-all").disabled = false;
+
+          container.innerHTML = rules
+            .map(
+              (r) => `
+      <label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:12px">
+        <input type="checkbox" class="rule-checkbox" value="${r.id}" checked onchange="updateSelectAllState()">
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.name}">${r.name}</span>
+        <span class="badge ${r.severity === "HIGH" ? "badge-red" : r.severity === "MEDIUM" ? "badge-amber" : "badge-green"}" style="font-size:9px;padding:1px 6px">${r.severity[0]}</span>
+      </label>
+    `,
+            )
+            .join("");
+        } catch (e) {
+          container.innerHTML = `<div style="color:var(--red);font-size:11px">Error: ${e.message}</div>`;
+        }
+      }
+
+      function toggleSelectAllRules() {
+        const isChecked = $("check-rules-all").checked;
+        document
+          .querySelectorAll(".rule-checkbox")
+          .forEach((cb) => (cb.checked = isChecked));
+      }
+
+      function updateSelectAllState() {
+        const checkboxes = document.querySelectorAll(".rule-checkbox");
+        const checked = document.querySelectorAll(".rule-checkbox:checked");
+        $("check-rules-all").checked = checked.length === checkboxes.length;
       }
 
       async function runChecks() {
@@ -2127,12 +2457,19 @@
           toast("Please select a dataset", "error");
           return;
         }
+
+        const selectedRules = Array.from(
+          document.querySelectorAll(".rule-checkbox:checked"),
+        ).map((cb) => parseInt(cb.value));
+
         const btn = $("run-check-btn");
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner"></div> Running...';
 
         try {
-          const result = await api("POST", `/api/checks/run/${id}`);
+          const result = await api("POST", `/api/checks/run/${id}`, {
+            rule_ids: selectedRules,
+          });
           const color = scoreColor(result.score);
           $("check-result-card").style.display = "";
           $("check-result-content").innerHTML = `
@@ -2263,19 +2600,27 @@
           }
 
           // Detailed Report additions
-          $("report-download-btn").style.display = "";
-          const scorePct =
-            parseFloat(report.executive_summary.score_percentage) || 0;
-          $("report-summary-output").innerHTML = `
-      <p><b>Status:</b> ${report.executive_summary.status}</p>
-      <p><b>Score:</b> ${scorePct.toFixed(1)}%</p>
-      <p><b>Rules Pass/Fail:</b> ${report.executive_summary.passed_rules} / ${report.executive_summary.failed_rules}</p>
-    `;
+          const btn = $("report-download-btn");
+          if (btn) btn.style.display = "";
 
-          $("report-recommendations-output").innerHTML =
-            report.recommendations.length > 0
-              ? `<ul>${report.recommendations.map((rec) => `<li>${rec}</li>`).join("")}</ul>`
-              : '<p style="color:var(--muted)">No recommendations available.</p>';
+          const summaryOutput = $("report-summary-output");
+          if (summaryOutput && report.executive_summary) {
+            const scorePct = parseFloat(report.executive_summary.score_percentage) || 0;
+            summaryOutput.innerHTML = `
+              <p><b>Status:</b> ${report.executive_summary.status || 'N/A'}</p>
+              <p><b>Score:</b> ${scorePct.toFixed(1)}%</p>
+              <p><b>Rules Pass/Fail:</b> ${report.executive_summary.passed_rules || 0} / ${report.executive_summary.failed_rules || 0}</p>
+            `;
+          } else if (summaryOutput) {
+            summaryOutput.innerHTML = '<p style="color:var(--muted)">Executive summary not available.</p>';
+          }
+
+          const recOutput = $("report-recommendations-output");
+          if (recOutput) {
+            recOutput.innerHTML = (report.recommendations && report.recommendations.length > 0)
+                ? `<ul>${report.recommendations.map((rec) => `<li>${rec}</li>`).join("")}</ul>`
+                : '<p style="color:var(--muted)">No recommendations available.</p>';
+          }
 
           if (
             report.top_failure_patterns &&
@@ -2311,28 +2656,31 @@
         }
       }
 
-      async function downloadCSV() {
-        const id = $("report-dataset-select").value;
-        if (!id) return;
-        try {
-          window.open(
-            `${API}/api/reports/${id}?format=csv&token=${token}`,
-            "_blank",
-          );
-          toast("CSV Download requested", "info");
-        } catch (e) {
-          toast("Download failed", "error");
-        }
-      }
-
       // ── TRENDS ───────────────────────────────────────────────────────────────────
       async function loadTrends() {
         const days = $("trend-days").value;
         const datasetId = $("trend-dataset-select").value;
         const interval = $("trend-interval").value;
+        const dateInput = $("trend-date");
+
+        // UI visibility logic
+        if (interval === "time") {
+          $("trend-days").style.display = "none";
+          dateInput.style.display = "inline-block";
+          if (!dateInput.value) {
+            dateInput.value = new Date().toISOString().split("T")[0];
+          }
+        } else {
+          $("trend-days").style.display = "inline-block";
+          dateInput.style.display = "none";
+        }
+
         try {
           let url = `/api/reports/trends?days=${days}&interval=${interval}`;
           if (datasetId) url += `&dataset_id=${datasetId}`;
+          if (interval === "time" && dateInput.value) {
+            url += `&date=${dateInput.value}`;
+          }
 
           const trendsData = await api("GET", url);
           const trendPoints = (trendsData && trendsData.trend_data) || [];
@@ -2514,13 +2862,14 @@
               {
                 label: "Quality Score",
                 data: scores,
-                borderColor: "#4f8ef7",
-                backgroundColor: "rgba(79,142,247,0.08)",
-                borderWidth: 2,
+                borderColor: "#3b82f6",
+                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                borderWidth: 3,
                 pointBackgroundColor: colors,
-                pointBorderColor: colors,
-                pointRadius: full ? 5 : 4,
-                pointHoverRadius: 7,
+                pointBorderColor: "#050505",
+                pointBorderWidth: 2,
+                pointRadius: full ? 6 : 5,
+                pointHoverRadius: 8,
                 tension: 0.4,
                 fill: true,
               },

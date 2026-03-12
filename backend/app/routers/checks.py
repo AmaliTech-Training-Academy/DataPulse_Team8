@@ -15,6 +15,7 @@ from app.models.dataset import Dataset, DatasetFile
 from app.models.rule import ValidationRule
 from app.models.user import User
 from app.schemas.report import CheckResultResponse
+from app.schemas.rule import RunChecksRequest
 from app.services.file_parser import parse_csv, parse_json
 from app.services.scoring_service import calculate_quality_score
 from app.services.validation_engine import ValidationEngine
@@ -50,10 +51,11 @@ def check_rate_limit(client_ip: str):
 def run_checks(
     dataset_id: int,
     request: Request,
+    check_request: RunChecksRequest = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Run all applicable validation checks on a dataset."""
+    """Run validation checks on a dataset."""
     start_time = time.time()
 
     client_ip = request.client.host if request.client else "unknown"
@@ -79,8 +81,8 @@ def run_checks(
         raise HTTPException(status_code=404, detail="File missing on disk")
 
     file_size = os.path.getsize(file_path)
-    if file_size > 100 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="File too large. Max size is 100MB")
+    if file_size > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max size is 10MB")
 
     try:
         if dataset.file_type == "csv":
@@ -94,8 +96,30 @@ def run_checks(
 
     df = metadata["dataframe"]
 
-    # We load rules filtering out inactive ones
-    rules = db.query(ValidationRule).filter(ValidationRule.is_active).all()
+    # Load rules created by this user
+    user_rules_query = db.query(ValidationRule).filter(
+        ValidationRule.is_active, ValidationRule.created_by == current_user.id
+    )
+
+    # Check if user has any rules at all
+    if user_rules_query.count() == 0:
+        raise HTTPException(
+            status_code=400, detail="You have no rule to validate this dataset"
+        )
+
+    # If specific rules are requested, filter by them
+    if check_request and check_request.rule_ids:
+        rules = user_rules_query.filter(
+            ValidationRule.id.in_(check_request.rule_ids)
+        ).all()
+        if not rules:
+            raise HTTPException(
+                status_code=400,
+                detail="None of the selected rules were found or belong to you.",
+            )
+    else:
+        rules = user_rules_query.all()
+
     # Filter rules to only include those that match the dataset name or fields present (flexibility)
     rules = [
         r for r in rules if r.dataset_type == dataset.name or r.field_name in df.columns
