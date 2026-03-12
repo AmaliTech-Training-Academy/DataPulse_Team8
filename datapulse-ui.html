@@ -709,7 +709,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────────────────
-const API = 'http://localhost:8000';
+// Use relative URLs so API calls go through the ALB (works in both local and production)
+const API = '';
 let token = localStorage.getItem('dp_token') || '';
 let isAdmin = localStorage.getItem('dp_is_admin') === 'true';
 let userEmail = localStorage.getItem('dp_user_email') || '';

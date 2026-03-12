@@ -635,7 +635,7 @@ resource "aws_ecs_task_definition" "backend" {
       environment = [
         {
           name  = "DATABASE_URL"
-          value = "postgresql://${var.database_host}:5432/${var.database_name}"
+          value = "postgresql://${local.postgres_user}:${local.postgres_password}@${var.database_host}:5432/${var.database_name}"
         }
       ]
       secrets = [
@@ -893,6 +893,10 @@ resource "aws_ecs_service" "backend_green" {
   tags = {
     Environment = var.environment
     Color       = "green"
+  }
+
+  lifecycle {
+    ignore_changes = [task_definition]
   }
 }
 
