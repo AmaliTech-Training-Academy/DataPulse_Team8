@@ -8,7 +8,7 @@ This folder previously contained the QA test suite for DataPulse. The API tests 
 
 The full black-box API test suite is maintained here:
 
-**[DataPulse API Test Suite — REST Assured](https://github.com/AmaliTech-Training-Academy/datapulse-api-tests)**
+**[DataPulse API Test Suite — REST Assured](https://github.com/tob-amalitech/api_testing_tob2)**
 
 > Built with **REST Assured 5.4**, **JUnit 5**, and **Allure Reports**.
 
