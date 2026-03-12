@@ -130,7 +130,7 @@ resource "docker_container" "fastapi" {
 
 # Prometheus
 resource "docker_image" "prometheus" {
-  name         = "prometheus:${var.prometheus_version}"
+  name         = "prom/prometheus:${var.prometheus_version}"
   keep_locally = true
 }
 
@@ -153,7 +153,7 @@ resource "docker_container" "prometheus" {
   }
 
   volumes {
-    host_path      = pathexpand("~/Amalitech/DataPulse_Team8/terraform/prometheus.yml")
+    host_path      = abspath("${path.module}/prometheus.yml")
     container_path = "/etc/prometheus/prometheus.yml"
   }
 
@@ -175,7 +175,7 @@ resource "docker_container" "prometheus" {
 
 # Grafana
 resource "docker_image" "grafana" {
-  name         = "grafana:${var.grafana_version}"
+  name         = "grafana/grafana:${var.grafana_version}"
   keep_locally = true
 }
 
@@ -240,7 +240,7 @@ resource "docker_container" "loki" {
   }
 
   volumes {
-    host_path      = pathexpand("~/Amalitech/DataPulse_Team8/monitoring/loki-config.yml")
+    host_path      = abspath("${path.module}/../monitoring/loki-config.yml")
     container_path = "/etc/loki/loki-config.yml"
   }
 
@@ -281,7 +281,7 @@ resource "docker_container" "promtail" {
   }
 
   volumes {
-    host_path      = pathexpand("~/Amalitech/DataPulse_Team8/monitoring/promtail-config.yml")
+    host_path      = abspath("${path.module}/../monitoring/promtail-config.yml")
     container_path = "/etc/promtail/promtail-config.yml"
   }
 
