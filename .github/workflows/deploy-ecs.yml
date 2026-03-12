@@ -86,20 +86,24 @@ jobs:
           container-name: backend
           image: ${{ steps.build-images.outputs.image }}
 
-      - name: Deploy to Amazon ECS
+      - name: Stop any active CodeDeploy deployment
         run: |
-          # Stop any active CodeDeploy deployment to prevent conflicts
           ACTIVE=$(aws deploy list-deployments \
             --application-name datapulse-backend-${{ steps.env.outputs.name }} \
             --deployment-group-name datapulse-backend-dg-${{ steps.env.outputs.name }} \
             --include-only-statuses InProgress \
             --region eu-west-1 \
             --query 'deployments[0]' \
-            --output text 2>/dev/null || echo "")
-          if [ -n "$ACTIVE" ] && [ "$ACTIVE" != "None" ]; then
+            --output text)
+          if [ "$ACTIVE" != "None" ] && [ -n "$ACTIVE" ]; then
             echo "Stopping active deployment: $ACTIVE"
-            aws deploy stop-deployment --deployment-id $ACTIVE --auto-rollback-enabled --region eu-west-1
-            sleep 10
+            aws deploy stop-deployment \
+              --deployment-id $ACTIVE \
+              --auto-rollback-enabled \
+              --region eu-west-1
+            sleep 15
+          else
+            echo "No active deployments found"
           fi
 
       - name: Deploy to Amazon ECS
@@ -109,7 +113,6 @@ jobs:
           service: datapulse-backend-blue-${{ steps.env.outputs.name }}
           cluster: ${{ steps.env.outputs.cluster }}
           wait-for-service-stability: true
-          # Note: If service uses CODE_DEPLOY, this action will use CodeDeploy if codedeploy-app is provided
           codedeploy-application: datapulse-backend-${{ steps.env.outputs.name }}
           codedeploy-deployment-group: datapulse-backend-dg-${{ steps.env.outputs.name }}
           codedeploy-appspec: appspec.yaml
