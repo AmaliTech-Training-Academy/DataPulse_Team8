@@ -559,7 +559,7 @@ resource "aws_lb_listener_rule" "api" {
 
   condition {
     path_pattern {
-      values = ["/api/*", "/docs", "/redoc", "/openapi.json", "/health", "/metrics"]
+      values = ["/api/*", "/docs", "/redoc", "/openapi.json", "/health"]
     }
   }
 }
@@ -849,14 +849,16 @@ resource "aws_ecs_service" "backend_blue" {
     type = "CODE_DEPLOY"
   }
 
-  # Blue-Green deployment configuration
-  deployment_circuit_breaker {
-    enable   = true
-    rollback = true
-  }
 
   # Blue-Green deployment configuration managed by CodeDeploy
-  depends_on = [aws_lb_listener.frontend]
+  depends_on = [
+    aws_lb_listener.frontend,
+    aws_lb_listener_rule.api
+  ]
+
+  lifecycle {
+    ignore_changes = [task_definition, load_balancer]
+  }
 
   tags = {
     Environment = var.environment
@@ -912,6 +914,14 @@ resource "aws_ecs_service" "frontend" {
     target_group_arn = aws_lb_target_group.frontend.arn
     container_name   = "frontend"
     container_port   = 80
+  }
+
+  depends_on = [
+    aws_lb_listener.frontend
+  ]
+
+  lifecycle {
+    ignore_changes = [task_definition, load_balancer]
   }
 }
 

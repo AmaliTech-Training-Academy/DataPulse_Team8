@@ -46,7 +46,7 @@ resource "aws_iam_role" "github_actions_deploy" {
             # Allow from any repository in the organization
             # Format: repo:owner:ref
             # Adjust this to match your specific repository
-            "token.actions.githubusercontent.com:sub" = "repo:DataPulse-Team8/*"
+            "token.actions.githubusercontent.com:sub" = "repo:AmaliTech-Training-Academy/DataPulse_Team8:*"
           }
         }
       }
@@ -178,7 +178,7 @@ resource "aws_iam_role" "github_actions_readonly" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:DataPulse-Team8/*"
+            "token.actions.githubusercontent.com:sub" = "repo:AmaliTech-Training-Academy/DataPulse_Team8:*"
           }
         }
       }

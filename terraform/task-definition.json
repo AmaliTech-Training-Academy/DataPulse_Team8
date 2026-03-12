@@ -1,0 +1,50 @@
+{
+  "family": "datapulse-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::384747604241:role/datapulse-ecs-task-execution-prod",
+  "taskRoleArn": "arn:aws:iam::384747604241:role/datapulse-ecs-task-prod",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "384747604241.dkr.ecr.eu-west-1.amazonaws.com/datapulse/backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "hostPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://datapulse-postgres-prod:5432/datapulse"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-1:384747604241:secret:datapulse/prod/credentials"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/datapulse-backend",
+          "awslogs-region": "eu-west-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

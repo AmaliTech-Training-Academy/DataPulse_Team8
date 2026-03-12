@@ -14,6 +14,9 @@ jobs:
   deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout code
@@ -25,73 +28,58 @@ jobs:
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "name=prod" >> $GITHUB_OUTPUT
             echo "cluster=datapulse-prod" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
-            echo "name=dev" >> $GITHUB_OUTPUT
-            echo "cluster=datapulse-dev" >> $GITHUB_OUTPUT
           else
             echo "name=dev" >> $GITHUB_OUTPUT
             echo "cluster=datapulse-dev" >> $GITHUB_OUTPUT
           fi
 
-      # Note: Cluster name should match Terraform: datapulse-${var.environment}
-
-      # OIDC: Authenticate to AWS using OIDC (no credentials needed)
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.GITHUB_OIDC_ROLE }}
+          role-to-assume: arn:aws:iam::384747604241:role/github-actions-deploy-${{ steps.env.outputs.name }}
           role-session-name: GitHubActions-${{ github.run_id }}
-          aws-region: ${{ secrets.AWS_REGION || 'eu-west-1' }}
+          aws-region: eu-west-1
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build Docker image
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/datapulse-backend:${{ github.sha }} ./backend
+          # Build backend
+          docker build -t $ECR_REGISTRY/datapulse/backend:$IMAGE_TAG ./backend
+          docker push $ECR_REGISTRY/datapulse/backend:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/datapulse/backend:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Push Docker image to ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      - name: Update environment in task-definition.json
         run: |
-          docker push $ECR_REGISTRY/datapulse-backend:${{ github.sha }}
+          ACCOUNT_ID="${{ secrets.AWS_ACCOUNT_ID }}"
+          ACCOUNT_ID="${ACCOUNT_ID:-384747604241}"
+          sed -i "s/384747604241/$ACCOUNT_ID/g" terraform/task-definition.json
+          sed -i "s/-prod/-${{ steps.env.outputs.name }}/g" terraform/task-definition.json
+          # Note: Hostname also changes if it's environment-based
+          sed -i "s/datapulse-postgres-prod/datapulse-postgres-${{ steps.env.outputs.name }}/g" terraform/task-definition.json
 
-      - name: Deploy to ECS
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-        run: |
-          echo "Deploying to ${{ steps.env.outputs.cluster }} cluster..."
+      - name: Render Amazon ECS task definition
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: terraform/task-definition.json
+          container-name: backend
+          image: ${{ steps.build-image.outputs.image }}
 
-          # Register new task definition
-          TASK_DEF=$(aws ecs register-task-definition \
-            --family datapulse-backend \
-            --network-mode awsvpc \
-            --requires-compatibilities FARGATE \
-            --cpu 512 \
-            --memory 1024 \
-            --execution-role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/datapulse-ecs-task-execution-${{ steps.env.outputs.name }} \
-            --task-role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/datapulse-ecs-task-${{ steps.env.outputs.name }} \
-            --container-definitions '[{"name":"backend","image":"${{ env.ECR_REGISTRY }}/datapulse-backend:${{ github.sha }}","essential":true,"portMappings":[{"containerPort":8000,"hostPort":8000,"protocol":"tcp"}],"logConfiguration":{"logDriver":"awslogs","options":{"awslogs-group":"/ecs/datapulse-${{ steps.env.outputs.name }}","awslogs-region":"${{ secrets.AWS_REGION || 'eu-west-1' }}","awslogs-stream-prefix":"ecs"}}}]' \
-            --query 'taskDefinition.taskDefinitionArn' \
-            --output text)
-
-          echo "Task definition: $TASK_DEF"
-
-          # Update service
-          aws ecs update-service \
-            --cluster ${{ steps.env.outputs.cluster }} \
-            --service datapulse-backend-blue-${{ steps.env.outputs.name }} \
-            --task-definition $TASK_DEF \
-            --desired-count 2 \
-            --force-new-deployment
-
-          echo "Waiting for service to stabilize..."
-          aws ecs wait services-stable \
-            --cluster ${{ steps.env.outputs.cluster }} \
-            --services datapulse-backend-blue-${{ steps.env.outputs.name }}
-
-          echo "Successfully deployed to ${{ steps.env.outputs.name }} environment!"
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          service: datapulse-backend-blue-${{ steps.env.outputs.name }}
+          cluster: ${{ steps.env.outputs.cluster }}
+          wait-for-service-stability: true
+          # Note: If service uses CODE_DEPLOY, this action will use CodeDeploy if codedeploy-app is provided
+          codedeploy-app: datapulse-backend-${{ steps.env.outputs.name }}
+          codedeploy-deployment-group: datapulse-backend-dg-${{ steps.env.outputs.name }}
+          codedeploy-appspec: terraform/appspec.yml
