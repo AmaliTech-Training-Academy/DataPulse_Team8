@@ -7,7 +7,12 @@ services:
       POSTGRES_PASSWORD: datapulse_test_pass
       POSTGRES_DB: datapulse_test
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U datapulse_test"]
       interval: 5s
@@ -22,6 +27,11 @@ services:
     environment:
       TEST_DATABASE_URL: postgresql://datapulse_test:datapulse_test_pass@postgres_test:5432/datapulse_test
       APP_ENV: test
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
     depends_on:
       postgres_test:
         condition: service_healthy

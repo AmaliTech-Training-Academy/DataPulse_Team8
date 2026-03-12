@@ -68,9 +68,6 @@ jobs:
           tags: ${{ env.ECR_REGISTRY }}/datapulse-backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            SECRET_KEY=${{ secrets.SECRET_KEY }}
 
       - name: Build and push Pipeline ETL
         uses: docker/build-push-action@v5
@@ -79,9 +76,6 @@ jobs:
           file: ./devops/Dockerfile.pipeline
           push: true
           tags: ${{ env.ECR_REGISTRY }}/datapulse-pipeline:${{ github.sha }}
-          build-args: |
-            SOURCE_DB_URL=${{ secrets.SOURCE_DB_URL }}
-            TARGET_DB_URL=${{ secrets.TARGET_DB_URL }}
 
   # Blue Environment Deployment (Staging)
   deploy-blue:

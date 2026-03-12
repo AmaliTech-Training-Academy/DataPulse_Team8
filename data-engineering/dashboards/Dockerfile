@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 
+# Create non-root user
+RUN groupadd -r streamlit && useradd -r -g streamlit streamlit
+
 WORKDIR /app
 
 # Install system dependencies for psycopg2
@@ -13,6 +16,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+RUN chown -R streamlit:streamlit /app
+USER streamlit
 
 EXPOSE 8501
 

@@ -14,7 +14,7 @@ variable "postgres_user" {
 variable "postgres_password" {
   description = "PostgreSQL password"
   type        = string
-  default     = "ChangeMe2024!"
+  default     = null
   sensitive   = true
 }
 
@@ -78,7 +78,7 @@ variable "grafana_admin_user" {
 variable "grafana_admin_password" {
   description = "Grafana admin password"
   type        = string
-  default     = "ChangeMe2024!"
+  default     = null
   sensitive   = true
 }
 

@@ -1,7 +1,15 @@
 FROM python:3.11-slim
+
+# Create non-root user
+RUN groupadd -r pipeline && useradd -r -g pipeline pipeline
+
 WORKDIR /pipeline
+
 RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 COPY data-engineering/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY data-engineering/ .
+RUN chown -R pipeline:pipeline /pipeline
+USER pipeline
+
 CMD ["python", "pipeline/etl_pipeline.py"]

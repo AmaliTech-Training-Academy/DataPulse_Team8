@@ -1,16 +1,21 @@
 services:
   # PostgreSQL Database
   db:
-    image: postgres:15-alpine
+    image: postgres:15.5-alpine
     container_name: datapulse-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
@@ -19,15 +24,20 @@ services:
 
   # PgAdmin for Database Management
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:8.2
     container_name: datapulse-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
     ports:
-      - "5050:80"
+      - "127.0.0.1:5050:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
     depends_on:
       db:
         condition: service_healthy
@@ -41,10 +51,15 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./backend/app:/app/app
       - ./backend/uploads:/app/uploads
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
     depends_on:
       db:
         condition: service_healthy
@@ -147,13 +162,18 @@ services:
 
   # Prometheus for Metrics Collection
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.49.1
     container_name: datapulse-prometheus
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 512M
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -162,16 +182,21 @@ services:
 
   # Grafana for Dashboard
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.3.3
     container_name: datapulse-grafana
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 512M
     depends_on:
       - prometheus
 
@@ -184,7 +209,12 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
     ports:
-      - "8501:8501"
+      - "127.0.0.1:8501:8501"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1G
     depends_on:
       db:
         condition: service_healthy
