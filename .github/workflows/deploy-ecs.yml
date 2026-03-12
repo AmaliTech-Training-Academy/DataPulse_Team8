@@ -69,7 +69,6 @@ jobs:
           docker tag grafana/loki:2.9.2 $ECR_REGISTRY/datapulse/loki:latest
           docker push $ECR_REGISTRY/datapulse/loki:latest
 
-
       - name: Update environment in task-definition.json
         run: |
           ACCOUNT_ID="${{ secrets.AWS_ACCOUNT_ID }}"
@@ -95,9 +94,8 @@ jobs:
           cluster: ${{ steps.env.outputs.cluster }}
           wait-for-service-stability: true
           # Note: If service uses CODE_DEPLOY, this action will use CodeDeploy if codedeploy-app is provided
-          codedeploy-app: datapulse-backend-${{ steps.env.outputs.name }}
+          codedeploy-application: datapulse-backend-${{ steps.env.outputs.name }}
           codedeploy-deployment-group: datapulse-backend-dg-${{ steps.env.outputs.name }}
-          codedeploy-appspec: terraform/appspec.yml
 
       - name: Restart auxiliary ECS Services
         run: |
