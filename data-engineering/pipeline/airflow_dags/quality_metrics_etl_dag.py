@@ -101,12 +101,17 @@ def notify_pipeline_failure(context: dict) -> None:
 
 def check_for_new_upload_data() -> bool:
     """Return True when new upload/check data exists since last successful watermark."""
-
-    pipeline = ETLPipeline()
-    watermark = pipeline.get_last_success_watermark()
-    has_new_data = pipeline.has_new_data_since_watermark(watermark)
-    LOGGER.info("Watermark=%s has_new_data=%s", watermark, has_new_data)
-    return has_new_data
+    try:
+        pipeline = ETLPipeline()
+        watermark = pipeline.get_last_success_watermark()
+        has_new_data = pipeline.has_new_data_since_watermark(watermark)
+        LOGGER.info("Watermark=%s has_new_data=%s", watermark, has_new_data)
+        return has_new_data
+    except Exception as exc:
+        LOGGER.warning(
+            "Could not check for new data (will skip this run): %s", exc
+        )
+        return False
 
 
 def run_quality_metrics_etl() -> dict:
