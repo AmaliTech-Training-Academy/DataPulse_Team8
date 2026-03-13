@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "127.0.0.1:5433:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     deploy:
@@ -30,7 +30,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
     ports:
-      - "127.0.0.1:5050:80"
+      - "5050:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     deploy:
@@ -51,7 +51,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     volumes:
       - ./backend/app:/app/app
       - ./backend/uploads:/app/uploads
@@ -165,7 +165,7 @@ services:
     image: prom/prometheus:v2.49.1
     container_name: datapulse-prometheus
     ports:
-      - "127.0.0.1:9090:9090"
+      - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -188,7 +188,7 @@ services:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
@@ -209,7 +209,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
     ports:
-      - "127.0.0.1:8501:8501"
+      - "8501:8501"
     deploy:
       resources:
         limits:

@@ -1652,18 +1652,23 @@
           <div class="topbar">
             <div>
               <div class="page-title">Advanced Analytics</div>
-              <div class="page-sub">DataPulse Intelligence Dashboard</div>
+              <div class="page-sub" id="analytics-sub">DataPulse Intelligence Dashboard</div>
             </div>
-            <button
-              class="btn btn-ghost"
-              onclick="$('analytics-frame').src += ''"
-            >
-              ↻ Reload
-            </button>
+            <div class="topbar-right">
+              <a id="analytics-direct-link" href="#" target="_blank" class="btn btn-ghost" style="text-decoration: none;">
+                ↗ Open in New Tab
+              </a>
+              <button
+                class="btn btn-ghost"
+                onclick="$('analytics-frame').src += ''"
+              >
+                ↻ Reload
+              </button>
+            </div>
           </div>
           <iframe
             id="analytics-frame"
-            src="http://localhost:8501/?embed=true"
+            src=""
           ></iframe>
         </div>
 
@@ -1726,9 +1731,8 @@
     <script>
       // ── CONFIG ──────────────────────────────────────────────────────────────────
       // ── API CONFIGURATION ──────────────────────────────────────────────────────
-      const API = (window.location.protocol === "file:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") 
-        ? "http://localhost:8000" 
-        : "";
+      const currentHost = window.location.hostname || "localhost";
+      const API = `http://${currentHost}:8000`;
       let token = localStorage.getItem("dp_token") || "";
       let isAdmin = localStorage.getItem("dp_is_admin") === "true";
       let userEmail = localStorage.getItem("dp_user_email") || "";
@@ -2050,10 +2054,18 @@
           shell.classList.add("mini-sidebar");
           // Dynamically set iframe source to match current host
           const frame = $("analytics-frame");
-          const host = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || !window.location.hostname) 
-            ? "localhost" 
-            : window.location.hostname;
-          frame.src = `http://${host}:8501/?embed=true`;
+          const targetSrc = `http://${currentHost}:8501/?embed=true`;
+          const directSrc = `http://${currentHost}:8501/`;
+          
+          if (frame.src !== targetSrc) {
+            frame.src = targetSrc;
+          }
+          
+          // Update direct link and subtext
+          const sub = $("analytics-sub");
+          const link = $("analytics-direct-link");
+          if (sub) sub.innerText = `Connected to ${directSrc}`;
+          if (link) link.href = directSrc;
         } else {
           shell.classList.remove("mini-sidebar");
         }

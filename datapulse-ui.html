@@ -1670,9 +1670,8 @@
       // ── CONFIG ──────────────────────────────────────────────────────────────────
 // Use relative URLs so API calls go through the ALB (works in both local and production)
       // ── API CONFIGURATION ──────────────────────────────────────────────────────
-      const API = (window.location.protocol === "file:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") 
-        ? "http://localhost:8000" 
-        : "";
+      const currentHost = window.location.hostname || "localhost";
+      const API = `http://${currentHost}:8000`;
       let token = localStorage.getItem("dp_token") || "";
       let isAdmin = localStorage.getItem("dp_is_admin") === "true";
       let userEmail = localStorage.getItem("dp_user_email") || "";
@@ -1994,10 +1993,10 @@
     shell.classList.add("mini-sidebar");
     // Dynamically set iframe source to match current host
     const frame = $("analytics-frame");
-    const host = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || !window.location.hostname) 
-      ? "localhost" 
-      : window.location.hostname;
-    frame.src = `http://${host}:8501/?embed=true`;
+    const targetSrc = `http://${currentHost}:8501/?embed=true`;
+    if (frame.src !== targetSrc) {
+      frame.src = targetSrc;
+    }
   } else {
     shell.classList.remove("mini-sidebar");
   }
