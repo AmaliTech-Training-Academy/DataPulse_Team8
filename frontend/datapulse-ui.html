@@ -2048,6 +2048,12 @@
         // Logic for mini-sidebar
         if (name === "analytics") {
           shell.classList.add("mini-sidebar");
+          // Dynamically set iframe source to match current host
+          const frame = $("analytics-frame");
+          const host = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || !window.location.hostname) 
+            ? "localhost" 
+            : window.location.hostname;
+          frame.src = `http://${host}:8501/?embed=true`;
         } else {
           shell.classList.remove("mini-sidebar");
         }

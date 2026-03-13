@@ -11,8 +11,16 @@ logger = logging.getLogger("datapulse.middleware")
 
 class GlobalLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        start_time = time.time()
+        # Handle preflight requests for Private Network Access (PNA)
+        if request.method == "OPTIONS" and "access-control-request-private-network" in request.headers:
+            response = Response(status_code=200)
+            response.headers["Access-Control-Allow-Private-Network"] = "true"
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            return response
 
+        start_time = time.time()
         # Log request parameters excluding sensitive info/body
         method = request.method
         url = request.url.path
@@ -20,6 +28,10 @@ class GlobalLoggingMiddleware(BaseHTTPMiddleware):
 
         try:
             response = await call_next(request)
+            
+            # Add PNA header to all responses
+            response.headers["Access-Control-Allow-Private-Network"] = "true"
+            
             process_time = time.time() - start_time
             status_code = response.status_code
             logger.info(
