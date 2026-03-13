@@ -1,7 +1,7 @@
 # PostgreSQL Outputs
 output "postgres_url" {
   description = "PostgreSQL connection URL"
-  value       = "postgresql://${var.postgres_user}:${var.postgres_password}@${aws_db_instance.main.endpoint}/${var.postgres_db}"
+  value       = "postgresql://${local.postgres_user}:${local.postgres_password}@${aws_db_instance.main.endpoint}/${local.postgres_db}"
   sensitive   = true
 }
 
@@ -45,7 +45,7 @@ output "grafana_url" {
 
 output "grafana_credentials" {
   description = "Grafana login credentials"
-  value       = "Username: ${var.grafana_admin_user}, Password: ${var.grafana_admin_password}"
+  value       = "Username: ${var.grafana_admin_user}, Password: ${local.grafana_password}"
   sensitive   = true
 }
 
@@ -126,11 +126,11 @@ output "public_subnet_ids" {
 }
 
 # =====================================================
-# GitHub OIDC Outputs (already defined in github_oidc.tf)
+# GitHub OIDC Outputs
 # =====================================================
 
 output "github_actions_deploy_role_arn" {
-  description = "ARN of the IAM role for GitHub Actions deployment - add this as GITHUB_OIDC_ROLE_ARN secret"
+  description = "ARN of the IAM role for GitHub Actions deployment"
   value       = aws_iam_role.github_actions_deploy.arn
 }
 

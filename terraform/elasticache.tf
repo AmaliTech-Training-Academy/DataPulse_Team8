@@ -71,16 +71,10 @@ resource "aws_elasticache_replication_group" "main" {
   at_rest_encryption_enabled = true
   transit_encryption_enabled = true
   auto_minor_version_upgrade = true
-  # Automatic failover disabled for budget optimization
+  
+  # MUST BE FALSE FOR SINGLE NODE (num_cache_clusters = 1)
   automatic_failover_enabled = false
-
-  # Backup configuration
-  snapshot_retention_limit = var.environment == "prod" ? 7 : 0
-  snapshot_window          = "03:00-04:00"
-  maintenance_window       = "mon:05:00-mon:06:00"
-
-  # Multi-AZ disabled for budget optimization
-  multi_az_enabled = false
+  multi_az_enabled           = false
 
   # Log delivery
   log_delivery_configuration {

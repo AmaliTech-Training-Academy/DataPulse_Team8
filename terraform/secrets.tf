@@ -54,9 +54,9 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
 
   secret_string = jsonencode({
     postgres_user          = var.postgres_user
-    postgres_password      = var.postgres_password != null ? var.postgres_password : random_password.postgres.result
+    postgres_password      = (var.postgres_password != null && var.postgres_password != "") ? var.postgres_password : random_password.postgres.result
     postgres_db            = var.postgres_db
-    grafana_admin_password = var.grafana_admin_password != null ? var.grafana_admin_password : random_password.grafana.result
+    grafana_admin_password = (var.grafana_admin_password != null && var.grafana_admin_password != "") ? var.grafana_admin_password : random_password.grafana.result
   })
 }
 
@@ -116,9 +116,9 @@ locals {
   # Use generated secrets (stored in Secrets Manager)
   db_secrets = {
     postgres_user          = var.postgres_user
-    postgres_password      = var.postgres_password != null ? var.postgres_password : random_password.postgres.result
+    postgres_password      = (var.postgres_password != null && var.postgres_password != "") ? var.postgres_password : random_password.postgres.result
     postgres_db            = var.postgres_db
-    grafana_admin_password = var.grafana_admin_password != null ? var.grafana_admin_password : random_password.grafana.result
+    grafana_admin_password = (var.grafana_admin_password != null && var.grafana_admin_password != "") ? var.grafana_admin_password : random_password.grafana.result
   }
 
   postgres_user     = local.db_secrets.postgres_user

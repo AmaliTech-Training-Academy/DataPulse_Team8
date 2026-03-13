@@ -1731,7 +1731,14 @@
     <script>
       // ── CONFIG ──────────────────────────────────────────────────────────────────
       // ── API CONFIGURATION ──────────────────────────────────────────────────────
-      const API = ""; // Relative URL, proxied via Nginx to backend:8000
+      // Use relative paths if served over a network (works for ALB and Gateways)
+      // Use localhost:8000 only if opened as a local file (file://)
+      const API = window.location.protocol === "file:" ? "http://localhost:8000" : "";
+      const isLocal = window.location.protocol === "file:" || 
+                      window.location.hostname === "localhost" || 
+                      window.location.hostname === "127.0.0.1";
+      
+      console.log("DataPulse API Base:", API || "(relative)");
       let token = localStorage.getItem("dp_token") || "";
       let isAdmin = localStorage.getItem("dp_is_admin") === "true";
       let userEmail = localStorage.getItem("dp_user_email") || "";
@@ -2051,9 +2058,14 @@
         // Logic for mini-sidebar
         if (name === "analytics") {
           shell.classList.add("mini-sidebar");
-          // Dynamically set iframe source to relative path (proxied)
+          // Dynamically set iframe source
           const frame = $("analytics-frame");
-          const targetSrc = `/analytics/?embed=true`;
+          const targetSrc = isLocal 
+            ? `http://localhost:8501/?embed=true`
+            : `/analytics/?embed=true`;
+          const directSrc = isLocal
+            ? `http://localhost:8501/`
+            : `/analytics/`;
           
           if (frame.src !== targetSrc) {
             frame.src = targetSrc;
@@ -2062,8 +2074,8 @@
           // Update direct link and subtext
           const sub = $("analytics-sub");
           const link = $("analytics-direct-link");
-          if (sub) sub.innerText = `Connected via Gateway /analytics/`;
-          if (link) link.href = "/analytics/";
+          if (sub) sub.innerText = isLocal ? `Local Dev: ${directSrc}` : `Live Analytics: ${directSrc}`;
+          if (link) link.href = directSrc;
         } else {
           shell.classList.remove("mini-sidebar");
         }

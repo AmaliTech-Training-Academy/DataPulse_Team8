@@ -17,6 +17,21 @@ resource "aws_ecr_repository" "backend" {
   }
 }
 
+resource "aws_ecr_repository" "dashboard" {
+  name = "datapulse/dashboard"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  image_tag_mutability = "MUTABLE"
+
+  tags = {
+    Description = "DataPulse Analytics Dashboard"
+    Environment = var.environment
+  }
+}
+
 resource "aws_ecr_repository" "frontend" {
   name = "datapulse/frontend"
 
@@ -117,8 +132,14 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
   capacity_providers = ["FARGATE", "FARGATE_SPOT"]
 
   default_capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight            = 100
+    base              = 0
+  }
+
+  default_capacity_provider_strategy {
     capacity_provider = "FARGATE"
-    weight            = 1
+    weight            = 0
   }
 }
 
@@ -446,6 +467,30 @@ resource "aws_lb_target_group" "backend_blue" {
   }
 }
 
+resource "aws_lb_target_group" "dashboard" {
+  name        = "datapulse-dashboard-${var.environment}"
+  port        = 8501
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip"
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 2
+    interval            = 60
+    matcher             = "200"
+    path                = "/analytics/_stcore/health"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    timeout             = 5
+    unhealthy_threshold = 2
+  }
+
+  tags = {
+    Environment = var.environment
+  }
+}
+
 resource "aws_lb_target_group" "frontend" {
   name        = "datapulse-frontend-${var.environment}"
   port        = 80
@@ -604,6 +649,22 @@ resource "aws_lb_listener_rule" "prometheus" {
   }
 }
 
+resource "aws_lb_listener_rule" "analytics" {
+  listener_arn = aws_lb_listener.frontend.arn
+  priority     = 40
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.dashboard.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/analytics/*", "/analytics"]
+    }
+  }
+}
+
 # Test Listener for Blue-Green Deployments
 resource "aws_lb_listener" "test" {
   load_balancer_arn = aws_lb.main.arn
@@ -645,7 +706,11 @@ resource "aws_ecs_task_definition" "backend" {
       environment = [
         {
           name  = "DATABASE_URL"
-          value = "postgresql://${local.postgres_user}:${local.postgres_password}@${aws_db_instance.main.endpoint}/${var.database_name}"
+          value = "postgresql://${local.postgres_user}:${local.postgres_password}@${aws_db_instance.main.endpoint}/${local.postgres_db}"
+        },
+        {
+          name  = "ENVIRONMENT"
+          value = "production"
         }
       ]
       secrets = [
@@ -676,6 +741,51 @@ resource "aws_ecs_task_definition" "backend" {
     Environment = var.environment
     Project     = "DataPulse"
   }
+}
+
+# Dashboard Task Definition
+resource "aws_ecs_task_definition" "dashboard" {
+  family                   = "datapulse-dashboard"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = 512
+  memory                   = 1024
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "dashboard"
+      image     = "${aws_ecr_repository.dashboard.repository_url}:latest"
+      essential = true
+      portMappings = [
+        {
+          containerPort = 8501
+          hostPort      = 8501
+          protocol      = "tcp"
+        }
+      ]
+      environment = [
+        {
+          name  = "DATABASE_URL"
+          value = "postgresql://${local.postgres_user}:${local.postgres_password}@${aws_db_instance.main.endpoint}/${local.postgres_db}"
+        },
+        {
+          name  = "ENVIRONMENT"
+          value = "production"
+        }
+      ]
+      command = ["streamlit", "run", "quality_dashboard.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.baseUrlPath=/analytics"]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/datapulse-dashboard"
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
 }
 
 # Frontend Task Definition
@@ -939,6 +1049,31 @@ resource "aws_ecs_service" "frontend" {
   }
 }
 
+# Dashboard Service
+resource "aws_ecs_service" "dashboard" {
+  name            = "datapulse-dashboard-${var.environment}"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.dashboard.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_groups  = [aws_security_group.ecs_tasks.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.dashboard.arn
+    container_name   = "dashboard"
+    container_port   = 8501
+  }
+
+  depends_on = [
+    aws_lb_listener.frontend
+  ]
+}
+
 # Prometheus Service
 resource "aws_ecs_service" "prometheus" {
   name            = "datapulse-prometheus-${var.environment}"
@@ -1012,6 +1147,15 @@ resource "aws_cloudwatch_log_group" "ecs" {
 resource "aws_cloudwatch_log_group" "backend" {
   name              = "/ecs/datapulse-backend"
   retention_in_days = var.log_retention_days
+}
+
+resource "aws_cloudwatch_log_group" "dashboard" {
+  name              = "/ecs/datapulse-dashboard"
+  retention_in_days = var.log_retention_days
+
+  tags = {
+    Environment = var.environment
+  }
 }
 
 resource "aws_cloudwatch_log_group" "frontend" {

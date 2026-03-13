@@ -1,0 +1,18 @@
+{
+  "version": 0.0,
+  "Resources": [
+    {
+      "TargetService": {
+        "Type": "AWS::ECS::Service",
+        "Properties": {
+          "TaskDefinition": "arn:aws:ecs:eu-west-1:384747604241:task-definition/datapulse-backend:52",
+          "LoadBalancerInfo": {
+            "ContainerName": "backend",
+            "ContainerPort": 8000
+          },
+          "PlatformVersion": "LATEST"
+        }
+      }
+    }
+  ]
+}

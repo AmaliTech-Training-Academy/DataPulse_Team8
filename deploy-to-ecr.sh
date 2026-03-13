@@ -18,8 +18,8 @@ ECR_BASE="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
 IMAGE_TAG="${1:-latest}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-ALB_DNS="datapulse-alb-dev-810866140.eu-west-1.elb.amazonaws.com"
-CLUSTER="datapulse-dev"
+ALB_DNS="datapulse-alb-prod-253557199.eu-west-1.elb.amazonaws.com"
+CLUSTER="datapulse-prod"
 
 # Colors
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
@@ -49,16 +49,19 @@ aws ecr get-login-password --region "${REGION}" | \
   docker login --username AWS --password-stdin "${ECR_BASE}"
 log "ECR login successful"
 
-# ── Step 2: Ensure CloudWatch log group exists ───────
-info "Ensuring CloudWatch log group exists..."
-aws logs create-log-group --log-group-name "/ecs/datapulse-backend" --region "${REGION}" 2>/dev/null || true
-aws logs put-retention-policy --log-group-name "/ecs/datapulse-backend" --retention-in-days 7 --region "${REGION}" 2>/dev/null || true
-log "CloudWatch log group ready"
+# ── Step 2: Ensure CloudWatch log groups exist ───────
+info "Ensuring CloudWatch log groups exist..."
+for svc in "backend" "dashboard"; do
+  aws logs create-log-group --log-group-name "/ecs/datapulse-prod/${svc}" --region "${REGION}" 2>/dev/null || true
+  aws logs put-retention-policy --log-group-name "/ecs/datapulse-prod/${svc}" --retention-in-days 7 --region "${REGION}" 2>/dev/null || true
+done
+log "CloudWatch log groups ready"
 
-# ── Step 3: Build backend image ──────────────────────
+# ── Step 3: Build images ──────────────────────
 info "Building backend image..."
 BACKEND_ECR="${ECR_BASE}/datapulse/backend"
 docker build \
+  --platform linux/amd64 \
   --provenance=false \
   --sbom=false \
   -t "datapulse-backend:${IMAGE_TAG}" \
@@ -68,10 +71,24 @@ docker build \
   "${PROJECT_ROOT}/backend"
 log "Backend image built"
 
+info "Building dashboard image..."
+DASHBOARD_ECR="${ECR_BASE}/datapulse/dashboard"
+docker build \
+  --platform linux/amd64 \
+  --provenance=false \
+  --sbom=false \
+  -t "datapulse-dashboard:${IMAGE_TAG}" \
+  -t "${DASHBOARD_ECR}:${IMAGE_TAG}" \
+  -t "${DASHBOARD_ECR}:latest" \
+  -f "${PROJECT_ROOT}/data-engineering/dashboards/Dockerfile" \
+  "${PROJECT_ROOT}/data-engineering/dashboards"
+log "Dashboard image built"
+
 # ── Step 4: Build frontend image ─────────────────────
 info "Building frontend image..."
 FRONTEND_ECR="${ECR_BASE}/datapulse/frontend"
 docker build \
+  --platform linux/amd64 \
   --provenance=false \
   --sbom=false \
   -t "datapulse-frontend:${IMAGE_TAG}" \
@@ -134,6 +151,7 @@ push_image() {
 }
 
 push_image "backend"    "${BACKEND_ECR}"    "${IMAGE_TAG}"
+push_image "dashboard"  "${DASHBOARD_ECR}"  "${IMAGE_TAG}"
 push_image "frontend"   "${FRONTEND_ECR}"   "${IMAGE_TAG}"
 push_image "prometheus" "${PROMETHEUS_ECR}" "latest"
 push_image "grafana"    "${GRAFANA_ECR}"    "latest"
@@ -150,8 +168,8 @@ TASK_DEF_ARN=$(aws ecs register-task-definition \
   --requires-compatibilities "FARGATE" \
   --cpu "512" \
   --memory "1024" \
-  --execution-role-arn "arn:aws:iam::${ACCOUNT_ID}:role/datapulse-ecs-task-execution-dev" \
-  --task-role-arn "arn:aws:iam::${ACCOUNT_ID}:role/datapulse-ecs-task-dev" \
+  --execution-role-arn "arn:aws:iam::${ACCOUNT_ID}:role/datapulse-ecs-task-execution-prod" \
+  --task-role-arn "arn:aws:iam::${ACCOUNT_ID}:role/datapulse-ecs-task-prod" \
   --container-definitions "[
     {
       \"name\": \"backend\",
@@ -165,7 +183,7 @@ TASK_DEF_ARN=$(aws ecs register-task-definition \
       \"logConfiguration\": {
         \"logDriver\": \"awslogs\",
         \"options\": {
-          \"awslogs-group\": \"/ecs/datapulse-backend\",
+          \"awslogs-group\": \"/ecs/datapulse-prod/backend\",
           \"awslogs-region\": \"${REGION}\",
           \"awslogs-stream-prefix\": \"ecs\"
         }
@@ -184,27 +202,53 @@ TASK_DEF_ARN=$(aws ecs register-task-definition \
 
 log "Task Definition registered: ${TASK_DEF_ARN}"
 
-# ── Step 8: Update ECS Service ───────────────────────
-info "Updating ECS service (backend-blue) with new task definition..."
-aws ecs update-service \
+# ── Step 8: Trigger CodeDeploy Deployment ────────────
+info "Triggering blue-green deployment via CodeDeploy..."
+
+# Create a temporary appspec file with the new Task Definition ARN
+cat > appspec.json <<EOF
+{
+  "version": 0.0,
+  "Resources": [
+    {
+      "TargetService": {
+        "Type": "AWS::ECS::Service",
+        "Properties": {
+          "TaskDefinition": "${TASK_DEF_ARN}",
+          "LoadBalancerInfo": {
+            "ContainerName": "backend",
+            "ContainerPort": 8000
+          },
+          "PlatformVersion": "LATEST"
+        }
+      }
+    }
+  ]
+}
+EOF
+
+# Trigger the deployment
+DEPLOYMENT_ID=$(aws deploy create-deployment \
   --region "${REGION}" \
-  --cluster "${CLUSTER}" \
-  --service "datapulse-backend-blue-dev" \
-  --task-definition "${TASK_DEF_ARN}" \
-  --desired-count 1 \
-  --force-new-deployment \
-  --output json > /dev/null
+  --application-name "datapulse-backend-prod" \
+  --deployment-group-name "datapulse-backend-dg-prod" \
+  --description "Deploying task definition ${TASK_DEF_ARN}" \
+  --revision "{\"revisionType\": \"AppSpecContent\", \"appSpecContent\": {\"content\": $(cat appspec.json | jq -Rs .)}}" \
+  --query 'deploymentId' \
+  --output text)
 
-log "ECS service update triggered"
+log "CodeDeploy deployment triggered: ${DEPLOYMENT_ID}"
 
-# ── Step 9: Wait for service stability ──────────────
-info "Waiting for ECS service to stabilize (this may take 2-5 minutes)..."
-aws ecs wait services-stable \
+# ── Step 9: Wait for deployment ──────────────────────
+info "Waiting for CodeDeploy deployment to complete (this may take 5-10 minutes)..."
+aws deploy wait deployment-successful \
   --region "${REGION}" \
-  --cluster "${CLUSTER}" \
-  --services "datapulse-backend-blue-dev"
+  --deployment-id "${DEPLOYMENT_ID}"
 
-log "ECS service is stable and running!"
+log "Deployment successful!"
+
+# Clean up
+rm appspec.json
 
 # ── Step 10: Verify ALB health ───────────────────────
 echo ""
@@ -224,10 +268,12 @@ echo -e "${GREEN}═════════════════════
 echo ""
 echo -e "  ${CYAN}Live API URL:${NC}    http://${ALB_DNS}"
 echo -e "  ${CYAN}API Docs:${NC}        http://${ALB_DNS}/docs"
+echo -e "  ${CYAN}Analytics:${NC}       http://${ALB_DNS}/analytics/"
 echo -e "  ${CYAN}Health Check:${NC}    http://${ALB_DNS}/health"
 echo ""
 echo -e "  ${CYAN}ECR Images Pushed:${NC}"
 echo -e "    • ${BACKEND_ECR}:${IMAGE_TAG}"
+echo -e "    • ${DASHBOARD_ECR}:${IMAGE_TAG}"
 echo -e "    • ${FRONTEND_ECR}:${IMAGE_TAG}"
 echo -e "    • ${PROMETHEUS_ECR}:latest"
 echo -e "    • ${GRAFANA_ECR}:latest"
