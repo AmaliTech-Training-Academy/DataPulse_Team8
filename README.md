@@ -32,12 +32,22 @@ This is the **fully implemented** version of DataPulse with all TODO stubs compl
 ```bash
 git clone <your-repo-url>
 cd 3-DataPulse
-docker-compose up --build
+docker compose up -d --build
 ```
 
+App UI is live at: **http://localhost:3001**
 API is live at: **http://localhost:8000**
-Swagger docs at: **http://localhost:8000/docs**
-User Interface at: **UI: http://localhost:3000**
+Swagger docs: **http://localhost:8000/docs**
+Streamlit analytics: **http://localhost:8501**
+Airflow UI: **http://localhost:8088**
+Grafana: **http://localhost:3000**
+PgAdmin: **http://localhost:5050**
+Frontend source of truth: `frontend/datapulse-ui.html`
+
+ETL automation:
+- Airflow scheduler runs the ETL DAG every minute.
+- New uploads appear in Streamlit after checks are run and the next ETL cycle completes.
+- Optional manual ETL run: `docker compose --profile manual run --rm pipeline`
 
 ### 3. Default credentials
 | Role  | Email                  | Password    |
@@ -148,16 +158,16 @@ Email: qa_user@datapulse.com
 Password: qapassword12
 Name: [Name]
 Access Your Application:
-UI: http://localhost:3000
+UI: http://localhost:3001
 Backend API: http://localhost:8000
 API Docs: http://localhost:8000/docs
 Current Status:
 ✅ Backend: Running on port 8000
 ✅ Database: PostgreSQL running with user data
 ✅ Authentication: Working properly
-✅ UI Server: Running on port 3000
+✅ UI Server: Running on port 3001
 Next Steps:
-Open http://localhost:3000 in your browser
+Open http://localhost:3001 in your browser
 Click the login form (it should show the auth overlay)
 Use credentials: qa_user@datapulse.com / qapassword12 or Create a new Account
 You should be able to access the full DataPulse dashboard!

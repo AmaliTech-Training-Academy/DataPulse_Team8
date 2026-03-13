@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
-"""Simple HTTP server to serve datapulse-ui.html"""
+"""Simple HTTP server for the canonical frontend UI."""
+
 import http.server
 import os
 import socketserver
+from pathlib import Path
 
-PORT = 3000
+PROJECT_ROOT = Path(__file__).resolve().parent
+FRONTEND_ROOT = PROJECT_ROOT / "frontend"
+PORT = int(os.getenv("PORT", "3001"))
 
 
 class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-        # Serve index.html for root path
-        if self.path == "/" or self.path == "":
+        # Serve the canonical frontend UI file at root.
+        if self.path in {"/", ""}:
             self.path = "/datapulse-ui.html"
         return super().do_GET()
 
@@ -22,15 +26,19 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+if not FRONTEND_ROOT.exists():
+    raise FileNotFoundError(f"Frontend directory not found: {FRONTEND_ROOT}")
+
+# Use frontend/ as the source of truth for local UI serving.
+os.chdir(FRONTEND_ROOT)
 
 with socketserver.TCPServer(("", PORT), MyHTTPRequestHandler) as httpd:
-    print("✓ DataPulse UI Server running!")
-    print(f"📱 Open your browser to: http://localhost:{PORT}")
-    print("📊 Backend API: http://localhost:8000")
-    print("\nDefault credentials: qa_user@datapulse.com / qapassword123")
+    print("DataPulse UI server running")
+    print(f"UI URL: http://localhost:{PORT}")
+    print("Backend API: http://localhost:8000")
+    print("Source of truth: frontend/datapulse-ui.html")
     print("\nPress Ctrl+C to stop the server\n")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        print("\n✓ Server stopped")
+        print("\nServer stopped")

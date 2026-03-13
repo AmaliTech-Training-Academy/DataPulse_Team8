@@ -17,6 +17,22 @@ services:
       timeout: 5s
       retries: 5
 
+  # One-time analytics schema bootstrap for Streamlit tables/views
+  analytics-init:
+    image: postgres:15-alpine
+    container_name: datapulse-analytics-init
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./data-engineering/sql:/sql:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "psql -h db -U ${POSTGRES_USER} -d ${POSTGRES_DB} -f /sql/analytics_schema.sql &&
+      psql -h db -U ${POSTGRES_USER} -d ${POSTGRES_DB} -f /sql/seed_dim_date.sql"
+    restart: "no"
+
   # PgAdmin for Database Management
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -55,8 +71,21 @@ services:
       retries: 3
       start_period: 40s
 
+  # DataPulse Frontend UI
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: datapulse-frontend
+    ports:
+      - "3001:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
   # Data Engineering Pipeline
   pipeline:
+    profiles: ["manual"]
     build:
       context: .
       dockerfile: devops/Dockerfile.pipeline
@@ -69,11 +98,12 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
+      analytics-init:
+        condition: service_completed_successfully
 
   # Airflow bootstrap (run once before scheduler/webserver)
   airflow-init:
     image: apache/airflow:2.9.3-python3.11
-    profiles: ["de"]
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
@@ -91,14 +121,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      analytics-init:
+        condition: service_completed_successfully
     command: >
       bash -c "airflow db migrate &&
-      airflow users create --username admin --firstname Data --lastname Engineer --role Admin --email admin@datapulse.local --password ${AIRFLOW_ADMIN_PASSWORD} || true"
+      (airflow users create --username admin --firstname Data --lastname Engineer --role Admin --email admin@datapulse.local --password ${AIRFLOW_ADMIN_PASSWORD} || true) &&
+      (airflow dags unpause quality_metrics_etl_on_upload || true)"
 
   # Airflow web UI for DE monitoring
   airflow-webserver:
     image: apache/airflow:2.9.3-python3.11
-    profiles: ["de"]
     restart: unless-stopped
     ports:
       - "8088:8080"
@@ -119,12 +151,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      analytics-init:
+        condition: service_completed_successfully
+      airflow-init:
+        condition: service_completed_successfully
     command: webserver
 
   # Airflow scheduler for DAG execution
   airflow-scheduler:
     image: apache/airflow:2.9.3-python3.11
-    profiles: ["de"]
     restart: unless-stopped
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -143,6 +178,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      analytics-init:
+        condition: service_completed_successfully
+      airflow-init:
+        condition: service_completed_successfully
     command: scheduler
 
   # Prometheus for Metrics Collection
@@ -188,6 +227,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      analytics-init:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:
