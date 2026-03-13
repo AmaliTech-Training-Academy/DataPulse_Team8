@@ -50,8 +50,9 @@ services:
     container_name: datapulse-backend
     environment:
       DATABASE_URL: ${DATABASE_URL}
-    ports:
-      - "8000:8000"
+    # REMOVED PORT MAPPING TO PROTECT INTERNALS
+    # ports:
+    #   - "8000:8000"
     volumes:
       - ./backend/app:/app/app
       - ./backend/uploads:/app/uploads
@@ -208,8 +209,10 @@ services:
     container_name: datapulse-dashboard
     environment:
       DATABASE_URL: ${DATABASE_URL}
-    ports:
-      - "8501:8501"
+    # REMOVED PORT MAPPING TO PROTECT INTERNALS
+    # ports:
+    #   - "8501:8501"
+    command: ["streamlit", "run", "quality_dashboard.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.baseUrlPath=/analytics"]
     deploy:
       resources:
         limits:
@@ -218,6 +221,18 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  # Unified Frontend Gateway
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: datapulse-frontend
+    ports:
+      - "3001:8080"
+    depends_on:
+      - backend
+      - dashboard
 
 volumes:
   postgres_data:

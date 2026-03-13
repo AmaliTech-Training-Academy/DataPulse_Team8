@@ -1731,8 +1731,7 @@
     <script>
       // ── CONFIG ──────────────────────────────────────────────────────────────────
       // ── API CONFIGURATION ──────────────────────────────────────────────────────
-      const currentHost = window.location.hostname || "localhost";
-      const API = `http://${currentHost}:8000`;
+      const API = ""; // Relative URL, proxied via Nginx to backend:8000
       let token = localStorage.getItem("dp_token") || "";
       let isAdmin = localStorage.getItem("dp_is_admin") === "true";
       let userEmail = localStorage.getItem("dp_user_email") || "";
@@ -2052,10 +2051,9 @@
         // Logic for mini-sidebar
         if (name === "analytics") {
           shell.classList.add("mini-sidebar");
-          // Dynamically set iframe source to match current host
+          // Dynamically set iframe source to relative path (proxied)
           const frame = $("analytics-frame");
-          const targetSrc = `http://${currentHost}:8501/?embed=true`;
-          const directSrc = `http://${currentHost}:8501/`;
+          const targetSrc = `/analytics/?embed=true`;
           
           if (frame.src !== targetSrc) {
             frame.src = targetSrc;
@@ -2064,8 +2062,8 @@
           // Update direct link and subtext
           const sub = $("analytics-sub");
           const link = $("analytics-direct-link");
-          if (sub) sub.innerText = `Connected to ${directSrc}`;
-          if (link) link.href = directSrc;
+          if (sub) sub.innerText = `Connected via Gateway /analytics/`;
+          if (link) link.href = "/analytics/";
         } else {
           shell.classList.remove("mini-sidebar");
         }
